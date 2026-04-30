@@ -1,15 +1,16 @@
-// We define the empty imports so the auto-complete feature works as expected.
-import {} from '@dcl/sdk/math'
 import { engine } from '@dcl/sdk/ecs'
+import { Vector3 } from '@dcl/sdk/math'
 
-import { changeColorSystem, circularSystem } from './systems'
+import { createPlatform, createWaterFloor } from './factories'
+import { waterScrollSystem } from './systems/waterScroll'
 import { setupUi } from './ui'
 
-export function main() {
-  // Defining behavior. See `src/systems.ts` file.
-  engine.addSystem(circularSystem)
-  engine.addSystem(changeColorSystem)
+const PLATFORM_CENTER = Vector3.create(240, 0, 240)
 
-  // draw UI. Here is the logic to spawn cubes.
+export function main(): void {
+  // 30x30 parcels (480x480m). Iteration 01: animated water floor + one platform.
+  createWaterFloor()
+  engine.addSystem(waterScrollSystem)
+  createPlatform(PLATFORM_CENTER)
   setupUi()
 }
