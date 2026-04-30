@@ -1,27 +1,31 @@
 import {
   Entity,
   Material,
+  MaterialTransparencyMode,
   MeshRenderer,
   TextureFilterMode,
   TextureWrapMode,
   Transform,
   engine
 } from '@dcl/sdk/ecs'
-import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 // import { VideoPlayer } from '@dcl/sdk/ecs' // re-enable when switching back to MP4 water
 
 import { WaterScroll } from '../components'
+import { WATER_LEVEL } from './sceneLevels'
 
-const PARCEL_GRID = 30
+const PARCEL_GRID = 50
 const PARCEL_SIZE = 16
-const TOTAL_SIZE = PARCEL_GRID * PARCEL_SIZE // 480 m
+const TOTAL_SIZE = PARCEL_GRID * PARCEL_SIZE // 800 m
 const WATER_TEXTURE = 'assets/scene/water/water-tile.png'
-const WATER_Y = 0
+const WATER_BUMP_TEXTURE = 'assets/scene/water/water-bump.png'
+const WATER_Y = WATER_LEVEL
+const WATER_ALPHA = 0.95
 // One tile per parcel (16 m of world = one image repeat). Bigger = blurrier;
 // smaller = more visible repetition. Tune as needed.
-const TILE_COUNT = 30
+const TILE_COUNT = 50
 
-export function createWaterFloor(): Entity {
+export function createWaterFloorV1(): Entity {
   const entity = engine.addEntity()
   Transform.create(entity, {
     position: Vector3.create(TOTAL_SIZE / 2, WATER_Y, TOTAL_SIZE / 2),
@@ -47,8 +51,21 @@ export function createWaterFloor(): Entity {
       filterMode: TextureFilterMode.TFM_BILINEAR,
       wrapMode: TextureWrapMode.TWM_REPEAT
     }),
-    roughness: 0.4,
-    metallic: 0.1
+    // Normal map adds the illusion of ripples that catch light as the camera
+    // moves. Shares the mesh UVs with the albedo, so the scroll system
+    // animates both at once.
+    bumpTexture: Material.Texture.Common({
+      src: WATER_BUMP_TEXTURE,
+      filterMode: TextureFilterMode.TFM_BILINEAR,
+      wrapMode: TextureWrapMode.TWM_REPEAT
+    }),
+    albedoColor: Color4.create(1, 1, 1, WATER_ALPHA),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
+    castShadows: false,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
+    reflectivityColor: Color3.Black()
   })
 
   // --- Animated MP4 floor (kept for reference) -----------------------------
