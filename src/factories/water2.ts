@@ -9,7 +9,6 @@ import {
   engine
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
-// import { VideoPlayer } from '@dcl/sdk/ecs' // re-enable when switching back to MP4 water
 
 import { WaterScroll } from '../components'
 import { WATER_LEVEL } from './sceneLevels'
@@ -22,7 +21,7 @@ const WATER_BUMP_TEXTURE = 'assets/scene/water/water-bump.png'
 const WATER_Y = WATER_LEVEL
 const WATER_ALPHA = 0.95
 // One tile per parcel (16 m of world = one image repeat). Bigger = blurrier;
-// smaller = more visible repetition. Tune as needed.
+// smaller = more visible repetition.
 const TILE_COUNT = 50
 
 export function createWaterFloorV2(): Entity {
@@ -51,9 +50,6 @@ export function createWaterFloorV2(): Entity {
       filterMode: TextureFilterMode.TFM_BILINEAR,
       wrapMode: TextureWrapMode.TWM_REPEAT
     }),
-    // Normal map adds the illusion of ripples that catch light as the camera
-    // moves. Shares the mesh UVs with the albedo, so the scroll system
-    // animates both at once.
     bumpTexture: Material.Texture.Common({
       src: WATER_BUMP_TEXTURE,
       filterMode: TextureFilterMode.TFM_BILINEAR,
@@ -62,27 +58,15 @@ export function createWaterFloorV2(): Entity {
     albedoColor: Color4.create(1, 1, 1, WATER_ALPHA),
     transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
     castShadows: false,
-    // Bump map still drives apparent ripples, but kill IBL/specular so the
-    // skybox doesn't bleed into the surface — we want the texture color, not
-    // a sky reflection.
-    roughness: 1,
+    // Lower roughness + dim specular gives the bump map moving highlights —
+    // crucial for "3D wave" feel. reflectivityColor is a dark blue tint
+    // (not white/black) so what reflections do form pick up a water hue
+    // instead of the actual skybox color.
+    roughness: 0.5,
     metallic: 0,
-    specularIntensity: 0,
-    reflectivityColor: Color3.Black()
+    specularIntensity: 0.4,
+    reflectivityColor: Color3.create(0.04, 0.06, 0.08)
   })
-
-  // --- Animated MP4 floor (kept for reference) -----------------------------
-  // VideoPlayer.create(entity, {
-  //   src: 'assets/scene/water/water-loop.mp4',
-  //   playing: true,
-  //   loop: true,
-  //   volume: 0,
-  //   playbackRate: 0.1
-  // })
-  // Material.setBasicMaterial(entity, {
-  //   texture: Material.Texture.Video({ videoPlayerEntity: entity })
-  // })
-  // -------------------------------------------------------------------------
 
   return entity
 }

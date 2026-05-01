@@ -44,12 +44,19 @@ const GRID_HALF_EXTENT = 50
 // on the same frame and to give a small "casting" beat.
 const PLACE_COOLDOWN_MS = 1500
 
+// Player must be standing on (or right at the edge of) the raft cell that's
+// adjacent to the marker — i.e. at most one platform away. The camera sits
+// ~1.8m above the deck, so the ray to a neighbour marker measures roughly
+// √(RAFT_SIZE² + 1.8²) ≈ 6.3m; a small buffer over RAFT_SIZE keeps the
+// hover/click reliable without letting the player reach two cells away.
+const PLACE_MAX_DISTANCE = RAFT_SIZE + 2
+
 // onPointerDown opts. CL_POINTER colliders + IA_POINTER make the click work
 // regardless of which mouse button DCL is currently mapping to action.
 const PLACE_OPTS = {
   button: InputAction.IA_POINTER,
   hoverText: 'Place raft',
-  maxDistance: 32
+  maxDistance: PLACE_MAX_DISTANCE
 }
 
 const DESTROY_OPTS = {
