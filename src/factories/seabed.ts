@@ -11,12 +11,12 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { SEABED_Y } from './sceneLevels'
 
-const PARCEL_GRID = 50
+const PARCEL_GRID = 5
 const PARCEL_SIZE = 16
-const TOTAL_SIZE = PARCEL_GRID * PARCEL_SIZE // 800 m
+const TOTAL_SIZE = PARCEL_GRID * PARCEL_SIZE // 80 m
 const SAND_TEXTURE = 'assets/scene/seabed/sand.png'
 // Higher repeat than water: sand grain reads as fine detail, not as a tile.
-const TILE_COUNT = 100
+const TILE_COUNT = 10
 
 export function createSeabed(): Entity {
   const entity = engine.addEntity()

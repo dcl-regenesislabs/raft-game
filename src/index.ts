@@ -8,6 +8,7 @@ import {
   spawnRingShark
 } from './factories'
 import { createFallRescueSystem } from './systems/fallRescue'
+import { inventoryInputSystem } from './systems/inventoryInput'
 import { raftBuilderSystem } from './systems/raftBuilder'
 import { sharkAttackSystem } from './systems/sharkAttack'
 import { sharkDirectorSystem } from './systems/sharkDirector'
@@ -22,7 +23,7 @@ const SHARK_INITIAL_COUNT = 3
 const SHARK_INITIAL_RADIUS = 12
 
 export function main(): void {
-  // 50x50 parcels (800x800m), elevated to y=200. Iteration 03: sharks orbit
+  // 5x5 parcels (80x80m), elevated to y=50. Iteration 03: sharks orbit
   // the platform centroid and periodically attack the most exposed non-base
   // raft.
   createSeabed()
@@ -35,6 +36,7 @@ export function main(): void {
   engine.addSystem(sharkAttackSystem)
   engine.addSystem(createFallRescueSystem(GRID_ORIGIN))
   engine.addSystem(raftBuilderSystem)
+  engine.addSystem(inventoryInputSystem)
   setupUi()
 }
 

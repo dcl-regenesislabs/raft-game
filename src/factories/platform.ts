@@ -12,16 +12,16 @@ import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import { MainPlatform, Platform } from '../components'
 import { WATER_LEVEL } from './sceneLevels'
 
-export const PLATFORM_SIZE_X = 6
+export const PLATFORM_SIZE_X = 3
 export const PLATFORM_SIZE_Y = 0.3
-export const PLATFORM_SIZE_Z = 6
+export const PLATFORM_SIZE_Z = 3
 export const PLATFORM_COLOR = Color4.create(0.45, 0.30, 0.18, 1) // walnut wood
 export const PLATFORM_DESTROY_TINT = Color4.create(0.85, 0.18, 0.18, 1) // angry red
 
-// World center of grid cell (0, 0). Every other raft sits at
+// Scene-local center of grid cell (0, 0). Every other raft sits at
 // (GRID_ORIGIN.x + gridX * PLATFORM_SIZE_X, WATER_LEVEL, GRID_ORIGIN.z + gridZ * PLATFORM_SIZE_Z).
-// Centered for a 50x50 parcel scene (50 * 16 / 2 = 400).
-export const GRID_ORIGIN = Vector3.create(400, WATER_LEVEL, 400)
+// Centered for a 5x5 parcel scene (5 * 16 / 2 = 40).
+export const GRID_ORIGIN = Vector3.create(40, WATER_LEVEL, 40)
 export const RAFT_SIZE = PLATFORM_SIZE_X
 
 export type CreatePlatformOptions = {
