@@ -73,7 +73,9 @@ export const HOOK_REEL_SPEED = 7
 export const HOOK_REEL_DESPAWN_RADIUS_XZ = 1.2
 // Safety: force-transition into floating after this much airtime.
 export const HOOK_MAX_FLIGHT_TIME_S = 6
-// Lateral (XZ) capture radius around the throw line at splashdown.
+// XZ capture radius around the hook. Checked on splashdown and again every
+// frame while the hook floats/reels, so items drifting near the line get
+// snagged dynamically rather than only those crossed at the moment of impact.
 export const HOOK_COLLECT_RADIUS_XZ = 1.8
 // Mid-air wobble amplitude (deg) and frequency.
 export const HOOK_WOBBLE_AMPLITUDE_DEG = 9
