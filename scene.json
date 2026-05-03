@@ -70,5 +70,5 @@
   "featureToggles": {
     "voiceChat": "enabled",
     "portableExperiences": "enabled"
-  },
+  }
 }
