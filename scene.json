@@ -2,9 +2,9 @@
   "ecs7": true,
   "runtimeVersion": "7",
   "display": {
-    "title": "SDK7 Scene Template",
-    "description": "template scene with SDK7",
-    "navmapThumbnail": "images/scene-thumbnail.png",
+    "title": "Raft Game",
+    "description": "Survive on a raft in Decentraland — fish, scavenge, craft, and build.",
+    "navmapThumbnail": "images/scene-thumbnail.jpg",
     "favicon": "favicon_asset"
   },
   "owner": "",
@@ -15,7 +15,10 @@
   "main": "bin/index.js",
   "tags": [],
   "worldConfiguration": {
-    "name": "italy2026.dcl.eth"
+    "name": "italy2026.dcl.eth",
+    "placesConfig": {
+      "optOut": false
+    }
   },
   "scene": {
     "parcels": [
