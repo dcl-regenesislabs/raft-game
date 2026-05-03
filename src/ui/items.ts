@@ -24,6 +24,10 @@ export interface ItemDef {
   // selected. Tools that shoot/swing/stab need it; raft drives placement
   // through pointer-events on world entities, not the button.
   hasAction: boolean
+  // Consumable items (food, drink) are eaten on selection: instead of
+  // equipping, one is removed from the stack and the food's effects table
+  // applies to the player's stats. See `foodEffects.ts`.
+  consumable: boolean
 }
 
 const TOOL = (
@@ -36,7 +40,8 @@ const TOOL = (
   stackable: false,
   selectable: true,
   heldKind,
-  hasAction: true
+  hasAction: true,
+  consumable: false
 })
 
 // Tools that don't yet have a first-person viewmodel or action wired up.
@@ -49,7 +54,8 @@ const PENDING_TOOL = (id: string, texture: string): ItemDef => ({
   stackable: false,
   selectable: true,
   heldKind: null,
-  hasAction: false
+  hasAction: false,
+  consumable: false
 })
 
 const MATERIAL = (id: string, texture: string): ItemDef => ({
@@ -58,7 +64,21 @@ const MATERIAL = (id: string, texture: string): ItemDef => ({
   stackable: true,
   selectable: false,
   heldKind: null,
-  hasAction: false
+  hasAction: false,
+  consumable: false
+})
+
+// Food / drink. Stackable, selectable from the bottom bar, no held viewmodel
+// and no action button — selecting consumes one from the stack and applies
+// the food's effects to hunger/thirst. See `foodEffects.ts` for the table.
+const FOOD = (id: string, texture: string): ItemDef => ({
+  id,
+  texture,
+  stackable: true,
+  selectable: true,
+  heldKind: null,
+  hasAction: false,
+  consumable: true
 })
 
 // Items the player gets from crafting. Stackable entries collapse into
@@ -72,7 +92,8 @@ const CRAFTED_STACK = (id: string, texture: string): ItemDef => ({
   stackable: true,
   selectable: false,
   heldKind: null,
-  hasAction: false
+  hasAction: false,
+  consumable: false
 })
 
 // Stackable, equippable item that doesn't swap the first-person viewmodel
@@ -86,7 +107,8 @@ const CRAFTED_PLACEABLE = (id: string, texture: string): ItemDef => ({
   stackable: true,
   selectable: true,
   heldKind: null,
-  hasAction: true
+  hasAction: true,
+  consumable: false
 })
 
 // Linear inventory layout. First BOTTOM_BAR_SLOT_COUNT entries map to the
@@ -141,7 +163,16 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
   fishingRod: CRAFTED_STACK('fishingRod', 'images/hud/items/item-15.png'),
   knife: CRAFTED_STACK('knife', 'images/hud/items/item-16.png'),
-  cup: CRAFTED_STACK('cup', 'images/hud/items/item-09.png')
+  cup: CRAFTED_STACK('cup', 'images/hud/items/item-09.png'),
+  // Food + drink. Effects in `foodEffects.ts`.
+  saltWater: FOOD('saltWater', 'images/hud/items/item-10.png'),
+  freshWater: FOOD('freshWater', 'images/hud/items/item-11.png'),
+  rawFish: FOOD('rawFish', 'images/hud/items/item-12.png'),
+  cookedFish: FOOD('cookedFish', 'images/hud/items/item-13.png'),
+  rawPotato: FOOD('rawPotato', 'images/hud/items/item-14.png'),
+  cookedPotato: FOOD('cookedPotato', 'images/hud/items/item-17.png'),
+  pasta: FOOD('pasta', 'images/hud/items/item-18.png'),
+  cookedFishPasta: FOOD('cookedFishPasta', 'images/hud/items/item-13.png')
 }
 
 const ITEMS_BY_ID: Record<string, ItemDef> = Object.fromEntries(

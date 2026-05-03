@@ -104,6 +104,14 @@ function seedDebugInventory(): void {
   addCollected('grill', 10)
   addCollected('purifier', 10)
   addCollected('platform', 10)
+  addCollected('saltWater', 10)
+  addCollected('freshWater', 10)
+  addCollected('rawFish', 10)
+  addCollected('rawPotato', 10)
+  addCollected('cookedPotato', 10)
+  addCollected('cookedFish', 10)
+  addCollected('pasta', 10)
+  addCollected('cookedFishPasta', 10)
 }
 
 function spawnSharks(): void {
