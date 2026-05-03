@@ -108,17 +108,17 @@ export const INVENTORY_BUTTON_TEXTURE = 'images/hud/button.png'
 export const INVENTORY_BUTTON_TEXTURE_OPEN = 'images/hud/selected-button.png'
 export const INVENTORY_BUTTON_ICON = 'images/hud/backpack.png'
 export const INVENTORY_BUTTON_SIZE = ACTION_BUTTON_SIZE
-// Mobile shrinks the top-row toggles to roughly the size of the native
-// avatar/menu buttons that sit alongside them on phone HUDs, so the icons
-// don't dominate the top edge.
-export const INVENTORY_BUTTON_SIZE_MOBILE = 90
+// Mobile sizes the top-row toggles to roughly match the native avatar
+// circle in the top-right corner, so they read as part of the native
+// HUD chrome rather than a third tier of buttons.
+export const INVENTORY_BUTTON_SIZE_MOBILE = 140
 // Mirror the bottom bar's edge-hug — a small negative inset so the button
 // pokes a hair past the canvas top edge instead of sitting in mid-air.
-export const INVENTORY_BUTTON_TOP = -10
-// Mobile keeps the button anchored at 82% from the left so the smaller
-// button still hugs the right region near the native avatar; desktop pins
-// it flush to the right with a small inset.
-export const INVENTORY_BUTTON_LEFT_PCT_MOBILE = 82
+export const INVENTORY_BUTTON_TOP = -20
+// Mobile anchors the backpack so the visible button sits just left of the
+// native avatar circle in the top-right corner. Step is sized to the
+// mobile frame so the craft toggle nests right next to the backpack.
+export const INVENTORY_BUTTON_LEFT_PCT_MOBILE = 80
 export const INVENTORY_BUTTON_RIGHT_DESKTOP = 32
 // Same trick as the action button: an outer frame sized to the peak-press
 // scale prevents the button from shifting when it grows.
@@ -131,36 +131,44 @@ export const INVENTORY_BUTTON_ICON_INSET_PCT = 24
 export const CRAFT_BUTTON_ICON = 'images/hud/saw.png'
 // Sit one button-size to the left of the backpack on desktop (visible edges
 // flush, no gap from the frame padding), and a matching percentage step on
-// mobile that scales with the smaller mobile button width.
+// mobile sized to clear the larger mobile frame.
 export const CRAFT_BUTTON_RIGHT_DESKTOP =
   INVENTORY_BUTTON_RIGHT_DESKTOP + INVENTORY_BUTTON_SIZE
-export const CRAFT_BUTTON_LEFT_PCT_MOBILE = INVENTORY_BUTTON_LEFT_PCT_MOBILE - 9
+export const CRAFT_BUTTON_LEFT_PCT_MOBILE = INVENTORY_BUTTON_LEFT_PCT_MOBILE - 8
 
 // --- Craft double-menu -----------------------------------------------------
 // The list and details panels render centered using the nine-sliced
 // `panel.png` background; the inventory grid is pinned to the bottom-left
 // corner at a smaller size so the centered panels have breathing room in
 // the middle of the screen.
-export const CRAFT_LIST_WIDTH = 320
-export const CRAFT_LIST_HEIGHT = 624
-export const CRAFT_DETAILS_WIDTH = 480
+export const CRAFT_LIST_WIDTH = 240
+export const CRAFT_LIST_HEIGHT = 470
+export const CRAFT_DETAILS_WIDTH = 360
 // Inventory grid size when shown alongside the craft panels. Smaller than
 // the standalone inventory so it doesn't dominate the bottom-left corner.
-export const CRAFT_INVENTORY_SIZE = 420
-export const CRAFT_INVENTORY_LEFT = 32
-export const CRAFT_INVENTORY_BOTTOM = 32
+export const CRAFT_INVENTORY_SIZE = 320
+export const CRAFT_INVENTORY_LEFT = 24
+export const CRAFT_INVENTORY_BOTTOM = 24
+// On mobile the bottom-left corner is taken by the joystick, so the
+// craft-mode inventory grid relocates to the top-left where the stats
+// bars normally sit (the bars are hidden while the craft menu is open,
+// so the slot is free). Smaller than desktop so it fits next to the
+// craft panels on a phone screen.
+export const CRAFT_INVENTORY_SIZE_MOBILE = 260
+export const CRAFT_INVENTORY_TOP_MOBILE = 100
+export const CRAFT_INVENTORY_LEFT_MOBILE = 0
 // Craft details panel grows with the recipe — header + description + the
 // REQUIRES row + one row per material.
-export const CRAFT_DETAILS_BASE_HEIGHT = 376
-export const CRAFT_DETAILS_ROW_HEIGHT = 58
-export const CRAFT_PANEL_GAP = 16
+export const CRAFT_DETAILS_BASE_HEIGHT = 280
+export const CRAFT_DETAILS_ROW_HEIGHT = 44
+export const CRAFT_PANEL_GAP = 12
 // Inset content past the painted bevel. Horizontal padding is bigger
 // than vertical so labels and counts don't crowd the painted left/right
 // frame; top padding is larger than bottom so the header sits visibly
 // inside the wood frame instead of hugging the top bevel.
-export const CRAFT_PANEL_PADDING_X = 56
-export const CRAFT_PANEL_PADDING_TOP = 64
-export const CRAFT_PANEL_PADDING_BOTTOM = 44
+export const CRAFT_PANEL_PADDING_X = 40
+export const CRAFT_PANEL_PADDING_TOP = 48
+export const CRAFT_PANEL_PADDING_BOTTOM = 32
 // Dark brown text reads against the cream panel center; the cream variant
 // is for rows with a dark inset (selected craftable).
 export const CRAFT_TEXT_COLOR = Color4.create(0.3, 0.18, 0.1, 1)
@@ -170,8 +178,8 @@ export const CRAFT_DIVIDER_COLOR = Color4.create(0.3, 0.18, 0.1, 0.5)
 export const CRAFT_ROW_SELECTED_BG = Color4.create(0, 0, 0, 0.55)
 export const CRAFT_BUTTON_TEXTURE = 'images/hud/red_button.png'
 export const CRAFT_BUTTON_FG = Color4.White()
-export const CRAFT_BUTTON_W = 110
-export const CRAFT_BUTTON_H = 38
+export const CRAFT_BUTTON_W = 90
+export const CRAFT_BUTTON_H = 32
 // Frame sized to the peak press scale (1 + peakBonus, generously rounded
 // to 1.25×) so the button can grow without shifting the parent row.
 export const CRAFT_BUTTON_FRAME_W = Math.round(CRAFT_BUTTON_W * 1.25)
@@ -205,10 +213,10 @@ export const STATS_BAR_LEFT = 64
 export const STATS_BAR_BOTTOM = 24
 // On mobile the bottom-left corner is occupied by the native joystick, so
 // the bars relocate to the upper-left under the chat/compass/location pill
-// row. Top inset clears those native widgets; left inset matches the
-// horizontal padding the native row uses.
-export const STATS_BAR_TOP_MOBILE = 130
-export const STATS_BAR_LEFT_MOBILE = 24
+// row. Top inset clears those native widgets; left inset hugs the screen
+// edge so the bars sit flush against the left margin.
+export const STATS_BAR_TOP_MOBILE = 100
+export const STATS_BAR_LEFT_MOBILE = 0
 // Painted dark-track inset within the bar art. Fill grows from FILL_LEFT
 // rightward up to FILL_RIGHT_LIMIT at 100%. Right limit stops at the
 // painted dark-track edge so 100% doesn't bleed onto the wood frame.

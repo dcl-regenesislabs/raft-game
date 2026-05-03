@@ -32,6 +32,7 @@ import { sharkDirectorSystem } from './systems/sharkDirector'
 import { sharkOrbitSystem } from './systems/sharkOrbit'
 import { sharkPointerEventsSystem } from './systems/sharkPointerEvents'
 import { spearAttackSystem } from './systems/spearAttack'
+import { survivalDrainSystem } from './systems/survivalDrain'
 import { waterScrollSystem } from './systems/waterScroll'
 import { setupUi } from './ui'
 import { actionButtonResetSystem } from './ui/actionButton'
@@ -75,6 +76,7 @@ export async function main(): Promise<void> {
   engine.addSystem(garbageSpawnerSystem)
   engine.addSystem(floatingGarbageSystem)
   engine.addSystem(createFallRescueSystem(GRID_ORIGIN))
+  engine.addSystem(survivalDrainSystem)
   engine.addSystem(raftBuilderSystem)
   engine.addSystem(constructionPlacementSystem)
   engine.addSystem(hookThrowerSystem)

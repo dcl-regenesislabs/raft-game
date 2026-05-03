@@ -1,5 +1,6 @@
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
+import { isMobile } from '@dcl/sdk/platform'
 
 import {
   CRAFTABLE_ITEMS,
@@ -37,7 +38,10 @@ import {
   CRAFT_HAVE_OK_COLOR,
   CRAFT_INVENTORY_BOTTOM,
   CRAFT_INVENTORY_LEFT,
+  CRAFT_INVENTORY_LEFT_MOBILE,
   CRAFT_INVENTORY_SIZE,
+  CRAFT_INVENTORY_SIZE_MOBILE,
+  CRAFT_INVENTORY_TOP_MOBILE,
   CRAFT_LIST_HEIGHT,
   CRAFT_LIST_WIDTH,
   CRAFT_PANEL_GAP,
@@ -62,6 +66,7 @@ const craftActionPulse = createPressPulse()
 // closed.
 export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
   if (!isCraftOpen()) return null
+  const mobile = isMobile()
   return (
     <UiEntity
       uiTransform={{
@@ -71,19 +76,26 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
         height: '100%'
       }}
     >
-      {/* Inventory pinned to the bottom-left so the player can see their
-          materials while crafting. The buttons stay mutually exclusive —
-          this is just a layout coupling, not a state coupling. */}
+      {/* Inventory pinned to the bottom-left on desktop. On mobile the
+          bottom-left is reserved for the joystick, so the grid moves to
+          the top-left where the (now hidden) stats bars normally sit. */}
       <UiEntity
         uiTransform={{
           positionType: 'absolute',
-          position: {
-            bottom: CRAFT_INVENTORY_BOTTOM,
-            left: CRAFT_INVENTORY_LEFT
-          }
+          position: mobile
+            ? {
+                top: CRAFT_INVENTORY_TOP_MOBILE,
+                left: CRAFT_INVENTORY_LEFT_MOBILE
+              }
+            : {
+                bottom: CRAFT_INVENTORY_BOTTOM,
+                left: CRAFT_INVENTORY_LEFT
+              }
         }}
       >
-        <InventoryGrid size={CRAFT_INVENTORY_SIZE} />
+        <InventoryGrid
+          size={mobile ? CRAFT_INVENTORY_SIZE_MOBILE : CRAFT_INVENTORY_SIZE}
+        />
       </UiEntity>
       {/* List + details centered in the middle of the screen. The bottom
           margin lifts them off the bottom bar. */}
@@ -131,13 +143,13 @@ function CraftItemList(): ReactEcs.JSX.Element {
     >
       <UiEntity
         uiTransform={{
-          height: 48,
+          height: 36,
           flexDirection: 'row',
           alignItems: 'center'
         }}
       >
         <UiEntity
-          uiTransform={{ width: 44, height: 44 }}
+          uiTransform={{ width: 32, height: 32 }}
           uiBackground={{
             textureMode: 'stretch',
             texture: { src: CRAFT_BUTTON_ICON }
@@ -145,15 +157,15 @@ function CraftItemList(): ReactEcs.JSX.Element {
         />
         <Label
           value="CRAFT"
-          fontSize={24}
+          fontSize={18}
           color={CRAFT_TEXT_COLOR}
-          uiTransform={{ margin: { left: 12 } }}
+          uiTransform={{ margin: { left: 8 } }}
         />
       </UiEntity>
       <UiEntity
         uiTransform={{
           height: 1,
-          margin: { top: 6, bottom: 8 }
+          margin: { top: 4, bottom: 6 }
         }}
         uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
       />
@@ -172,17 +184,17 @@ function CraftItemRow(props: {
   return (
     <UiEntity
       uiTransform={{
-        height: 52,
+        height: 38,
         flexDirection: 'row',
         alignItems: 'center',
-        margin: { bottom: 4 },
-        padding: { left: 8, right: 8 }
+        margin: { bottom: 3 },
+        padding: { left: 6, right: 6 }
       }}
       uiBackground={selected ? { color: CRAFT_ROW_SELECTED_BG } : undefined}
       onMouseDown={() => selectCraftable(props.item.id)}
     >
       <UiEntity
-        uiTransform={{ width: 48, height: 48 }}
+        uiTransform={{ width: 34, height: 34 }}
         uiBackground={{
           textureMode: 'stretch',
           texture: { src: props.item.texture }
@@ -190,9 +202,9 @@ function CraftItemRow(props: {
       />
       <Label
         value={props.item.name}
-        fontSize={16}
+        fontSize={13}
         color={selected ? CRAFT_TEXT_LIGHT_COLOR : CRAFT_TEXT_COLOR}
-        uiTransform={{ flexGrow: 1, margin: { left: 12 } }}
+        uiTransform={{ flexGrow: 1, margin: { left: 8 } }}
       />
     </UiEntity>
   )
@@ -222,13 +234,13 @@ function CraftDetails(): ReactEcs.JSX.Element | null {
     >
       <UiEntity
         uiTransform={{
-          height: 60,
+          height: 44,
           flexDirection: 'row',
           alignItems: 'center'
         }}
       >
         <UiEntity
-          uiTransform={{ width: 60, height: 60 }}
+          uiTransform={{ width: 44, height: 44 }}
           uiBackground={{
             textureMode: 'stretch',
             texture: { src: item.texture }
@@ -236,35 +248,35 @@ function CraftDetails(): ReactEcs.JSX.Element | null {
         />
         <Label
           value={item.name}
-          fontSize={28}
+          fontSize={20}
           color={CRAFT_TEXT_COLOR}
-          uiTransform={{ margin: { left: 14 } }}
+          uiTransform={{ margin: { left: 10 } }}
         />
       </UiEntity>
       <UiEntity
         uiTransform={{
           height: 1,
-          margin: { top: 10, bottom: 12 }
+          margin: { top: 6, bottom: 8 }
         }}
         uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
       />
       <Label
         value={item.description}
-        fontSize={16}
+        fontSize={13}
         color={CRAFT_TEXT_DIM_COLOR}
         textAlign="top-left"
-        uiTransform={{ width: '100%', height: 110 }}
+        uiTransform={{ width: '100%', height: 80 }}
       />
       <UiEntity
         uiTransform={{
-          height: CRAFT_BUTTON_FRAME_H + 8,
+          height: CRAFT_BUTTON_FRAME_H + 6,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
           margin: { top: 4, bottom: 4 }
         }}
       >
-        <Label value="REQUIRES" fontSize={22} color={CRAFT_TEXT_COLOR} />
+        <Label value="REQUIRES" fontSize={16} color={CRAFT_TEXT_COLOR} />
         <CraftActionButton item={item} />
       </UiEntity>
       {item.cost.map((cost) => (
@@ -318,7 +330,7 @@ function CraftActionButton(props: {
           startCraft(props.item.id)
         }}
       >
-        <Label value="CRAFT" fontSize={16} color={CRAFT_BUTTON_FG} />
+        <Label value="CRAFT" fontSize={13} color={CRAFT_BUTTON_FG} />
       </UiEntity>
     </UiEntity>
   )
@@ -344,7 +356,7 @@ function CraftCostRow(props: {
     >
       {texture !== undefined && (
         <UiEntity
-          uiTransform={{ width: 50, height: 50 }}
+          uiTransform={{ width: 36, height: 36 }}
           uiBackground={{
             textureMode: 'stretch',
             texture: { src: texture }
@@ -353,13 +365,13 @@ function CraftCostRow(props: {
       )}
       <Label
         value={label}
-        fontSize={18}
+        fontSize={14}
         color={CRAFT_TEXT_COLOR}
-        uiTransform={{ flexGrow: 1, margin: { left: 12 } }}
+        uiTransform={{ flexGrow: 1, margin: { left: 8 } }}
       />
       <Label
         value={`${have}/${props.cost.amount}`}
-        fontSize={20}
+        fontSize={15}
         color={enough ? CRAFT_HAVE_OK_COLOR : CRAFT_HAVE_LOW_COLOR}
       />
     </UiEntity>

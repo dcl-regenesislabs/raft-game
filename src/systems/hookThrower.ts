@@ -306,6 +306,7 @@ function bankGrabbedItem(kind: string): void {
     addCollected('plants', randInt(0, 2))
     addCollected('plastic', randInt(0, 1))
     addCollected('rope', randInt(0, 1))
+    addCollected('potato', randInt(0, 2))
     return
   }
   addCollected(kind, 1)

@@ -1,6 +1,7 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { isMobile } from '@dcl/sdk/platform'
 
+import { isCraftOpen } from '../craftToggle'
 import { type StatKind, getStat } from '../statsBars'
 import {
   STAT_FILL_COLORS,
@@ -29,7 +30,11 @@ import {
 // the upper-left corner on mobile (the bottom-left corner is reserved for
 // the native joystick on touch devices). STATS_ORDER drives the visual
 // order so the first entry renders on top.
-export function StatsBars(): ReactEcs.JSX.Element {
+export function StatsBars(): ReactEcs.JSX.Element | null {
+  // Hide while the craft menu is open — the menu covers the same screen
+  // real estate (especially on mobile) and the bars would otherwise show
+  // through the panel bevel and look like layout debris.
+  if (isCraftOpen()) return null
   const totalHeight =
     STATS_ORDER.length * STATS_BAR_HEIGHT +
     (STATS_ORDER.length - 1) * STATS_BAR_GAP
@@ -62,7 +67,11 @@ function StatBar(props: {
   marginTop: number
   key?: string
 }): ReactEcs.JSX.Element {
-  const t = Math.max(0, Math.min(1, getStat(props.kind)))
+  // Quantise the displayed value to whole percent steps so the bar only
+  // moves when the underlying stat crosses a 1% boundary. Internal stats
+  // keep their fractional precision; only the visualisation snaps.
+  const raw = Math.max(0, Math.min(1, getStat(props.kind)))
+  const t = Math.floor(raw * 100) / 100
   const fillSpanPct = STATS_FILL_RIGHT_LIMIT_PCT - STATS_FILL_LEFT_PCT
   const fillWidthPct = fillSpanPct * t
   return (

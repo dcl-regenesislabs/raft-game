@@ -56,6 +56,18 @@ export const SHARK_BITE_Y_OFFSET = -0.3
 // [1 - r, 1 + r].
 export const SHARK_SPACING_MULT_RANGE = 0.3
 
+// --- Survival drain --------------------------------------------------------
+// Stat bars (life/hunger/thirst) are stored internally as 0..1, but designers
+// reason about them as 0..100 percentages. Rates below are expressed in
+// percentage-points-per-second; the system divides by 100 at apply time.
+export const HUNGER_DRAIN_PCT_PER_S = 0.09
+export const THIRST_DRAIN_PCT_PER_S = 0.11
+// Life damage per second when EITHER hunger or thirst hits 0%.
+export const LIFE_DAMAGE_SINGLE_PCT_PER_S = 0.75
+// Life damage per second when BOTH hunger AND thirst are at 0% (replaces,
+// does not stack with, the single-empty rate).
+export const LIFE_DAMAGE_BOTH_PCT_PER_S = 1.5
+
 // --- Hook thrower ----------------------------------------------------------
 // Initial speed bounds along the aim direction. Charge ramps the throw
 // from MIN (instant tap) up to MAX (held until the bar fills).
