@@ -3,8 +3,10 @@ import { isMobile } from '@dcl/sdk/platform'
 
 import {
   INVENTORY_BUTTON_FRAME,
+  INVENTORY_BUTTON_FRAME_MOBILE,
   INVENTORY_BUTTON_ICON_INSET_PCT,
   INVENTORY_BUTTON_SIZE,
+  INVENTORY_BUTTON_SIZE_MOBILE,
   INVENTORY_BUTTON_TEXTURE,
   INVENTORY_BUTTON_TEXTURE_OPEN,
   INVENTORY_BUTTON_TOP
@@ -30,8 +32,10 @@ export interface IconButtonProps {
 }
 
 export function IconButton(props: IconButtonProps): ReactEcs.JSX.Element {
-  const scaledSize = Math.round(INVENTORY_BUTTON_SIZE * props.scale)
   const mobile = isMobile()
+  const baseSize = mobile ? INVENTORY_BUTTON_SIZE_MOBILE : INVENTORY_BUTTON_SIZE
+  const frameSize = mobile ? INVENTORY_BUTTON_FRAME_MOBILE : INVENTORY_BUTTON_FRAME
+  const scaledSize = Math.round(baseSize * props.scale)
   return (
     <UiEntity
       uiTransform={{
@@ -45,8 +49,8 @@ export function IconButton(props: IconButtonProps): ReactEcs.JSX.Element {
               top: INVENTORY_BUTTON_TOP,
               right: props.rightDesktop
             },
-        width: INVENTORY_BUTTON_FRAME,
-        height: INVENTORY_BUTTON_FRAME,
+        width: frameSize,
+        height: frameSize,
         alignItems: 'center',
         justifyContent: 'center'
       }}

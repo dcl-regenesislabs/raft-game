@@ -108,26 +108,33 @@ export const INVENTORY_BUTTON_TEXTURE = 'images/hud/button.png'
 export const INVENTORY_BUTTON_TEXTURE_OPEN = 'images/hud/selected-button.png'
 export const INVENTORY_BUTTON_ICON = 'images/hud/backpack.png'
 export const INVENTORY_BUTTON_SIZE = ACTION_BUTTON_SIZE
+// Mobile shrinks the top-row toggles to roughly the size of the native
+// avatar/menu buttons that sit alongside them on phone HUDs, so the icons
+// don't dominate the top edge.
+export const INVENTORY_BUTTON_SIZE_MOBILE = 90
 // Mirror the bottom bar's edge-hug — a small negative inset so the button
 // pokes a hair past the canvas top edge instead of sitting in mid-air.
 export const INVENTORY_BUTTON_TOP = -10
-// Mobile keeps the button anchored at 70% from the left so it sits in
-// the upper-right region without crowding the edge of the touch target.
-// Desktop pins it flush to the right with a small inset.
-export const INVENTORY_BUTTON_LEFT_PCT_MOBILE = 70
+// Mobile keeps the button anchored at 82% from the left so the smaller
+// button still hugs the right region near the native avatar; desktop pins
+// it flush to the right with a small inset.
+export const INVENTORY_BUTTON_LEFT_PCT_MOBILE = 82
 export const INVENTORY_BUTTON_RIGHT_DESKTOP = 32
 // Same trick as the action button: an outer frame sized to the peak-press
 // scale prevents the button from shifting when it grows.
 export const INVENTORY_BUTTON_FRAME = Math.round(INVENTORY_BUTTON_SIZE * 1.25)
+export const INVENTORY_BUTTON_FRAME_MOBILE = Math.round(
+  INVENTORY_BUTTON_SIZE_MOBILE * 1.25
+)
 export const INVENTORY_BUTTON_ICON_INSET_PCT = 24
 
 export const CRAFT_BUTTON_ICON = 'images/hud/saw.png'
 // Sit one button-size to the left of the backpack on desktop (visible edges
 // flush, no gap from the frame padding), and a matching percentage step on
-// mobile.
+// mobile that scales with the smaller mobile button width.
 export const CRAFT_BUTTON_RIGHT_DESKTOP =
   INVENTORY_BUTTON_RIGHT_DESKTOP + INVENTORY_BUTTON_SIZE
-export const CRAFT_BUTTON_LEFT_PCT_MOBILE = INVENTORY_BUTTON_LEFT_PCT_MOBILE - 14
+export const CRAFT_BUTTON_LEFT_PCT_MOBILE = INVENTORY_BUTTON_LEFT_PCT_MOBILE - 9
 
 // --- Craft double-menu -----------------------------------------------------
 // The list and details panels render centered using the nine-sliced
@@ -196,6 +203,12 @@ export const STATS_BAR_HEIGHT = Math.round(STATS_BAR_WIDTH * (124 / 600))
 export const STATS_BAR_GAP = 6
 export const STATS_BAR_LEFT = 64
 export const STATS_BAR_BOTTOM = 24
+// On mobile the bottom-left corner is occupied by the native joystick, so
+// the bars relocate to the upper-left under the chat/compass/location pill
+// row. Top inset clears those native widgets; left inset matches the
+// horizontal padding the native row uses.
+export const STATS_BAR_TOP_MOBILE = 130
+export const STATS_BAR_LEFT_MOBILE = 24
 // Painted dark-track inset within the bar art. Fill grows from FILL_LEFT
 // rightward up to FILL_RIGHT_LIMIT at 100%. Right limit stops at the
 // painted dark-track edge so 100% doesn't bleed onto the wood frame.
