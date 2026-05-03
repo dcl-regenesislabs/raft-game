@@ -2,9 +2,11 @@ import {
   ColliderLayer,
   Entity,
   InputAction,
+  PointerEventType,
   RaycastQueryType,
   Transform,
   engine,
+  inputSystem,
   pointerEventsSystem,
   raycastSystem
 } from '@dcl/sdk/ecs'
@@ -18,8 +20,16 @@ import {
   PlatformUnderAttack
 } from '../components'
 import { actionButtonJustPressed } from '../ui/actionButton'
-import { getSelectedSlot, getSlotPressCount } from '../ui/inventoryState'
+import { isPointerLocked } from '../ui/cursorLock'
+import {
+  getCollectedCount,
+  getSelectedSlot,
+  getSlotPressCount,
+  isSelectionPointerLockoutActive,
+  subtractCollected
+} from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
+import { showNotification } from '../ui/notification'
 import {
   GRID_ORIGIN,
   PLATFORM_COLOR,
@@ -27,6 +37,7 @@ import {
   RAFT_SIZE,
   applyPlatformMaterial,
   createPlatform,
+  destroyPlatformEntity,
   gridCellToWorld
 } from '../factories/platform'
 import { WATER_LEVEL } from '../factories/sceneLevels'
@@ -82,6 +93,17 @@ const DESTROY_OPTS = {
 const RED_GHOST_DIM = Color4.create(1, 0.2, 0.2, 0.55)
 const RED_GHOST_BRIGHT = Color4.create(1, 0.2, 0.2, 0.55)
 
+// Yellow palette for the "valid spot but you're out of platforms" preview.
+// Same pulse shape as the green ghost; the colour swap is the player's cue
+// that they need to craft more platforms before clicking will commit.
+const YELLOW_GHOST_DIM = Color4.create(0.9, 0.7, 0.05, 1)
+const YELLOW_GHOST_BRIGHT = Color4.create(1.0, 0.95, 0.3, 1)
+
+// Inventory id of the buildable platform tile. Each successful placement
+// consumes one; placement is blocked (and the preview turns yellow) when the
+// count hits zero. Matches the `platform` entry in `craftableItems.ts`.
+const PLATFORM_ITEM_ID = 'platform'
+
 // Camera-forward continuous raycast tuning for PLACING mode. CL_POINTER hits
 // the placement click areas (valid spots) and existing platforms (block the
 // preview). Open water has no collider, so we project the camera ray onto
@@ -93,6 +115,10 @@ const CAMERA_FORWARD = Vector3.create(0, 0, 1)
 let mode: Mode = 'idle'
 // Green "valid placement" preview, snapped to the hovered click-area cell.
 let validGhost: Entity | null = null
+// Yellow "valid spot but no platform in inventory" preview. Replaces the
+// green ghost when the player has zero platforms; same hover cell, different
+// colour so the lack-of-stock reads at a glance.
+let noStockGhost: Entity | null = null
 // Red "invalid placement" preview, follows the camera-forward cursor.
 let cursorGhost: Entity | null = null
 // Latest placement target derived from the camera raycast, refreshed each
@@ -144,12 +170,22 @@ export function raftBuilderSystem(dt: number): void {
     }
   }
 
-  // Mobile: the action button is the canonical commit input. Desktop wires
-  // place/destroy to per-entity pointerEventsSystem callbacks already. Both
-  // are gated on inventory state — see the click handlers below.
-  if (isMobile() && !isInventoryActionLocked() && actionButtonJustPressed()) {
-    if (mode === 'placing') commitPlaceFromHover()
-    else if (mode === 'destroying') commitDestroyFromHover()
+  // Commit from the global input each frame, mirroring how spear/hook fire:
+  // mobile uses the on-screen action button, desktop reads IA_POINTER PET_DOWN
+  // directly. Per-entity pointerEventsSystem.onPointerDown is also wired up
+  // (below) to drive the hover text and as a fallback, but in practice the
+  // hover state computed by the camera-forward raycast is the source of
+  // truth for what the click should commit to.
+  if (!isInventoryActionLocked() && (mode === 'placing' || mode === 'destroying')) {
+    const firePressed = isMobile()
+      ? actionButtonJustPressed()
+      : isPointerLocked() &&
+        !isSelectionPointerLockoutActive() &&
+        inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)
+    if (firePressed) {
+      if (mode === 'placing') commitPlaceFromHover()
+      else commitDestroyFromHover()
+    }
   }
 }
 
@@ -167,7 +203,7 @@ function commitDestroyFromHover(): void {
   if (PlatformUnderAttack.getOrNull(destroyHoverEntity) !== null) return
   const target = destroyHoverEntity
   destroyHoverEntity = null
-  engine.removeEntity(target)
+  destroyPlatformEntity(target)
   triggerHammerSwing()
 }
 
@@ -211,6 +247,12 @@ function enterPlacing(): void {
   if (validGhost === null) {
     validGhost = createSpectralPlatform()
   }
+  if (noStockGhost === null) {
+    noStockGhost = createSpectralPlatform({
+      dim: YELLOW_GHOST_DIM,
+      bright: YELLOW_GHOST_BRIGHT
+    })
+  }
   if (cursorGhost === null) {
     cursorGhost = createSpectralPlatform({
       dim: RED_GHOST_DIM,
@@ -218,6 +260,7 @@ function enterPlacing(): void {
     })
   }
   hideSpectral(validGhost)
+  hideSpectral(noStockGhost)
   hideSpectral(cursorGhost)
   placeHoverCell = null
   placeCursorWorld = null
@@ -242,6 +285,7 @@ function exitPlacing(): void {
   raycastSystem.removeRaycasterEntity(engine.CameraEntity)
   removeAllMarkers()
   if (validGhost !== null) hideSpectral(validGhost)
+  if (noStockGhost !== null) hideSpectral(noStockGhost)
   if (cursorGhost !== null) hideSpectral(cursorGhost)
   placeHoverCell = null
   placeCursorWorld = null
@@ -253,14 +297,19 @@ function exitPlacing(): void {
 // a valid placement click area; red follows the cursor's world position
 // otherwise.
 function updatePlacementPreview(dt: number): void {
-  if (validGhost === null || cursorGhost === null) return
+  if (validGhost === null || noStockGhost === null || cursorGhost === null) return
   if (placeHoverCell !== null) {
-    showSpectralAt(validGhost, gridCellToWorld(placeHoverCell.gx, placeHoverCell.gz))
-    tickSpectralBlink(validGhost, dt)
+    const hasStock = getCollectedCount(PLATFORM_ITEM_ID) > 0
+    const active = hasStock ? validGhost : noStockGhost
+    const inactive = hasStock ? noStockGhost : validGhost
+    showSpectralAt(active, gridCellToWorld(placeHoverCell.gx, placeHoverCell.gz))
+    tickSpectralBlink(active, dt)
+    hideSpectral(inactive)
     hideSpectral(cursorGhost)
     return
   }
   hideSpectral(validGhost)
+  hideSpectral(noStockGhost)
   if (placeCursorWorld !== null) {
     showSpectralAt(cursorGhost, placeCursorWorld)
   } else {
@@ -364,10 +413,19 @@ function attachPlacementClick(clickArea: Entity, gx: number, gz: number): void {
 }
 
 function placeRaft(gridX: number, gridZ: number): void {
+  // Each placement consumes one platform from the inventory. Bail when stock
+  // is empty and surface a notification so the click feels acknowledged
+  // (the yellow preview is the at-rest cue; this is the on-action cue).
+  if (getCollectedCount(PLATFORM_ITEM_ID) <= 0) {
+    showNotification('No platforms in inventory. Craft a PLATFORM to build.')
+    return
+  }
+  subtractCollected(PLATFORM_ITEM_ID, 1)
   createPlatform(gridCellToWorld(gridX, gridZ), { gridX, gridZ })
   triggerHammerSwing()
   removeAllMarkers()
   if (validGhost !== null) hideSpectral(validGhost)
+  if (noStockGhost !== null) hideSpectral(noStockGhost)
   placeHoverCell = null
   // Re-spawn around the new occupancy set so the perimeter keeps growing.
   spawnMarkersForVacantNeighbours()
@@ -437,7 +495,7 @@ function attachDestroyClick(entity: Entity): void {
       // Locked while a shark is committed to this platform.
       if (PlatformUnderAttack.getOrNull(entity) !== null) return
       if (destroyHoverEntity === entity) destroyHoverEntity = null
-      engine.removeEntity(entity)
+      destroyPlatformEntity(entity)
       triggerHammerSwing()
     }
   )

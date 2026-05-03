@@ -12,6 +12,7 @@ import {
 } from './factories'
 import { DEMO_PARCEL_GRID, FULL_PARCEL_GRID } from './factories/sceneLevels'
 import { getSceneMode } from './runtime/sceneMode'
+import { constructionPlacementSystem } from './systems/constructionPlacement'
 import { createFallRescueSystem } from './systems/fallRescue'
 import { firstPersonItemSwaySystem } from './systems/firstPersonItemSway'
 import { floatingGarbageSystem } from './systems/floatingGarbage'
@@ -29,8 +30,13 @@ import { spearAttackSystem } from './systems/spearAttack'
 import { waterScrollSystem } from './systems/waterScroll'
 import { setupUi } from './ui'
 import { actionButtonResetSystem } from './ui/actionButton'
+import { craftSessionTickSystem } from './ui/craftSession'
+import { craftToggleResetSystem } from './ui/craftToggle'
 import { dragResetSystem } from './ui/inventoryDrag'
+import { addCollected } from './ui/inventoryState'
 import { inventoryToggleResetSystem } from './ui/inventoryToggle'
+import { tickNotification } from './ui/notification'
+import { pressPulseTickSystem } from './ui/pressPulse'
 
 // Starting population. The shark director scales this up/down each frame
 // based on the patrol-ring circumference (see SHARK_TARGET_ARC_PER_SHARK).
@@ -71,14 +77,29 @@ export async function main(): Promise<void> {
   engine.addSystem(floatingGarbageSystem)
   engine.addSystem(createFallRescueSystem(GRID_ORIGIN))
   engine.addSystem(raftBuilderSystem)
+  engine.addSystem(constructionPlacementSystem)
   engine.addSystem(hookThrowerSystem)
   engine.addSystem(inventoryInputSystem)
+  engine.addSystem(craftSessionTickSystem)
   engine.addSystem(inventoryToggleResetSystem)
+  engine.addSystem(craftToggleResetSystem)
+  engine.addSystem(pressPulseTickSystem)
+  engine.addSystem(tickNotification)
   engine.addSystem(dragResetSystem)
   // Must be last so every consumer above sees the action-button edge flags
   // for the current frame before they're cleared.
   engine.addSystem(actionButtonResetSystem)
   setupUi()
+
+  // TEST: pre-seed materials so crafting recipes can be exercised without
+  // grinding garbage pickups. Remove before shipping.
+  addCollected('wood', 1000)
+  addCollected('plastic', 1000)
+  addCollected('rope', 1000)
+  addCollected('metal', 1000)
+  addCollected('grill', 10)
+  addCollected('purifier', 10)
+  addCollected('platform', 10)
 }
 
 function spawnSharks(): void {

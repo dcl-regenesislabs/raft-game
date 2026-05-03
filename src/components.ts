@@ -28,6 +28,21 @@ export const Platform = engine.defineComponent('mystic-pond:platform', {
 // Empty marker on the origin raft. Destruction skips entities carrying this tag.
 export const MainPlatform = engine.defineComponent('mystic-pond:main-platform', {})
 
+// Marks a platform that has a placed construction (grill / water purifier)
+// sitting on its deck. `kind` identifies the construction type so a
+// future placement system can refuse stacking another of the same family
+// — and the gameplay code can route behaviour by kind. `child` is the
+// GLB visual entity parented to the platform so platform-removal
+// callers can clean it up explicitly (SDK7 doesn't auto-remove
+// orphaned children when their parent goes away).
+export const PlatformConstruction = engine.defineComponent(
+  'mystic-pond:platform-construction',
+  {
+    kind: Schemas.String,
+    child: Schemas.Entity
+  }
+)
+
 // Tags small green disc click-targets shown around existing rafts in PLACING
 // mode. The system removes every entity carrying this tag when leaving the
 // mode.

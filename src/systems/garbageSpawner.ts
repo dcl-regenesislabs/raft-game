@@ -6,7 +6,7 @@ import {
   createFloatingGarbage
 } from '../factories/floatingGarbage'
 import { GRID_ORIGIN } from '../factories/platform'
-import { getPlatformExtent } from '../factories/platformExtent'
+import { aabbHalfExtentAlong, getPlatformExtent } from '../factories/platformExtent'
 import {
   SEA_FLOW_DIR_X,
   SEA_FLOW_DIR_Z,
@@ -18,13 +18,14 @@ import {
 const SPAWN_INTERVAL_S = 30
 // Items per group.
 const GROUP_SIZE = 5
-// Desired upstream spawn distance from the platform footprint. The system
-// clamps this down per-spawn if the scene bounds don't allow it (5x5 demo
-// has tight upstream/downstream room on the corners).
+// Desired upstream spawn distance from the platform's flow-axis footprint.
+// The system clamps this down per-spawn if the scene bounds don't allow it
+// (5x5 demo has tight upstream/downstream room on the corners).
 const SPAWN_DISTANCE_MARGIN = 35
-// Lateral offset band (perpendicular to flow). Items pass between
-// `BYPASS_MIN_MARGIN` and `BYPASS_MAX_MARGIN` metres beyond the raft
-// footprint — close enough to be hooked from the deck, never on top of it.
+// Lateral offset band (perpendicular to flow), measured from the platform
+// AABB edge. Items pass between BYPASS_MIN_MARGIN and BYPASS_MAX_MARGIN
+// metres beyond the raft footprint — close enough to be hooked from the
+// deck, never on top of it.
 const BYPASS_MIN_MARGIN = 3
 const BYPASS_MAX_MARGIN = 9
 // Stagger the group along the flow axis so the 5 items don't arrive in a
@@ -33,11 +34,13 @@ const UPSTREAM_JITTER_M = 3
 // Drift speed in metres/second along the flow direction.
 const DRIFT_SPEED = 1.8
 const DRIFT_SPEED_JITTER = 0.3
-// Margin (metres) inside the scene parcel boundary that spawn positions
-// must respect. Items drifting past the downstream boundary self-despawn.
-const SCENE_BOUND_MARGIN = 2
-// Minimum upstream gap from the raft footprint we still consider workable.
-// If the chosen lateral side has less than this much room upstream we flip
+// Margin (metres) inside the parcel boundary that spawn positions must
+// respect. Nothing is ever spawned inside this band — ensures items
+// always start visibly inside the map. floatingGarbage.ts uses a slightly
+// smaller margin so spawned items don't immediately self-despawn.
+const MAP_EDGE_SPAWN_MARGIN = 4
+// Minimum upstream gap from the raft AABB we still consider workable. If
+// the chosen lateral side has less than this much room upstream we flip
 // to the other side or skip the slot entirely.
 const MIN_UPSTREAM_GAP = 6
 
@@ -53,18 +56,28 @@ export function garbageSpawnerSystem(dt: number): void {
 }
 
 function spawnGroup(): void {
-  const { cx, cz, radius } = getPlatformExtent()
+  const extent = getPlatformExtent()
+  // Spawn anchor is the geometric centre of the platform AABB so an
+  // asymmetric raft (e.g. 4x2 or L-shape) doesn't bias spawns toward its
+  // heavy side.
+  const anchorX = (extent.minX + extent.maxX) / 2
+  const anchorZ = (extent.minZ + extent.maxZ) / 2
   const flowX = SEA_FLOW_DIR_X
   const flowZ = SEA_FLOW_DIR_Z
   // Right-hand perpendicular on the XZ plane (rotate flow by -90°).
   const perpX = flowZ
   const perpZ = -flowX
+  // Half-depth of the platform AABB along each axis. These project the
+  // group's actual corners onto the flow / perp directions, so margins
+  // below scale with whatever shape the player has built.
+  const flowHalf = aabbHalfExtentAlong(extent, flowX, flowZ)
+  const perpHalf = aabbHalfExtentAlong(extent, perpX, perpZ)
   // Scene is square, centred on GRID_ORIGIN.
   const sceneSize = GRID_ORIGIN.x * 2
 
-  const desiredSpawnDistance = radius + SPAWN_DISTANCE_MARGIN
-  const bypassMin = radius + BYPASS_MIN_MARGIN
-  const bypassMax = radius + BYPASS_MAX_MARGIN
+  const desiredSpawnDistance = flowHalf + SPAWN_DISTANCE_MARGIN
+  const bypassMin = perpHalf + BYPASS_MIN_MARGIN
+  const bypassMax = perpHalf + BYPASS_MAX_MARGIN
 
   // Barrels are the high-value pickup of the group — cap at one per group
   // so the player never gets a barrel-only haul that trivialises the
@@ -74,33 +87,33 @@ function spawnGroup(): void {
   for (let i = 0; i < GROUP_SIZE; i++) {
     let side = Math.random() < 0.5 ? -1 : 1
     let lateral = side * (bypassMin + Math.random() * (bypassMax - bypassMin))
-    let lateralX = cx + perpX * lateral
-    let lateralZ = cz + perpZ * lateral
-    let upstreamMax = maxFlowDistance(lateralX, lateralZ, -flowX, -flowZ, sceneSize, SCENE_BOUND_MARGIN)
-    let downstreamMax = maxFlowDistance(lateralX, lateralZ, flowX, flowZ, sceneSize, SCENE_BOUND_MARGIN)
+    let lateralX = anchorX + perpX * lateral
+    let lateralZ = anchorZ + perpZ * lateral
+    let upstreamMax = maxFlowDistance(lateralX, lateralZ, -flowX, -flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
+    let downstreamMax = maxFlowDistance(lateralX, lateralZ, flowX, flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
 
     // The chosen side puts us in a corner with no upstream room — flip to
     // the other lateral side and try again.
-    if (upstreamMax < radius + MIN_UPSTREAM_GAP) {
+    if (upstreamMax < flowHalf + MIN_UPSTREAM_GAP) {
       side = -side
       lateral = side * (bypassMin + Math.random() * (bypassMax - bypassMin))
-      lateralX = cx + perpX * lateral
-      lateralZ = cz + perpZ * lateral
-      upstreamMax = maxFlowDistance(lateralX, lateralZ, -flowX, -flowZ, sceneSize, SCENE_BOUND_MARGIN)
-      downstreamMax = maxFlowDistance(lateralX, lateralZ, flowX, flowZ, sceneSize, SCENE_BOUND_MARGIN)
+      lateralX = anchorX + perpX * lateral
+      lateralZ = anchorZ + perpZ * lateral
+      upstreamMax = maxFlowDistance(lateralX, lateralZ, -flowX, -flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
+      downstreamMax = maxFlowDistance(lateralX, lateralZ, flowX, flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
     }
-    if (upstreamMax < radius + MIN_UPSTREAM_GAP) continue
+    if (upstreamMax < flowHalf + MIN_UPSTREAM_GAP) continue
     if (downstreamMax < MIN_UPSTREAM_GAP) continue
 
-    // Clamp spawn distance into the available upstream room. The item will
-    // start at most upstreamMax-2 metres along -flow from lateralPos.
-    const upstreamCap = Math.max(0, upstreamMax - SCENE_BOUND_MARGIN)
-    const baseSpawnDistance = Math.min(desiredSpawnDistance, upstreamCap)
+    // Clamp spawn distance into the available upstream room. The item
+    // starts at most `upstreamMax` metres along -flow from the lateral
+    // anchor — `maxFlowDistance` already bakes in MAP_EDGE_SPAWN_MARGIN.
+    const baseSpawnDistance = Math.min(desiredSpawnDistance, upstreamMax)
     const upstreamJitter = (Math.random() * 2 - 1) * UPSTREAM_JITTER_M
     const spawnDistance = clamp(
       baseSpawnDistance + upstreamJitter,
-      radius + MIN_UPSTREAM_GAP,
-      upstreamCap
+      flowHalf + MIN_UPSTREAM_GAP,
+      upstreamMax
     )
     const along = -spawnDistance
 
@@ -116,7 +129,7 @@ function spawnGroup(): void {
     // Lifetime: time to drift from spawn through the lateral pos and on to
     // the downstream boundary, plus a small safety pad. The drift system
     // also enforces a scene-bounds despawn so this is just an upper cap.
-    const totalDistance = spawnDistance + Math.max(0, downstreamMax - SCENE_BOUND_MARGIN)
+    const totalDistance = spawnDistance + downstreamMax
     const maxLifetime = totalDistance / Math.max(speed, 0.5) + 5
 
     const pool: readonly GarbageKind[] = barrelSpawned

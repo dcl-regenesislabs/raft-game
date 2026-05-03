@@ -7,8 +7,22 @@ export {
   computeGridOrigin,
   configureGridOrigin,
   createPlatform,
+  destroyPlatformEntity,
   gridCellToWorld
 } from './platform'
+export {
+  CONSTRUCTION_KINDS,
+  createConstruction,
+  getConstructionGlb,
+  getConstructionVisualSize
+} from './construction'
+export type { ConstructionKind } from './construction'
+export {
+  createSpectralConstruction,
+  hideSpectralConstruction,
+  showSpectralConstructionAt,
+  tickSpectralConstructionBlink
+} from './spectralConstruction'
 export { createFirstPersonArea } from './firstPersonArea'
 export {
   HELD_ITEMS,
@@ -36,7 +50,7 @@ export { createShark, spawnRingShark, SHARK_Y } from './shark'
 export type { SharkParams } from './shark'
 export { createFloatingGarbage, GARBAGE_KINDS } from './floatingGarbage'
 export type { GarbageKind, FloatingGarbageParams } from './floatingGarbage'
-export { getPlatformExtent } from './platformExtent'
+export { aabbHalfExtentAlong, getPlatformExtent } from './platformExtent'
 export type { PlatformExtent } from './platformExtent'
 export {
   SEABED_Y,

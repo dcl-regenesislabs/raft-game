@@ -9,8 +9,12 @@ import { GRID_ORIGIN } from '../factories/platform'
 const BOB_RATE = Math.PI * 0.4
 const RAD_TO_DEG = 180 / Math.PI
 // Margin (metres) inside the parcel boundary at which we despawn an item
-// that has drifted out of view. 1 m gives a tight cull without flicker.
-const SCENE_MARGIN = 1
+// that has drifted out of view. Must be smaller than the spawn-side margin
+// in `garbageSpawner.ts` (MAP_EDGE_SPAWN_MARGIN) so freshly-spawned items
+// don't immediately self-despawn, and large enough that items always die
+// BEFORE they cross the map edge — DCL hides anything outside the parcel
+// footprint, so a 3 m cushion absorbs one frame of drift without flicker.
+const SCENE_MARGIN = 3
 
 // Per-frame: drift along stored velocity, sinusoidal bob on Y, gentle yaw
 // drift + pitch/roll wobble, despawn on lifetime OR scene-bounds exit.

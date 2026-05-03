@@ -22,6 +22,7 @@ import {
   actionButtonJustPressed,
   isActionButtonPressed
 } from '../ui/actionButton'
+import { isPointerLocked } from '../ui/cursorLock'
 import {
   addCollected,
   getSelectedSlot,
@@ -111,32 +112,42 @@ export function isHookInFlight(): boolean {
 }
 
 export function hookThrowerSystem(dt: number): void {
-  // Inventory open or just closed: cancel any in-flight charge and skip
-  // input handling. The action button is hidden while open, but the click
-  // that closed the inventory also fires IA_POINTER, so we keep ignoring
-  // input for a brief lockout window after close.
-  if (isInventoryActionLocked()) {
+  const locked = isInventoryActionLocked()
+  const handPos = computeHandPos()
+
+  // If a hook is already in flight (flying or reeling with grabbed items),
+  // let it finish even when the menu opens — opening the inventory should
+  // conclude the action, not freeze the rope mid-air with items dangling.
+  if (hookEntity !== null) {
+    cancelCharge()
+    if (handPos === null) return
+    advanceHook(dt, handPos)
+    return
+  }
+
+  // No hook in flight: gate fresh charge input on inventory state. The
+  // action button is hidden while open, but the click that closed the
+  // inventory also fires IA_POINTER, so we keep ignoring input for a brief
+  // lockout window after close. On desktop, also require the pointer to be
+  // captured — without this, a charge that's mid-fill when the player hits
+  // Esc would auto-release on the next stillHeld=false read and throw the
+  // hook against the player's intent.
+  if (locked) {
+    cancelCharge()
+    return
+  }
+  if (!isMobile() && !isPointerLocked()) {
     cancelCharge()
     return
   }
 
-  const selected = getSelectedSlot()
-  const handPos = computeHandPos()
-
-  if (selected !== HOOK_SLOT) {
-    if (hookEntity !== null) despawnHook()
+  if (getSelectedSlot() !== HOOK_SLOT) {
     cancelCharge()
     return
   }
 
   if (handPos === null) return
-
-  if (hookEntity === null) {
-    tickCharge(dt, handPos)
-  } else {
-    cancelCharge()
-    advanceHook(dt, handPos)
-  }
+  tickCharge(dt, handPos)
 }
 
 // Charge state machine: PET_DOWN starts charging; held → bar fills; full
@@ -324,12 +335,31 @@ function advanceHook(dt: number, handPos: Vector3): void {
   followGrabbedItems()
 }
 
+// Translate a hooked debris kind into inventory deposits. Most kinds map
+// 1:1 to a material, but barrels are a "loot box" that breaks open into a
+// random mix of crafting materials so they feel distinct from a plain log.
+function bankGrabbedItem(kind: string): void {
+  if (kind === 'barrel') {
+    addCollected('wood', randInt(0, 1))
+    addCollected('plants', randInt(0, 2))
+    addCollected('plastic', randInt(0, 1))
+    addCollected('rope', randInt(0, 1))
+    return
+  }
+  addCollected(kind, 1)
+}
+
+// Inclusive integer in [min, max].
+function randInt(min: number, max: number): number {
+  return min + Math.floor(Math.random() * (max - min + 1))
+}
+
 function despawnHook(): void {
   // Hook reached the player (or the throw was cancelled) — bank everything
   // it was dragging and remove the entities. Done before the hook itself
   // is removed so we don't leave orphaned children behind for one frame.
   for (const item of grabbedItems) {
-    addCollected(item.kind, 1)
+    bankGrabbedItem(item.kind)
     engine.removeEntity(item.entity)
   }
   grabbedItems = []

@@ -1,0 +1,124 @@
+// Catalog of items the player can craft. Each entry binds the recipe (which
+// materials and how many) to the metadata the craft panel needs to display
+// it: name, flavor description, and an icon texture.
+//
+// `materialId` strings must match keys in the material catalog (see
+// `items.ts`), so the cost rows can resolve material textures and counts
+// against the player's collected tally.
+
+export interface MaterialCost {
+  materialId: string
+  amount: number
+}
+
+export interface CraftableItem {
+  id: string
+  name: string
+  description: string
+  texture: string
+  cost: readonly MaterialCost[]
+  // Optional per-item craft duration in seconds. When omitted the craft
+  // session falls back to the default duration. Used to make foundational
+  // build pieces craft faster than tools/utility items.
+  craftSec?: number
+}
+
+export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
+  {
+    id: 'hammer',
+    name: 'HAMMER',
+    description:
+      'A sturdy building hammer for raising platforms and lashing your raft together.',
+    texture: 'images/hud/items/item-01.png',
+    cost: [
+      { materialId: 'wood', amount: 4 },
+      { materialId: 'rope', amount: 2 }
+    ]
+  },
+  {
+    id: 'platform',
+    name: 'PLATFORM',
+    description:
+      'A wooden raft tile. Place it next to an existing platform to expand your raft.',
+    texture: 'images/hud/items/item-20.png',
+    cost: [
+      { materialId: 'wood', amount: 2 },
+      { materialId: 'plastic', amount: 2 },
+      { materialId: 'rope', amount: 1 }
+    ],
+    craftSec: 1
+  },
+  {
+    id: 'spear',
+    name: 'WOODEN SPEAR',
+    description:
+      'A pointed wooden shaft for warding off circling sharks at close range.',
+    texture: 'images/hud/items/item-19.png',
+    cost: [
+      { materialId: 'wood', amount: 8 },
+      { materialId: 'rope', amount: 3 }
+    ]
+  },
+  {
+    id: 'purifier',
+    name: 'WATER PURIFIER',
+    description:
+      'Boils sea water through layers of leaves and salvaged plastic to make it drinkable.',
+    texture: 'images/hud/items/item-06.png',
+    cost: [
+      { materialId: 'wood', amount: 6 },
+      { materialId: 'plants', amount: 5 },
+      { materialId: 'plastic', amount: 4 },
+      { materialId: 'metal', amount: 2 }
+    ]
+  },
+  {
+    id: 'grill',
+    name: 'GRILL',
+    description:
+      'A scrap-metal cooking station. Char fish and meat into proper meals.',
+    texture: 'images/hud/items/item-07.png',
+    cost: [
+      { materialId: 'metal', amount: 3 },
+      { materialId: 'wood', amount: 6 },
+      { materialId: 'rope', amount: 3 }
+    ]
+  },
+  {
+    id: 'fishingRod',
+    name: 'FISHING ROD',
+    description:
+      'A real rod with a long line. Casts further than the throw hook and pulls in larger fish.',
+    texture: 'images/hud/items/item-15.png',
+    cost: [
+      { materialId: 'wood', amount: 6 },
+      { materialId: 'rope', amount: 8 }
+    ]
+  },
+  {
+    id: 'knife',
+    name: 'KNIFE',
+    description:
+      'A honed metal blade for gutting fish, butchering meat, and cutting rope.',
+    texture: 'images/hud/items/item-16.png',
+    cost: [
+      { materialId: 'wood', amount: 2 },
+      { materialId: 'metal', amount: 8 }
+    ]
+  },
+  {
+    id: 'cup',
+    name: 'CUP',
+    description:
+      'A simple vessel carved from wood and lined with plastic. Holds water and other liquids.',
+    texture: 'images/hud/items/item-09.png',
+    cost: [
+      { materialId: 'wood', amount: 2 },
+      { materialId: 'plastic', amount: 2 }
+    ]
+  }
+]
+
+export function getCraftableById(id: string): CraftableItem | null {
+  return CRAFTABLE_ITEMS.find((c) => c.id === id) ?? null
+}

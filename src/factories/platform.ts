@@ -9,7 +9,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 
-import { MainPlatform, Platform } from '../components'
+import { MainPlatform, Platform, PlatformConstruction } from '../components'
 import { DEMO_PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from './sceneLevels'
 
 export const PLATFORM_SIZE_X = 3
@@ -91,6 +91,19 @@ export function createPlatform(
   if (isMain) MainPlatform.create(platform)
 
   return platform
+}
+
+// Removes the platform AND its placed construction (grill / purifier) child
+// if any. SDK7 does not auto-cascade entity removal to children, so without
+// this helper the GLB would orphan in the scene with a dangling parent
+// reference. Use this everywhere a platform is destroyed (hammer destroy,
+// shark bite) instead of calling engine.removeEntity directly.
+export function destroyPlatformEntity(entity: Entity): void {
+  const construction = PlatformConstruction.getOrNull(entity)
+  if (construction !== null) {
+    engine.removeEntity(construction.child)
+  }
+  engine.removeEntity(entity)
 }
 
 // Re-applies the PBR material with the given albedo. Keeps roughness/metallic

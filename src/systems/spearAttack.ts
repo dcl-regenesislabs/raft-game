@@ -13,6 +13,7 @@ import { isMobile } from '@dcl/sdk/platform'
 import { SharkHittable } from '../components'
 import { getHeldItemEntity, getHeldItemKind } from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
+import { isPointerLocked } from '../ui/cursorLock'
 import { isSelectionPointerLockoutActive } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import { tryHitShark } from './sharkAttack'
@@ -73,11 +74,15 @@ export function spearAttackSystem(dt: number): void {
   // close, since the click that closed the panel also fires IA_POINTER.
   // In-flight stabs are allowed to finish their animation/cooldown so the
   // state machine clears cleanly when the player closes the panel.
+  // On desktop, also require the pointer to be captured — the click that
+  // re-locks the canvas after pressing Esc fires IA_POINTER too, and we
+  // don't want that to double as a stab.
   const firePressed =
     !isInventoryActionLocked() &&
     (isMobile()
       ? actionButtonJustPressed()
-      : inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN))
+      : isPointerLocked() &&
+        inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN))
   if (
     isSpearHeld &&
     attackElapsed === 0 &&

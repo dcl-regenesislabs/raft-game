@@ -8,7 +8,12 @@ import {
   SharkAttack,
   SharkOrbit
 } from '../components'
-import { PLATFORM_SIZE_X, PLATFORM_SIZE_Z, tintPlatform } from '../factories/platform'
+import {
+  PLATFORM_SIZE_X,
+  PLATFORM_SIZE_Z,
+  destroyPlatformEntity,
+  tintPlatform
+} from '../factories/platform'
 import { WATER_LEVEL } from '../factories/sceneLevels'
 import { spawnRingShark } from '../factories/shark'
 import { resetSharkHits } from './sharkAttack'
@@ -557,7 +562,7 @@ function advanceAttack(entity: Entity, dt: number): void {
     if (attack.elapsed >= BITE_DURATION_S) {
       stopBite(entity)
       if (Platform.getOrNull(target) !== null) {
-        engine.removeEntity(target)
+        destroyPlatformEntity(target)
       }
       const tr = Transform.get(entity)
       attackCache.set(entity, {

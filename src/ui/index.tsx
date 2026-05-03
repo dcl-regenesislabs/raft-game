@@ -12,7 +12,6 @@ import {
   releaseActionButton
 } from './actionButton'
 import {
-  addCollected,
   getCollectedCount,
   getPressProgress,
   getSelectedSlot,
@@ -31,11 +30,35 @@ import {
   toggleInventory
 } from './inventoryToggle'
 import {
+  getCraftButtonScale,
+  getSelectedCraftableId,
+  isCraftOpen,
+  selectCraftable,
+  toggleCraft
+} from './craftToggle'
+import {
+  CRAFTABLE_ITEMS,
+  type CraftableItem,
+  type MaterialCost,
+  getCraftableById
+} from './craftableItems'
+import {
+  canStartCraft,
+  getCraftProgress,
+  isCrafting,
+  startCraft
+} from './craftSession'
+import {
   BOTTOM_BAR_SLOT_COUNT,
   INVENTORY_LAYOUT,
   getInventorySlot,
+  getMaterialDef,
   type ItemDef
 } from './items'
+import { getNotification } from './notification'
+import { Panel } from './panel'
+import { createPressPulse } from './pressPulse'
+import { type StatKind, getStat } from './statsBars'
 
 // Shake animation for non-selected slots while swap-mode is active.
 // Single global oscillator — every shaking slot uses the same offset so
@@ -146,17 +169,6 @@ const INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED = -10
 // linear layout so adjusting `items.ts` flows through to the UI.
 const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_LAYOUT.length - BOTTOM_BAR_SLOT_COUNT
 
-// Test-only: seed every stackable item across the whole inventory (bottom
-// bar + grid) with a random count in [1, 200] so the count badges are
-// visible without having to actually collect anything in-world. Drop this
-// IIFE once the gameplay collectors fully populate the inventory.
-;(() => {
-  for (const item of INVENTORY_LAYOUT) {
-    if (item === null || !item.stackable) continue
-    addCollected(item.id, 1 + Math.floor(Math.random() * 200))
-  }
-})()
-
 // Count badge styling. Used by both the bottom-bar slots and the inventory
 // grid cells so the visual stays consistent.
 const COUNT_BADGE_BG = Color4.create(0, 0, 0, 0.7)
@@ -183,6 +195,117 @@ const INVENTORY_BUTTON_RIGHT_DESKTOP = 32
 const INVENTORY_BUTTON_FRAME = Math.round(INVENTORY_BUTTON_SIZE * 1.25)
 const INVENTORY_BUTTON_ICON_INSET_PCT = 24
 
+// Craft double-menu sizes. The list and details panels render centered
+// using the nine-sliced `panel.png` background; the inventory grid is
+// pinned to the bottom-left corner at a smaller size so the centered
+// panels have breathing room in the middle of the screen.
+const CRAFT_LIST_WIDTH = 320
+const CRAFT_LIST_HEIGHT = 624
+const CRAFT_DETAILS_WIDTH = 480
+// Inventory grid size when shown alongside the craft panels. Smaller than
+// the standalone inventory so it doesn't dominate the bottom-left corner.
+const CRAFT_INVENTORY_SIZE = 420
+const CRAFT_INVENTORY_LEFT = 32
+const CRAFT_INVENTORY_BOTTOM = 32
+// Craft details panel grows with the recipe — header + description + the
+// REQUIRES row + one row per material.
+const CRAFT_DETAILS_BASE_HEIGHT = 376
+const CRAFT_DETAILS_ROW_HEIGHT = 58
+const CRAFT_PANEL_GAP = 16
+// Inset content past the painted bevel. Horizontal padding is bigger
+// than vertical so labels and counts don't crowd the painted left/right
+// frame; top padding is larger than bottom so the header sits visibly
+// inside the wood frame instead of hugging the top bevel.
+const CRAFT_PANEL_PADDING_X = 56
+const CRAFT_PANEL_PADDING_TOP = 64
+const CRAFT_PANEL_PADDING_BOTTOM = 44
+// Dark brown text reads against the cream panel center; the cream variant
+// is for rows with a dark inset (selected craftable).
+const CRAFT_TEXT_COLOR = Color4.create(0.3, 0.18, 0.1, 1)
+const CRAFT_TEXT_DIM_COLOR = Color4.create(0.45, 0.3, 0.18, 1)
+const CRAFT_TEXT_LIGHT_COLOR = Color4.create(0.97, 0.92, 0.78, 1)
+const CRAFT_DIVIDER_COLOR = Color4.create(0.3, 0.18, 0.1, 0.5)
+const CRAFT_ROW_SELECTED_BG = Color4.create(0, 0, 0, 0.55)
+const CRAFT_BUTTON_TEXTURE = 'images/hud/red_button.png'
+const CRAFT_BUTTON_FG = Color4.White()
+const CRAFT_BUTTON_W = 110
+const CRAFT_BUTTON_H = 38
+// Frame sized to the peak press scale (1 + peakBonus, generously rounded
+// to 1.25×) so the button can grow without shifting the parent row.
+const CRAFT_BUTTON_FRAME_W = Math.round(CRAFT_BUTTON_W * 1.25)
+const CRAFT_BUTTON_FRAME_H = Math.round(CRAFT_BUTTON_H * 1.25)
+// red_button.png has rounded ends; nine-slice keeps the corners pixel-correct
+// when the size doesn't match the source aspect ratio.
+const CRAFT_BUTTON_SLICE = 0.2
+
+// Notification banner. Sits above every other HUD element and slides in
+// from offscreen when `showNotification` is called. Width is fixed so the
+// pill doesn't reflow as the message changes; the resting top inset gives
+// it a small margin from the screen edge.
+const NOTIFICATION_WIDTH = 520
+const NOTIFICATION_HEIGHT = 96
+const NOTIFICATION_TOP_INSET = 32
+const NOTIFICATION_PADDING_X = 48
+const NOTIFICATION_TEXT_COLOR = Color4.create(0.3, 0.18, 0.1, 1)
+const NOTIFICATION_FONT_SIZE = 22
+
+// Stats bars (life / hunger / thirst), bottom-left of the screen.
+// Source art `bar.png` is 600×124. The cream icon cell sits on the left,
+// followed by a wood-framed dark track that we fill left-to-right.
+// Percentages were measured from the source PNG.
+const STATS_BAR_TEXTURE = 'images/hud/bar.png'
+const STATS_BAR_WIDTH = 280
+const STATS_BAR_HEIGHT = Math.round(STATS_BAR_WIDTH * (124 / 600))
+const STATS_BAR_GAP = 6
+const STATS_BAR_LEFT = 64
+const STATS_BAR_BOTTOM = 24
+// Painted dark-track inset within the bar art. Fill grows from FILL_LEFT
+// rightward up to FILL_RIGHT_LIMIT at 100%. Right limit stops at the
+// painted dark-track edge so 100% doesn't bleed onto the wood frame.
+const STATS_FILL_LEFT_PCT = 21
+const STATS_FILL_RIGHT_LIMIT_PCT = 95
+const STATS_FILL_TOP_PCT = 32
+const STATS_FILL_BOTTOM_PCT = 30
+// Icon cell bounds — generously oversized so the icons read big against
+// the bar. Negative top/left lets the icon overflow the painted cream
+// cell and sit visually larger than the cell itself.
+const STATS_ICON_LEFT_PCT = 0
+const STATS_ICON_TOP_PCT = 0
+const STATS_ICON_WIDTH_PCT = 26*0.8
+const STATS_ICON_HEIGHT_PCT = 120*0.8
+// No inset — icons are tight crops, so let them fill the icon cell.
+const STATS_ICON_INSET_PCT = 0
+const STAT_ICON_TEXTURES: Record<StatKind, string> = {
+  life: 'images/hud/icons/life.png',
+  hunger: 'images/hud/icons/hungry.png',
+  thirst: 'images/hud/icons/thirst.png'
+}
+// Tints for each stat — kept in the warm/saturated range so they read
+// against the brown frame.
+const STAT_FILL_COLORS: Record<StatKind, ReturnType<typeof Color4.create>> = {
+  life: Color4.create(0.85, 0.18, 0.18, 1),
+  hunger: Color4.create(1.0, 0.6, 0.18, 1),
+  thirst: Color4.create(0.25, 0.65, 1.0, 1)
+}
+const STATS_ORDER: readonly StatKind[] = ['life', 'hunger', 'thirst']
+
+// Module-level pulse so the same animation clock survives across the
+// React-ECS render rebuilds. Ticked by `pressPulseTickSystem` registered
+// in `index.ts`.
+const craftActionPulse = createPressPulse()
+const CRAFT_HAVE_OK_COLOR = Color4.create(0.7, 1, 0.5, 1)
+const CRAFT_HAVE_LOW_COLOR = Color4.create(1, 0.55, 0.3, 1)
+
+// Craft menu toggle (left of the backpack). Reuses the same circular button
+// art and sizing as the inventory button, with the saw as the inner icon.
+const CRAFT_BUTTON_ICON = 'images/hud/saw.png'
+// Sit one button-size to the left of the backpack on desktop (visible edges
+// flush, no gap from the frame padding), and a matching percentage step on
+// mobile.
+const CRAFT_BUTTON_RIGHT_DESKTOP =
+  INVENTORY_BUTTON_RIGHT_DESKTOP + INVENTORY_BUTTON_SIZE
+const CRAFT_BUTTON_LEFT_PCT_MOBILE = INVENTORY_BUTTON_LEFT_PCT_MOBILE - 14
+
 // React-ECS render runs every frame; reading scene state directly here is the
 // idiomatic pattern (no useState/useEffect).
 export function setupUi(): void {
@@ -190,6 +313,24 @@ export function setupUi(): void {
 }
 
 function ui(): ReactEcs.JSX.Element {
+  // While a craft is running every interactive HUD element hides — the
+  // player can't act, only watch the progress bar fill. The bar reuses
+  // the hook charge meter style for visual consistency.
+  if (isCrafting()) {
+    return (
+      <UiEntity
+        uiTransform={{
+          width: '100%',
+          height: '100%',
+          positionType: 'absolute'
+        }}
+      >
+        <CraftProgressBar />
+        <NotificationOverlay />
+      </UiEntity>
+    )
+  }
+
   const showDestroy = getDestroyHoverTarget() !== null
 
   return (
@@ -224,10 +365,510 @@ function ui(): ReactEcs.JSX.Element {
       )}
 
       <BottomBar />
+      <StatsBars />
       <ActionButton />
       <InventoryButton />
+      <CraftButton />
       <InventoryPanel />
+      <CraftDoubleMenu />
       <ChargeReticle />
+      <NotificationOverlay />
+    </UiEntity>
+  )
+}
+
+function StatsBars(): ReactEcs.JSX.Element {
+  // Stack vertically, anchored to the bottom-left corner. Reverse so the
+  // first entry in STATS_ORDER renders on top.
+  const totalHeight =
+    STATS_ORDER.length * STATS_BAR_HEIGHT +
+    (STATS_ORDER.length - 1) * STATS_BAR_GAP
+  return (
+    <UiEntity
+      uiTransform={{
+        positionType: 'absolute',
+        position: { bottom: STATS_BAR_BOTTOM, left: STATS_BAR_LEFT },
+        width: STATS_BAR_WIDTH,
+        height: totalHeight,
+        flexDirection: 'column'
+      }}
+    >
+      {STATS_ORDER.map((kind, i) => (
+        <StatBar
+          key={kind}
+          kind={kind}
+          marginTop={i === 0 ? 0 : STATS_BAR_GAP}
+        />
+      ))}
+    </UiEntity>
+  )
+}
+
+function StatBar(props: {
+  kind: StatKind
+  marginTop: number
+  key?: string
+}): ReactEcs.JSX.Element {
+  const t = Math.max(0, Math.min(1, getStat(props.kind)))
+  const fillSpanPct = STATS_FILL_RIGHT_LIMIT_PCT - STATS_FILL_LEFT_PCT
+  const fillWidthPct = fillSpanPct * t
+  return (
+    <UiEntity
+      uiTransform={{
+        width: STATS_BAR_WIDTH,
+        height: STATS_BAR_HEIGHT,
+        margin: { top: props.marginTop }
+      }}
+    >
+      {/* Bar art first; the painted dark track is opaque, so the colored
+          fill renders ON TOP of it inside the track area. */}
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: { top: 0, left: 0 },
+          width: '100%',
+          height: '100%'
+        }}
+        uiBackground={{
+          textureMode: 'stretch',
+          texture: { src: STATS_BAR_TEXTURE }
+        }}
+      />
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: {
+            top: `${STATS_FILL_TOP_PCT}%`,
+            bottom: `${STATS_FILL_BOTTOM_PCT}%`,
+            left: `${STATS_FILL_LEFT_PCT}%`
+          },
+          width: `${fillWidthPct}%`
+        }}
+        uiBackground={{ color: STAT_FILL_COLORS[props.kind] }}
+      />
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: {
+            top: `${STATS_ICON_TOP_PCT}%`,
+            left: `${STATS_ICON_LEFT_PCT}%`
+          },
+          width: `${STATS_ICON_WIDTH_PCT}%`,
+          height: `${STATS_ICON_HEIGHT_PCT}%`
+        }}
+      >
+        <UiEntity
+          uiTransform={{
+            positionType: 'absolute',
+            position: {
+              top: `${STATS_ICON_INSET_PCT}%`,
+              bottom: `${STATS_ICON_INSET_PCT}%`,
+              left: `${STATS_ICON_INSET_PCT}%`,
+              right: `${STATS_ICON_INSET_PCT}%`
+            }
+          }}
+          uiBackground={{
+            textureMode: 'stretch',
+            texture: { src: STAT_ICON_TEXTURES[props.kind] }
+          }}
+        />
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
+function NotificationOverlay(): ReactEcs.JSX.Element | null {
+  const view = getNotification()
+  if (view === null) return null
+  // Slide from fully offscreen (-(height + top inset)) at slide=0 to the
+  // resting NOTIFICATION_TOP_INSET at slide=1. Linear interpolation keeps
+  // the easing concentrated in the slide curve itself.
+  const offscreenTop = -(NOTIFICATION_HEIGHT + NOTIFICATION_TOP_INSET)
+  const top = offscreenTop + (NOTIFICATION_TOP_INSET - offscreenTop) * view.slide
+  return (
+    <UiEntity
+      uiTransform={{
+        positionType: 'absolute',
+        position: { top: 0, left: 0 },
+        width: '100%',
+        height: '100%',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start'
+      }}
+    >
+      <Panel
+        uiTransform={{
+          width: NOTIFICATION_WIDTH,
+          height: NOTIFICATION_HEIGHT,
+          margin: { top: Math.round(top) },
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: { left: NOTIFICATION_PADDING_X, right: NOTIFICATION_PADDING_X }
+        }}
+      >
+        <Label
+          value={view.message}
+          fontSize={NOTIFICATION_FONT_SIZE}
+          color={NOTIFICATION_TEXT_COLOR}
+          textAlign="middle-center"
+          uiTransform={{ flexGrow: 1, height: '100%' }}
+        />
+      </Panel>
+    </UiEntity>
+  )
+}
+
+function CraftProgressBar(): ReactEcs.JSX.Element {
+  const t = getCraftProgress()
+  const fillWidth = Math.max(2, Math.round(CHARGE_BAR_WIDTH * t))
+  return (
+    <UiEntity
+      uiTransform={{
+        positionType: 'absolute',
+        position: { top: 0, left: 0 },
+        width: '100%',
+        height: '100%',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <UiEntity
+        uiTransform={{
+          width: CHARGE_BAR_WIDTH,
+          height: CHARGE_BAR_HEIGHT
+        }}
+        uiBackground={{ color: CHARGE_TRACK_COLOR }}
+      >
+        <UiEntity
+          uiTransform={{ width: fillWidth, height: CHARGE_BAR_HEIGHT }}
+          uiBackground={{ color: CHARGE_FILL_COLOR }}
+        />
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
+function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
+  if (!isCraftOpen()) return null
+  return (
+    <UiEntity
+      uiTransform={{
+        positionType: 'absolute',
+        position: { top: 0, left: 0 },
+        width: '100%',
+        height: '100%'
+      }}
+    >
+      {/* Inventory pinned to the bottom-left so the player can see their
+          materials while crafting. The buttons stay mutually exclusive —
+          this is just a layout coupling, not a state coupling. */}
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: {
+            bottom: CRAFT_INVENTORY_BOTTOM,
+            left: CRAFT_INVENTORY_LEFT
+          }
+        }}
+      >
+        <InventoryGrid size={CRAFT_INVENTORY_SIZE} />
+      </UiEntity>
+      {/* List + details centered in the middle of the screen. The bottom
+          margin lifts them off the bottom bar. */}
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: { top: 0, left: 0 },
+          width: '100%',
+          height: '100%',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <UiEntity
+          uiTransform={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            margin: { bottom: '8%' }
+          }}
+        >
+          <CraftItemList />
+          <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
+          <CraftDetails />
+        </UiEntity>
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
+function CraftItemList(): ReactEcs.JSX.Element {
+  return (
+    <Panel
+      uiTransform={{
+        width: CRAFT_LIST_WIDTH,
+        height: CRAFT_LIST_HEIGHT,
+        flexDirection: 'column',
+        padding: {
+          top: CRAFT_PANEL_PADDING_TOP,
+          bottom: CRAFT_PANEL_PADDING_BOTTOM,
+          left: CRAFT_PANEL_PADDING_X,
+          right: CRAFT_PANEL_PADDING_X
+        }
+      }}
+    >
+      <UiEntity
+        uiTransform={{
+          height: 48,
+          flexDirection: 'row',
+          alignItems: 'center'
+        }}
+      >
+        <UiEntity
+          uiTransform={{ width: 44, height: 44 }}
+          uiBackground={{
+            textureMode: 'stretch',
+            texture: { src: CRAFT_BUTTON_ICON }
+          }}
+        />
+        <Label
+          value="CRAFT"
+          fontSize={24}
+          color={CRAFT_TEXT_COLOR}
+          uiTransform={{ margin: { left: 12 } }}
+        />
+      </UiEntity>
+      <UiEntity
+        uiTransform={{
+          height: 1,
+          margin: { top: 6, bottom: 8 }
+        }}
+        uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
+      />
+      {CRAFTABLE_ITEMS.map((item) => (
+        <CraftItemRow key={item.id} item={item} />
+      ))}
+    </Panel>
+  )
+}
+
+function CraftItemRow(props: {
+  item: CraftableItem
+  key?: number | string
+}): ReactEcs.JSX.Element {
+  const selected = getSelectedCraftableId() === props.item.id
+  return (
+    <UiEntity
+      uiTransform={{
+        height: 52,
+        flexDirection: 'row',
+        alignItems: 'center',
+        margin: { bottom: 4 },
+        padding: { left: 8, right: 8 }
+      }}
+      uiBackground={selected ? { color: CRAFT_ROW_SELECTED_BG } : undefined}
+      onMouseDown={() => selectCraftable(props.item.id)}
+    >
+      <UiEntity
+        uiTransform={{ width: 48, height: 48 }}
+        uiBackground={{
+          textureMode: 'stretch',
+          texture: { src: props.item.texture }
+        }}
+      />
+      <Label
+        value={props.item.name}
+        fontSize={16}
+        color={selected ? CRAFT_TEXT_LIGHT_COLOR : CRAFT_TEXT_COLOR}
+        uiTransform={{ flexGrow: 1, margin: { left: 12 } }}
+      />
+    </UiEntity>
+  )
+}
+
+function CraftDetails(): ReactEcs.JSX.Element | null {
+  const id = getSelectedCraftableId()
+  const item = id !== null ? getCraftableById(id) : null
+  if (item === null) return null
+  // Detail panel grows with the recipe so the wood frame hugs the content
+  // rather than leaving an empty stretch under short recipes.
+  const height = CRAFT_DETAILS_BASE_HEIGHT + CRAFT_DETAILS_ROW_HEIGHT * item.cost.length
+  return (
+    <Panel
+      uiTransform={{
+        width: CRAFT_DETAILS_WIDTH,
+        height,
+        flexDirection: 'column',
+        padding: {
+          top: CRAFT_PANEL_PADDING_TOP,
+          bottom: CRAFT_PANEL_PADDING_BOTTOM,
+          left: CRAFT_PANEL_PADDING_X,
+          right: CRAFT_PANEL_PADDING_X
+        }
+      }}
+    >
+      <UiEntity
+        uiTransform={{
+          height: 60,
+          flexDirection: 'row',
+          alignItems: 'center'
+        }}
+      >
+        <UiEntity
+          uiTransform={{ width: 60, height: 60 }}
+          uiBackground={{
+            textureMode: 'stretch',
+            texture: { src: item.texture }
+          }}
+        />
+        <Label
+          value={item.name}
+          fontSize={28}
+          color={CRAFT_TEXT_COLOR}
+          uiTransform={{ margin: { left: 14 } }}
+        />
+      </UiEntity>
+      <UiEntity
+        uiTransform={{
+          height: 1,
+          margin: { top: 10, bottom: 12 }
+        }}
+        uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
+      />
+      <Label
+        value={item.description}
+        fontSize={16}
+        color={CRAFT_TEXT_DIM_COLOR}
+        textAlign="top-left"
+        uiTransform={{
+          width: '100%',
+          height: 110
+        }}
+      />
+      <UiEntity
+        uiTransform={{
+          height: CRAFT_BUTTON_FRAME_H + 8,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          margin: { top: 4, bottom: 4 }
+        }}
+      >
+        <Label value="REQUIRES" fontSize={22} color={CRAFT_TEXT_COLOR} />
+        <CraftActionButton item={item} />
+      </UiEntity>
+      {item.cost.map((cost) => (
+        <CraftCostRow key={cost.materialId} cost={cost} />
+      ))}
+    </Panel>
+  )
+}
+
+function CraftActionButton(props: { item: CraftableItem }): ReactEcs.JSX.Element {
+  const scale = craftActionPulse.getScale()
+  const w = Math.round(CRAFT_BUTTON_W * scale)
+  const h = Math.round(CRAFT_BUTTON_H * scale)
+  const enabled = canStartCraft(props.item.id)
+  return (
+    <UiEntity
+      uiTransform={{
+        width: CRAFT_BUTTON_FRAME_W,
+        height: CRAFT_BUTTON_FRAME_H,
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <UiEntity
+        uiTransform={{
+          width: w,
+          height: h,
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+        uiBackground={{
+          textureMode: 'nine-slices',
+          texture: { src: CRAFT_BUTTON_TEXTURE },
+          textureSlices: {
+            top: CRAFT_BUTTON_SLICE,
+            right: CRAFT_BUTTON_SLICE,
+            bottom: CRAFT_BUTTON_SLICE,
+            left: CRAFT_BUTTON_SLICE
+          },
+          // Dim the button when materials are short so the player gets a
+          // visual cue that pressing it won't start a craft.
+          color: enabled
+            ? Color4.create(1, 1, 1, 1)
+            : Color4.create(1, 1, 1, 0.45)
+        }}
+        onMouseDown={() => {
+          if (!enabled) return
+          craftActionPulse.press()
+          startCraft(props.item.id)
+        }}
+      >
+        <Label value="CRAFT" fontSize={16} color={CRAFT_BUTTON_FG} />
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
+function CraftCostRow(props: {
+  cost: MaterialCost
+  key?: number | string
+}): ReactEcs.JSX.Element {
+  const def = getMaterialDef(props.cost.materialId)
+  const have = getCollectedCount(props.cost.materialId)
+  const enough = have >= props.cost.amount
+  const label = def?.id.toUpperCase() ?? props.cost.materialId.toUpperCase()
+  const texture = def?.texture
+  return (
+    <UiEntity
+      uiTransform={{
+        height: CRAFT_DETAILS_ROW_HEIGHT - 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        margin: { bottom: 8 }
+      }}
+    >
+      {texture !== undefined && (
+        <UiEntity
+          uiTransform={{ width: 50, height: 50 }}
+          uiBackground={{
+            textureMode: 'stretch',
+            texture: { src: texture }
+          }}
+        />
+      )}
+      <Label
+        value={label}
+        fontSize={18}
+        color={CRAFT_TEXT_COLOR}
+        uiTransform={{ flexGrow: 1, margin: { left: 12 } }}
+      />
+      <Label
+        value={`${have}/${props.cost.amount}`}
+        fontSize={20}
+        color={enough ? CRAFT_HAVE_OK_COLOR : CRAFT_HAVE_LOW_COLOR}
+      />
+    </UiEntity>
+  )
+}
+
+function InventoryGrid(props: { size?: number }): ReactEcs.JSX.Element {
+  const size = props.size ?? INVENTORY_PANEL_SIZE
+  return (
+    <UiEntity
+      uiTransform={{ width: size, height: size }}
+      uiBackground={{
+        textureMode: 'stretch',
+        texture: { src: INVENTORY_PANEL_TEXTURE }
+      }}
+    >
+      {Array.from({ length: INVENTORY_GRID_TOTAL_CELLS }, (_, i) => (
+        <InventoryCell key={i} index={i} />
+      ))}
     </UiEntity>
   )
 }
@@ -252,18 +893,10 @@ function InventoryPanel(): ReactEcs.JSX.Element | null {
     >
       <UiEntity
         uiTransform={{
-          width: INVENTORY_PANEL_SIZE,
-          height: INVENTORY_PANEL_SIZE,
           margin: { left: barShiftX, bottom: '10%' }
         }}
-        uiBackground={{
-          textureMode: 'stretch',
-          texture: { src: INVENTORY_PANEL_TEXTURE }
-        }}
       >
-        {Array.from({ length: INVENTORY_GRID_TOTAL_CELLS }, (_, i) => (
-          <InventoryCell key={i} index={i} />
-        ))}
+        <InventoryGrid />
       </UiEntity>
     </UiEntity>
   )
@@ -310,7 +943,13 @@ function InventoryCell(props: {
         width: `${INVENTORY_CELL_SIZE_PCT}%`,
         height: `${INVENTORY_CELL_SIZE_PCT}%`
       }}
-      onMouseDown={() => pressSlot(globalIndex)}
+      onMouseDown={() => {
+        // Inventory grid is read-only while the craft menu is open — no
+        // selection, no swap, the player just sees their materials and
+        // crafted stock alongside the recipe.
+        if (isCraftOpen()) return
+        pressSlot(globalIndex)
+      }}
     >
       <UiEntity
         uiTransform={{
@@ -411,6 +1050,64 @@ function InventoryButton(): ReactEcs.JSX.Element {
           uiBackground={{
             textureMode: 'stretch',
             texture: { src: INVENTORY_BUTTON_ICON }
+          }}
+        />
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
+function CraftButton(): ReactEcs.JSX.Element {
+  const open = isCraftOpen()
+  const scaledSize = Math.round(INVENTORY_BUTTON_SIZE * getCraftButtonScale())
+  const mobile = isMobile()
+  return (
+    <UiEntity
+      uiTransform={{
+        positionType: 'absolute',
+        position: mobile
+          ? {
+              top: INVENTORY_BUTTON_TOP,
+              left: `${CRAFT_BUTTON_LEFT_PCT_MOBILE}%`
+            }
+          : {
+              top: INVENTORY_BUTTON_TOP,
+              right: CRAFT_BUTTON_RIGHT_DESKTOP
+            },
+        width: INVENTORY_BUTTON_FRAME,
+        height: INVENTORY_BUTTON_FRAME,
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <UiEntity
+        uiTransform={{
+          width: scaledSize,
+          height: scaledSize,
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+        uiBackground={{
+          textureMode: 'stretch',
+          texture: {
+            src: open ? INVENTORY_BUTTON_TEXTURE_OPEN : INVENTORY_BUTTON_TEXTURE
+          }
+        }}
+        onMouseDown={toggleCraft}
+      >
+        <UiEntity
+          uiTransform={{
+            positionType: 'absolute',
+            position: {
+              top: `${INVENTORY_BUTTON_ICON_INSET_PCT}%`,
+              bottom: `${INVENTORY_BUTTON_ICON_INSET_PCT}%`,
+              left: `${INVENTORY_BUTTON_ICON_INSET_PCT}%`,
+              right: `${INVENTORY_BUTTON_ICON_INSET_PCT}%`
+            }
+          }}
+          uiBackground={{
+            textureMode: 'stretch',
+            texture: { src: CRAFT_BUTTON_ICON }
           }}
         />
       </UiEntity>

@@ -9,6 +9,7 @@ import { isInventoryOpen } from './inventoryToggle'
 import {
   BOTTOM_BAR_SLOT_COUNT,
   type ItemDef,
+  ensureCollectibleSlot,
   getInventorySlot
 } from './items'
 
@@ -124,11 +125,26 @@ const collectedCounts = new Map<string, number>()
 
 export function addCollected(kind: string, count: number = 1): void {
   if (count <= 0) return
+  // Make sure the item has a visible slot before bumping the count.
+  // Looks up materials and craftables; for ids already in the starter
+  // layout (e.g. hammer, spear) the slot exists so this is a no-op and
+  // the count just tracks internally without duplicating the slot.
+  ensureCollectibleSlot(kind)
   collectedCounts.set(kind, (collectedCounts.get(kind) ?? 0) + count)
 }
 
 export function getCollectedCount(kind: string): number {
   return collectedCounts.get(kind) ?? 0
+}
+
+// Decrement the player's tally, clamped at zero. Returns the count that
+// was actually subtracted so callers can detect insufficient materials.
+export function subtractCollected(kind: string, count: number = 1): number {
+  if (count <= 0) return 0
+  const cur = collectedCounts.get(kind) ?? 0
+  const taken = Math.min(cur, count)
+  collectedCounts.set(kind, cur - taken)
+  return taken
 }
 
 export function getAllCollected(): ReadonlyMap<string, number> {
