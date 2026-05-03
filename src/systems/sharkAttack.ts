@@ -6,7 +6,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Color3, Color4 } from '@dcl/sdk/math'
 
-import { SharkAttack, SharkHittable } from '../components'
+import { SharkAttack, SharkAttackPhase, SharkHittable } from '../components'
 import { repelAttacker } from './sharkDirector'
 
 // Lets the player damage a shark while it is biting a raft. Two timed hits
@@ -29,8 +29,6 @@ const HIT_COOLDOWN_S = 1
 const FLASH_DURATION_S = 0.09
 const HITS_TO_REPEL = 2
 
-const PHASE_BITE = 1
-
 export function sharkAttackSystem(dt: number): void {
   for (const [entity] of engine.getEntitiesWith(SharkHittable)) {
     const hit = SharkHittable.getMutable(entity)
@@ -52,7 +50,7 @@ export function sharkAttackSystem(dt: number): void {
 export function tryHitShark(entity: Entity): void {
   const attack = SharkAttack.getOrNull(entity)
   if (attack === null) return
-  if (attack.phase !== PHASE_BITE) return
+  if (attack.phase !== SharkAttackPhase.Bite) return
 
   const hit = SharkHittable.getMutableOrNull(entity)
   if (hit === null) return

@@ -54,17 +54,26 @@ export const PlacementMarker = engine.defineComponent('mystic-pond:placement-mar
 // Per-shark attack state. Present only while a shark is in the attack cycle
 // (approach → bite → return). Drives `systems/sharkDirector.ts`; the orbit
 // system early-returns on entities carrying this so the director can move
-// them directly.
-//
-// `phase` encodes the cycle step:
-//   0 = approaching the target (lerp orbit pos → platform pos)
-//   1 = biting (held above platform, plays bite clip, pulses tint)
-//   2 = returning (lerp current pos → freshly-recentered orbit slot)
+// them directly. See `SharkAttackPhase` for the phase encoding.
 export const SharkAttack = engine.defineComponent('mystic-pond:shark-attack', {
   target: Schemas.Entity,
   phase: Schemas.Int,
   elapsed: Schemas.Number
 })
+
+// Phase encoding for `SharkAttack.phase`. Stored as Int so the schema can
+// network-serialise; the enum keeps call sites readable. Re-spacing after
+// the attack is handled by the orbit system itself, so there's no
+// dedicated resync phase here — at the end of RETURN we simply delete
+// SharkAttack and the formation reflows naturally.
+export const enum SharkAttackPhase {
+  // Approaching the target (lerp orbit pos → platform pos).
+  Approach = 0,
+  // Biting (held above platform, plays bite clip, pulses tint).
+  Bite = 1,
+  // Returning (lerp current pos → freshly-recentered orbit slot).
+  Return = 2
+}
 
 // Tag on the platform currently being eaten. Lets target selection skip it
 // and lets future systems (UI, FX) react to the attacked state.
@@ -84,15 +93,22 @@ export const SharkHittable = engine.defineComponent('mystic-pond:shark-hittable'
   flashTimer: Schemas.Number
 })
 
-// Tags the single thrown-hook entity. Phase encodes the throw cycle:
-//   0 = flying    (ballistic — velocity integrated with gravity each frame)
-//   1 = floating  (touched water — pulled back toward the player along XZ)
-// `velocity` is metres/second; only meaningful during phase 0.
+// Tags the single thrown-hook entity. See `HookPhase` for the phase
+// encoding. `velocity` is metres/second; only meaningful while flying.
 export const Hook = engine.defineComponent('mystic-pond:hook', {
   phase: Schemas.Int,
   elapsed: Schemas.Number,
   velocity: Schemas.Vector3
 })
+
+// Phase encoding for `Hook.phase`. Stored as Int for serialisation; this
+// enum keeps call sites readable.
+export const enum HookPhase {
+  // Ballistic — velocity integrated with gravity each frame.
+  Flying = 0,
+  // Touched water — pulled back toward the player along XZ.
+  Floating = 1
+}
 
 // Floating debris (wood / barrel / plants / plastic / metal) drifting past
 // the rafts along the sea-flow direction. Spawned in groups by

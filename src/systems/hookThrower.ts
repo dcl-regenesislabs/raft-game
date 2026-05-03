@@ -9,7 +9,20 @@ import {
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
-import { FloatingGarbage, Hook } from '../components'
+import {
+  HOOK_CHARGE_DURATION_S,
+  HOOK_COLLECT_RADIUS_XZ,
+  HOOK_GRAVITY,
+  HOOK_MAX_FLIGHT_TIME_S,
+  HOOK_MAX_THROW_SPEED,
+  HOOK_MIN_THROW_SPEED,
+  HOOK_REEL_DESPAWN_RADIUS_XZ,
+  HOOK_REEL_SPEED,
+  HOOK_REEL_WOBBLE_SCALE,
+  HOOK_WOBBLE_AMPLITUDE_DEG,
+  HOOK_WOBBLE_FREQ
+} from '../config/gameConfig'
+import { FloatingGarbage, Hook, HookPhase } from '../components'
 import {
   HOOK_FORWARD_ROTATION,
   createHookEntity,
@@ -29,47 +42,10 @@ import {
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
+import { RAD_TO_DEG, randInt } from '../utils/math'
+import { computeWobble } from '../utils/wobble'
 
 const HOOK_SLOT = 0
-
-// Initial speed bounds along the aim direction. Charge ramps the throw from
-// MIN (instant tap) up to MAX (held two full seconds). Combined with GRAVITY
-// the max throw covers ~10–11 m on flat water; min is a short chest-height
-// dribble.
-const MIN_THROW_SPEED = 6
-const MAX_THROW_SPEED = 18
-// Hold the pointer for this long to fill the charge bar all the way. At the
-// instant the bar fills the throw fires automatically — releasing earlier
-// throws at the partial strength.
-const CHARGE_DURATION_S = 0.5
-// Slightly stronger than real gravity so the arc resolves quickly and reads
-// as a "throw" rather than a slow lob.
-const GRAVITY = 18
-// Constant horizontal speed of the hook while floating back toward the
-// player. Tuned so a max-distance throw reels in over ~1.5 s.
-const REEL_SPEED = 7
-// Despawn when the hook is this close to the player on the XZ plane.
-const REEL_DESPAWN_RADIUS_XZ = 1.2
-// Safety: if a throw never crosses water level (e.g. player throws into a
-// wall), force-transition into floating after this much airtime.
-const MAX_FLIGHT_TIME_S = 6
-// Lateral (XZ) capture radius around the throw line. Anything within this
-// distance of the path on the water surface gets reeled in on splashdown.
-// Tuned generous so a "close enough" throw still rewards the player.
-const COLLECT_RADIUS_XZ = 1.8
-
-const PHASE_FLYING = 0
-const PHASE_FLOATING = 1
-
-// Mid-air wobble. Three independent sine waves on each axis at detuned
-// frequencies give an irregular tumble that reads as drag/wind resistance.
-// Smaller-than-instinctive amplitudes look right because the heading is
-// already snapping toward the player — the wobble is a quiver on top, not
-// a tumble.
-const SHAKE_AMPLITUDE_DEG = 9
-const SHAKE_FREQ = 22
-
-const RAD_TO_DEG = 180 / Math.PI
 
 const CAMERA_FORWARD = Vector3.create(0, 0, 1)
 // Player "hand" anchor in camera-local space: slightly below + forward of
@@ -180,7 +156,7 @@ function tickCharge(dt: number, handPos: Vector3): void {
     return
   }
 
-  chargeT = Math.min(1, chargeT + dt / CHARGE_DURATION_S)
+  chargeT = Math.min(1, chargeT + dt / HOOK_CHARGE_DURATION_S)
   if (chargeT >= 1) {
     spawnAndThrow(handPos, 1)
     cancelCharge()
@@ -195,11 +171,12 @@ function cancelCharge(): void {
 function spawnAndThrow(handPos: Vector3, strength: number): void {
   const aim = computeAimDir()
   if (aim === null) return
-  const speed = MIN_THROW_SPEED + (MAX_THROW_SPEED - MIN_THROW_SPEED) * strength
+  const speed =
+    HOOK_MIN_THROW_SPEED + (HOOK_MAX_THROW_SPEED - HOOK_MIN_THROW_SPEED) * strength
   hookEntity = createHookEntity()
   if (ropeEntity === null) ropeEntity = createRopeEntity()
   Hook.create(hookEntity, {
-    phase: PHASE_FLYING,
+    phase: HookPhase.Flying,
     elapsed: 0,
     velocity: Vector3.create(aim.x * speed, aim.y * speed, aim.z * speed)
   })
@@ -246,20 +223,20 @@ function advanceHook(dt: number, handPos: Vector3): void {
   const transform = Transform.getMutable(hookEntity)
   const pos = transform.position
 
-  if (state.phase === PHASE_FLYING) {
+  if (state.phase === HookPhase.Flying) {
     state.velocity = Vector3.create(
       state.velocity.x,
-      state.velocity.y - GRAVITY * dt,
+      state.velocity.y - HOOK_GRAVITY * dt,
       state.velocity.z
     )
     const nextY = pos.y + state.velocity.y * dt
-    if (nextY <= WATER_LEVEL || state.elapsed > MAX_FLIGHT_TIME_S) {
+    if (nextY <= WATER_LEVEL || state.elapsed > HOOK_MAX_FLIGHT_TIME_S) {
       const nextX = pos.x + state.velocity.x * dt
       const nextZ = pos.z + state.velocity.z * dt
       transform.position = Vector3.create(nextX, WATER_LEVEL, nextZ)
-      state.phase = PHASE_FLOATING
+      state.phase = HookPhase.Floating
       // Splashdown — sweep every floating-garbage entity whose XZ position
-      // lies within COLLECT_RADIUS_XZ of the throw's straight-line path
+      // lies within HOOK_COLLECT_RADIUS_XZ of the throw's straight-line path
       // (handPos → splash). The XZ projection of a ballistic throw is a
       // straight line because gravity only affects Y, so a single segment
       // captures the whole "path" without any per-frame history.
@@ -275,30 +252,29 @@ function advanceHook(dt: number, handPos: Vector3): void {
       // the same heading used during reeling, the hook stays oriented
       // consistently from throw release through splash through retrieval.
       // A small detuned-axis wobble layers on top to read as flight drag.
-      const t = state.elapsed
-      const wx = Math.sin(t * SHAKE_FREQ) * SHAKE_AMPLITUDE_DEG
-      const wy =
-        Math.sin(t * SHAKE_FREQ * 1.31 + 1.7) * SHAKE_AMPLITUDE_DEG * 0.7
-      const wz =
-        Math.sin(t * SHAKE_FREQ * 0.79 + 0.5) * SHAKE_AMPLITUDE_DEG * 1.1
+      const w = computeWobble(
+        state.elapsed,
+        HOOK_WOBBLE_FREQ,
+        HOOK_WOBBLE_AMPLITUDE_DEG
+      )
       transform.rotation = composeHeading(
         handPos.x - nextX,
         0,
         handPos.z - nextZ,
-        wx,
-        wy,
-        wz
+        w.x,
+        w.y,
+        w.z
       )
     }
-  } else if (state.phase === PHASE_FLOATING) {
+  } else if (state.phase === HookPhase.Floating) {
     const dx = handPos.x - pos.x
     const dz = handPos.z - pos.z
     const distXZ = Math.sqrt(dx * dx + dz * dz)
-    if (distXZ < REEL_DESPAWN_RADIUS_XZ) {
+    if (distXZ < HOOK_REEL_DESPAWN_RADIUS_XZ) {
       despawnHook()
       return
     }
-    const step = Math.min(REEL_SPEED * dt, distXZ)
+    const step = Math.min(HOOK_REEL_SPEED * dt, distXZ)
     const nx = dx / distXZ
     const nz = dz / distXZ
     transform.position = Vector3.create(
@@ -310,21 +286,13 @@ function advanceHook(dt: number, handPos: Vector3): void {
     // aimed at the player so the line of action stays readable. Wobble
     // continues — same sine pattern as flight, dialled down so the hook
     // looks like it's bobbing on water rather than fighting wind.
-    const t = state.elapsed
-    const REEL_WOBBLE_SCALE = 0.45
-    const wx =
-      Math.sin(t * SHAKE_FREQ) * SHAKE_AMPLITUDE_DEG * REEL_WOBBLE_SCALE
-    const wy =
-      Math.sin(t * SHAKE_FREQ * 1.31 + 1.7) *
-      SHAKE_AMPLITUDE_DEG *
-      0.7 *
-      REEL_WOBBLE_SCALE
-    const wz =
-      Math.sin(t * SHAKE_FREQ * 0.79 + 0.5) *
-      SHAKE_AMPLITUDE_DEG *
-      1.1 *
-      REEL_WOBBLE_SCALE
-    transform.rotation = composeHeading(dx, 0, dz, wx, wy, wz)
+    const w = computeWobble(
+      state.elapsed,
+      HOOK_WOBBLE_FREQ,
+      HOOK_WOBBLE_AMPLITUDE_DEG,
+      HOOK_REEL_WOBBLE_SCALE
+    )
+    transform.rotation = composeHeading(dx, 0, dz, w.x, w.y, w.z)
   }
 
   if (ropeEntity !== null) {
@@ -347,11 +315,6 @@ function bankGrabbedItem(kind: string): void {
     return
   }
   addCollected(kind, 1)
-}
-
-// Inclusive integer in [min, max].
-function randInt(min: number, max: number): number {
-  return min + Math.floor(Math.random() * (max - min + 1))
 }
 
 function despawnHook(): void {
@@ -405,7 +368,7 @@ function computeHandPos(): Vector3 | null {
 }
 
 // Sweep all FloatingGarbage entities and attach every one whose XZ position
-// lies within COLLECT_RADIUS_XZ of the throw's path segment to the hook.
+// lies within HOOK_COLLECT_RADIUS_XZ of the throw's path segment to the hook.
 // Items hang off the hook (via Transform.parent) so they ride back to the
 // player as the hook reels in; the inventory credit happens in `despawnHook`
 // when the hook actually reaches the player.
@@ -416,7 +379,7 @@ function collectGarbageAlongPath(
   endZ: number
 ): void {
   if (hookEntity === null) return
-  const radiusSq = COLLECT_RADIUS_XZ * COLLECT_RADIUS_XZ
+  const radiusSq = HOOK_COLLECT_RADIUS_XZ * HOOK_COLLECT_RADIUS_XZ
   for (const [entity] of engine.getEntitiesWith(FloatingGarbage, Transform)) {
     const pos = Transform.get(entity).position
     if (

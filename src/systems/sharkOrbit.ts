@@ -2,11 +2,8 @@ import { Entity, Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { SharkAttack, SharkOrbit } from '../components'
-
-const TAU = Math.PI * 2
-const RAD_TO_DEG = 180 / Math.PI
-// Half-range of the spacing speed multiplier; range becomes [0.7, 1.3].
-const SPACING_MULT_RANGE = 0.3
+import { SHARK_SPACING_MULT_RANGE } from '../config/gameConfig'
+import { RAD_TO_DEG, TAU, clamp, wrapAngle } from '../utils/math'
 
 // Per-frame circular motion + adaptive spacing.
 //
@@ -55,7 +52,7 @@ export function sharkOrbitSystem(dt: number): void {
     const backwardGap = orbiting.length > 1 ? TAU - maxFwd : TAU
 
     const adj = clamp((forwardGap - backwardGap) / targetGap, -1, 1)
-    const mult = 1 + SPACING_MULT_RANGE * adj
+    const mult = 1 + SHARK_SPACING_MULT_RANGE * adj
 
     // speed is linear (m/s); angular = speed / radius. Guard against a
     // near-zero radius so we don't spin wildly during a transient.
@@ -77,10 +74,3 @@ export function sharkOrbitSystem(dt: number): void {
   }
 }
 
-function wrapAngle(value: number): number {
-  return ((value % TAU) + TAU) % TAU
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v
-}

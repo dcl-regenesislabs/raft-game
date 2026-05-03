@@ -3,11 +3,11 @@ import { Quaternion } from '@dcl/sdk/math'
 
 import { FloatingGarbage } from '../components'
 import { GRID_ORIGIN } from '../factories/platform'
+import { RAD_TO_DEG } from '../utils/math'
 
 // Vertical bob frequency in radians/second. ~0.2 Hz feels like a slow
 // ocean swell rather than a video-game wobble.
 const BOB_RATE = Math.PI * 0.4
-const RAD_TO_DEG = 180 / Math.PI
 // Margin (metres) inside the parcel boundary at which we despawn an item
 // that has drifted out of view. Must be smaller than the spawn-side margin
 // in `garbageSpawner.ts` (MAP_EDGE_SPAWN_MARGIN) so freshly-spawned items

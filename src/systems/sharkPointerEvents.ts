@@ -6,18 +6,13 @@ import {
   engine
 } from '@dcl/sdk/ecs'
 
-import { SharkAttack, SharkHittable } from '../components'
+import { SharkAttack, SharkAttackPhase, SharkHittable } from '../components'
 import { getHeldItemKind } from '../factories/heldItem'
 import {
   SHARK_HOVER_HIT,
   SHARK_HOVER_MAX_DISTANCE,
   SHARK_HOVER_NEEDS_SPEAR
 } from '../factories/shark'
-
-// Mirrors the PHASE_BITE encoding used by sharkDirector / sharkAttack.
-// A shark is only attackable while it is biting a raft — orbiting sharks
-// and approach/return phases are ignored.
-const PHASE_BITE = 1
 
 // Player must be within this distance to a biting shark for the hover
 // prompt to appear and a hit to register. Matches STRIKE_REACH_M in the
@@ -39,7 +34,8 @@ export function sharkPointerEventsSystem(_dt: number): void {
 
   for (const [entity] of engine.getEntitiesWith(SharkHittable)) {
     const attack = SharkAttack.getOrNull(entity)
-    const isBiting = attack !== null && attack.phase === PHASE_BITE
+    const isBiting =
+      attack !== null && attack.phase === SharkAttackPhase.Bite
 
     let inRange = false
     if (isBiting) {
