@@ -53,11 +53,11 @@ Entity creation is centralized in factory functions (e.g. `src/factory.ts`) that
 
 ## SDK reference
 
-`cursor.config` and `.cursor/rules/rules.md` point at external SDK7 reference material. When unsure about an API, prefer the README's primer and the official docs at https://docs.decentraland.org/creator/ over guessing.
+When unsure about an API, prefer the README's primer, the topic skills under `.agents/skills/`, and the official docs at https://docs.decentraland.org/creator/ over guessing.
 
 ## Skills
 
-Two layers under `.agents/skills/`:
+Two layers under `.agents/skills/`, both surfaced to Claude Code via symlinks in `.claude/skills/`:
 
-- `decentraland-sdk-skills/` — upstream-vendored topic skills installed via `npx skills add decentraland/sdk-skills`. Treat as read-only; refreshing overwrites this directory.
+- `decentraland-sdk-skills/` — upstream-vendored topic skills installed via `npx skills add decentraland/sdk-skills`. Treat as read-only; refreshing overwrites this directory. Entry point: `.agents/skills/decentraland-sdk-skills/SKILL.md`.
 - `local/` — project-local skills that survive `skills add` refreshes. Start at `.agents/skills/local/SKILL.md` for the index. Currently includes `mobile-ui-scaling` (godot-explorer-style HUD scaling — fixed pixel sizes, edge-anchored positions, `SafeAreaContainer` usage).
