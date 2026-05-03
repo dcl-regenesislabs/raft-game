@@ -55,10 +55,6 @@ const HAND_OFFSET_LOCAL = Vector3.create(0.25, -0.45, 0.4)
 
 let hookEntity: Entity | null = null
 let ropeEntity: Entity | null = null
-// XZ origin of the active throw — used to build the swept line segment for
-// the splashdown collector. Set in `spawnAndThrow`, cleared on despawn.
-let throwStartX = 0
-let throwStartZ = 0
 // Items attached to the hook between splashdown and despawn. They ride the
 // hook back to the player by having their world position copied from the
 // hook each frame plus a small offset. We deliberately do NOT use
@@ -180,8 +176,6 @@ function spawnAndThrow(handPos: Vector3, strength: number): void {
     elapsed: 0,
     velocity: Vector3.create(aim.x * speed, aim.y * speed, aim.z * speed)
   })
-  throwStartX = handPos.x
-  throwStartZ = handPos.z
   const transform = Transform.getMutable(hookEntity)
   transform.position = Vector3.create(handPos.x, handPos.y, handPos.z)
   // Face the player on the XZ plane (consistent with flight + reeling).
@@ -235,12 +229,10 @@ function advanceHook(dt: number, handPos: Vector3): void {
       const nextZ = pos.z + state.velocity.z * dt
       transform.position = Vector3.create(nextX, WATER_LEVEL, nextZ)
       state.phase = HookPhase.Floating
-      // Splashdown — sweep every floating-garbage entity whose XZ position
-      // lies within HOOK_COLLECT_RADIUS_XZ of the throw's straight-line path
-      // (handPos → splash). The XZ projection of a ballistic throw is a
-      // straight line because gravity only affects Y, so a single segment
-      // captures the whole "path" without any per-frame history.
-      collectGarbageAlongPath(throwStartX, throwStartZ, nextX, nextZ)
+      // Splashdown — snag any floating garbage already within reach. Anything
+      // further out gets a chance every frame as the hook reels in (below),
+      // so the throw plays as a moving capture rather than a one-shot sweep.
+      collectGarbageNearHook(nextX, nextZ)
       // Keep `elapsed` ticking across the phase boundary so the wobble
       // sine waves carry on without a visual reset on splashdown.
       // (Rotation will be set by the FLOATING branch on the next frame.)
@@ -277,11 +269,13 @@ function advanceHook(dt: number, handPos: Vector3): void {
     const step = Math.min(HOOK_REEL_SPEED * dt, distXZ)
     const nx = dx / distXZ
     const nz = dz / distXZ
-    transform.position = Vector3.create(
-      pos.x + nx * step,
-      WATER_LEVEL,
-      pos.z + nz * step
-    )
+    const reeledX = pos.x + nx * step
+    const reeledZ = pos.z + nz * step
+    transform.position = Vector3.create(reeledX, WATER_LEVEL, reeledZ)
+    // Snag any floating garbage that drifted (or got reeled) into reach this
+    // frame. Items collected mid-reel join the cluster and ride home with
+    // the rest, so the hook keeps "fishing" for the entire trip back.
+    collectGarbageNearHook(reeledX, reeledZ)
     // Reel direction changes as the player moves; keep the hook visually
     // aimed at the player so the line of action stays readable. Wobble
     // continues — same sine pattern as flight, dialled down so the hook
@@ -367,27 +361,19 @@ function computeHandPos(): Vector3 | null {
   )
 }
 
-// Sweep all FloatingGarbage entities and attach every one whose XZ position
-// lies within HOOK_COLLECT_RADIUS_XZ of the throw's path segment to the hook.
-// Items hang off the hook (via Transform.parent) so they ride back to the
-// player as the hook reels in; the inventory credit happens in `despawnHook`
-// when the hook actually reaches the player.
-function collectGarbageAlongPath(
-  startX: number,
-  startZ: number,
-  endX: number,
-  endZ: number
-): void {
+// Attach every FloatingGarbage entity within HOOK_COLLECT_RADIUS_XZ of the
+// hook's current XZ position. Called on splashdown and again every reel
+// frame, so the hook keeps catching items as it slides home rather than
+// only the ones it landed on. Inventory credit is deferred to `despawnHook`.
+function collectGarbageNearHook(hookX: number, hookZ: number): void {
   if (hookEntity === null) return
   const radiusSq = HOOK_COLLECT_RADIUS_XZ * HOOK_COLLECT_RADIUS_XZ
+  let collectedAny = false
   for (const [entity] of engine.getEntitiesWith(FloatingGarbage, Transform)) {
     const pos = Transform.get(entity).position
-    if (
-      distanceSqPointToSegmentXZ(pos.x, pos.z, startX, startZ, endX, endZ) >
-      radiusSq
-    ) {
-      continue
-    }
+    const ex = pos.x - hookX
+    const ez = pos.z - hookZ
+    if (ex * ex + ez * ez > radiusSq) continue
     const kind = FloatingGarbage.get(entity).kind
     // Detach from the drift system — the item is no longer floating; it's
     // hooked. Without this the float system would keep advancing its world
@@ -401,10 +387,12 @@ function collectGarbageAlongPath(
       offsetY: offset.y,
       offsetZ: offset.z
     })
+    collectedAny = true
   }
-  // Snap items onto the hook position immediately so they don't show one
-  // frame at their old water position before the next advanceHook runs.
-  followGrabbedItems()
+  // Snap newly-grabbed items onto the hook so they don't render one frame
+  // at their old water position. Skip when nothing was added — the regular
+  // followGrabbedItems pass at the end of advanceHook covers prior items.
+  if (collectedAny) followGrabbedItems()
 }
 
 // Cluster offset around the hook in WORLD-space metres, staggered by index
@@ -438,30 +426,3 @@ function followGrabbedItems(): void {
   }
 }
 
-// Squared distance from (px, pz) to the line segment [(ax, az), (bx, bz)]
-// on the XZ plane. Squared because all callers compare against r² — saves
-// a sqrt per garbage entity per throw.
-function distanceSqPointToSegmentXZ(
-  px: number,
-  pz: number,
-  ax: number,
-  az: number,
-  bx: number,
-  bz: number
-): number {
-  const dx = bx - ax
-  const dz = bz - az
-  const lenSq = dx * dx + dz * dz
-  let cx = ax
-  let cz = az
-  if (lenSq > 1e-6) {
-    let t = ((px - ax) * dx + (pz - az) * dz) / lenSq
-    if (t < 0) t = 0
-    else if (t > 1) t = 1
-    cx = ax + t * dx
-    cz = az + t * dz
-  }
-  const ex = px - cx
-  const ez = pz - cz
-  return ex * ex + ez * ez
-}
