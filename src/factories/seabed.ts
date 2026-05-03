@@ -9,24 +9,25 @@ import {
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
-import { SEABED_Y } from './sceneLevels'
+import { DEMO_PARCEL_GRID, PARCEL_SIZE_M, SEABED_Y } from './sceneLevels'
 
-const PARCEL_GRID = 5
-const PARCEL_SIZE = 16
-const TOTAL_SIZE = PARCEL_GRID * PARCEL_SIZE // 80 m
 const SAND_TEXTURE = 'assets/scene/seabed/sand.png'
-// Higher repeat than water: sand grain reads as fine detail, not as a tile.
-const TILE_COUNT = 10
+// Sand grain reads as fine detail, so we keep ~2 repeats per parcel
+// regardless of scene size (10 tiles for 5x5; 100 tiles for 50x50).
+const TILES_PER_PARCEL = 2
 
-export function createSeabed(): Entity {
+export function createSeabed(parcelGrid: number = DEMO_PARCEL_GRID): Entity {
+  const totalSize = parcelGrid * PARCEL_SIZE_M
+  const tileCount = parcelGrid * TILES_PER_PARCEL
+
   const entity = engine.addEntity()
   Transform.create(entity, {
-    position: Vector3.create(TOTAL_SIZE / 2, SEABED_Y, TOTAL_SIZE / 2),
+    position: Vector3.create(totalSize / 2, SEABED_Y, totalSize / 2),
     rotation: Quaternion.fromEulerDegrees(-90, 0, 0),
-    scale: Vector3.create(TOTAL_SIZE, TOTAL_SIZE, 1)
+    scale: Vector3.create(totalSize, totalSize, 1)
   })
 
-  MeshRenderer.setPlane(entity, buildTiledUVs(TILE_COUNT))
+  MeshRenderer.setPlane(entity, buildTiledUVs(tileCount))
 
   Material.setPbrMaterial(entity, {
     texture: Material.Texture.Common({

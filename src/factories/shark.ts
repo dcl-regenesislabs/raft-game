@@ -3,15 +3,12 @@ import {
   ColliderLayer,
   Entity,
   GltfContainer,
-  InputAction,
   Transform,
-  engine,
-  pointerEventsSystem
+  engine
 } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
 
 import { SharkHittable, SharkOrbit } from '../components'
-import { tryHitShark } from '../systems/sharkAttack'
 import { SEABED_Y } from './sceneLevels'
 
 const SHARK_MODEL = 'assets/scene/sharks/shark.glb'
@@ -25,16 +22,19 @@ export const SHARK_Y = SEABED_Y + 1.5
 // current ring radius to get the angular velocity each frame, so the
 // shark's apparent speed stays constant as the raft (and ring) grows.
 export const SHARK_DEFAULT_SPEED = 4.2
-export const SHARK_DEFAULT_SCALE = 1
+export const SHARK_DEFAULT_SCALE = 0.8
 export const SHARK_DEFAULT_HEADING_OFFSET_DEG = 0
 
-const HIT_OPTS = {
-  button: InputAction.IA_POINTER,
-  hoverText: 'HIT SHARK',
-  // Player has to be on/near the platform to reach a biting shark. Anything
-  // larger lets the player ping orbiting sharks from across the pond.
-  maxDistance: 12
-}
+// Hover text variants. The actual hit registration happens in the spear
+// animation system — these strings exist purely to telegraph what the
+// player needs to do.
+export const SHARK_HOVER_HIT = 'HIT SHARK'
+export const SHARK_HOVER_NEEDS_SPEAR = 'EQUIP SPEAR'
+// Max camera→shark distance for the hover prompt. The pointer-events
+// system also gates by an in-range check at this same radius before
+// attaching the component, so this is just a safety net for the SDK's
+// own hover-feedback culling.
+export const SHARK_HOVER_MAX_DISTANCE = 4
 
 export interface SharkParams {
   center: Vector3
@@ -103,10 +103,9 @@ export function createShark(params: SharkParams): Entity {
     headingOffsetDeg
   })
 
-  pointerEventsSystem.onPointerDown({ entity, opts: HIT_OPTS }, () => {
-    tryHitShark(entity)
-  })
-
+  // PointerEvents are attached/removed dynamically by sharkPointerEvents
+  // system based on bite phase + player proximity, so resting orbiters
+  // don't show a hover prompt and unreachable biters don't either.
   SharkHittable.create(entity, {
     hits: 0,
     cooldown: 0,

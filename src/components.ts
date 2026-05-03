@@ -69,6 +69,48 @@ export const SharkHittable = engine.defineComponent('mystic-pond:shark-hittable'
   flashTimer: Schemas.Number
 })
 
+// Tags the single thrown-hook entity. Phase encodes the throw cycle:
+//   0 = flying    (ballistic — velocity integrated with gravity each frame)
+//   1 = floating  (touched water — pulled back toward the player along XZ)
+// `velocity` is metres/second; only meaningful during phase 0.
+export const Hook = engine.defineComponent('mystic-pond:hook', {
+  phase: Schemas.Int,
+  elapsed: Schemas.Number,
+  velocity: Schemas.Vector3
+})
+
+// Floating debris (wood / barrel / plants / plastic / metal) drifting past
+// the rafts along the sea-flow direction. Spawned in groups by
+// `systems/garbageSpawner.ts`, advanced + despawned by `systems/floatingGarbage.ts`.
+// Velocity is stored per-entity (not derived) so the spawner can perturb
+// individual items in a group without recomputing the global flow vector.
+export const FloatingGarbage = engine.defineComponent('mystic-pond:floating-garbage', {
+  // Which debris type this is (matches GarbageKind in factories/floatingGarbage).
+  // Kept on the component so the hook collector can credit the right slot
+  // without parsing the GLB src.
+  kind: Schemas.String,
+  velocityX: Schemas.Number,
+  velocityZ: Schemas.Number,
+  // Mean Y the bob oscillates around. Set at spawn to ~water surface.
+  baseY: Schemas.Number,
+  bobPhase: Schemas.Number,
+  bobAmplitude: Schemas.Number,
+  // Initial yaw in degrees. The drift system rebuilds rotation from euler
+  // every frame (yaw drift + pitch/roll wobble), so we need to remember the
+  // starting yaw rather than mutating the quaternion incrementally.
+  baseYawDeg: Schemas.Number,
+  // Yaw rate in rad/s. Sign sets direction; small values give a gentle tumble.
+  spinSpeed: Schemas.Number,
+  // Pitch/roll oscillation amplitude in degrees. Drives the "rocking on
+  // waves" feel — barrels use a big value, flat debris (plants) almost zero.
+  rollAmplitude: Schemas.Number,
+  // Seconds since spawn. The drift system removes the entity once this
+  // exceeds maxLifetime, OR when it leaves the scene parcels (whichever
+  // comes first) — keeps despawn cheap (no centroid recompute per item).
+  lifetime: Schemas.Number,
+  maxLifetime: Schemas.Number
+})
+
 // Drives circular motion around a fixed point on the XZ plane. Used by sharks
 // patrolling the platform. Consumed by `systems/sharkOrbit.ts`.
 export const SharkOrbit = engine.defineComponent('shark-orbit', {

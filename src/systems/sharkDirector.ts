@@ -35,7 +35,10 @@ const PHASE_BITE = 1
 const PHASE_RETURN = 2
 
 // --- tunables ---
-const ATTACK_INTERVAL_S = 10
+// Attacks pace at one every 5 minutes, and the clock only ticks while at
+// least one destructible (non-Main) platform exists — players who have only
+// the starter raft are never harassed.
+const ATTACK_INTERVAL_S = 5 * 60
 const APPROACH_DURATION_S = 2.0
 const BITE_DURATION_S = 5
 const RETURN_DURATION_S = 3.0
@@ -66,6 +69,10 @@ const BITE_PITCH_DEG = -25
 // feel without moving the shark off the anchor.
 const BITE_SHAKE_AMP_DEG = 10
 const BITE_SHAKE_HZ = 4
+// Vertical offset (metres) applied to the bite anchor relative to the water
+// surface. Negative sinks the shark so only the head/snout breaches the deck
+// edge while the body stays submerged.
+const BITE_Y_OFFSET = -0.3
 
 const TAU = Math.PI * 2
 const RAD_TO_DEG = 180 / Math.PI
@@ -119,7 +126,13 @@ export function sharkDirectorSystem(dt: number): void {
 
   cancelStaleAttacks()
 
-  timeSinceLastAttack += dt
+  // Freeze the schedule clock while the player has only the starter raft —
+  // there's nothing attackable, so the 5-minute countdown shouldn't tick.
+  if (hasAttackablePlatform()) {
+    timeSinceLastAttack += dt
+  } else {
+    timeSinceLastAttack = 0
+  }
   if (timeSinceLastAttack >= ATTACK_INTERVAL_S && !anySharkAttacking()) {
     const choice = selectAttack()
     if (choice !== null) {
@@ -273,6 +286,15 @@ function wrapAngle(value: number): number {
 }
 
 // --- selection ---
+
+// True when at least one destructible platform (built by the player) exists.
+// The starter raft carries the MainPlatform tag and is excluded.
+function hasAttackablePlatform(): boolean {
+  for (const [entity] of engine.getEntitiesWith(Platform)) {
+    if (MainPlatform.getOrNull(entity) === null) return true
+  }
+  return false
+}
 
 // Only approach + bite count as "actively attacking" for scheduling. Sharks
 // in return/resync have already done their damage and shouldn't block the
@@ -450,12 +472,12 @@ function biteAnchorFor(target: Entity, attackerStart: Vector3): Vector3 {
   } else {
     edgeZ = p.z + Math.sign(dz || 1) * halfZ
   }
-  return Vector3.create(edgeX, WATER_LEVEL, edgeZ)
+  return Vector3.create(edgeX, WATER_LEVEL + BITE_Y_OFFSET, edgeZ)
 }
 
 function platformCenterPos(target: Entity): Vector3 {
   const p = Transform.get(target).position
-  return Vector3.create(p.x, WATER_LEVEL, p.z)
+  return Vector3.create(p.x, WATER_LEVEL + BITE_Y_OFFSET, p.z)
 }
 
 function cancelStaleAttacks(): void {

@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 20.x
       - run: npm install
-      - name: Deploy to raft.dcl.eth
+      - name: Deploy FULL game to raft.dcl.eth
         env:
           DCL_PRIVATE_KEY: ${{ secrets.DCL_PRIVATE_KEY }}
-        run: npm run deploy -- --target-content https://worlds-content-server.decentraland.org
+        run: npm run deploy:full

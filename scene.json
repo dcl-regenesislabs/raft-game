@@ -15,7 +15,7 @@
   "main": "bin/index.js",
   "tags": [],
   "worldConfiguration": {
-    "name": "raft.dcl.eth"
+    "name": "italy2026.dcl.eth"
   },
   "scene": {
     "parcels": [
@@ -53,12 +53,12 @@
       "default": true,
       "position": {
         "x": [38, 42],
-        "y": [51, 51],
+        "y": [5, 5],
         "z": [38, 42]
       },
       "cameraTarget": {
         "x": 40,
-        "y": 51,
+        "y": 5,
         "z": 40
       }
     }

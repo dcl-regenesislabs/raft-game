@@ -6,6 +6,10 @@
     "start": "sdk-commands start",
     "deploy": "sdk-commands deploy",
     "build": "sdk-commands build",
+    "prepare:demo": "node scripts/build-scene-json.mjs --target=demo",
+    "prepare:full": "node scripts/build-scene-json.mjs --target=full",
+    "deploy:demo": "npm run prepare:demo && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org",
+    "deploy:full": "npm run prepare:full && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org",
     "upgrade-sdk": "npm install --save-dev @dcl/sdk@latest",
     "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next"
   },

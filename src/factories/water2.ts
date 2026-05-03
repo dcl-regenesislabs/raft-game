@@ -11,28 +11,27 @@ import {
 import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { WaterScroll } from '../components'
-import { WATER_LEVEL } from './sceneLevels'
+import { DEMO_PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from './sceneLevels'
 
-const PARCEL_GRID = 5
-const PARCEL_SIZE = 16
-const TOTAL_SIZE = PARCEL_GRID * PARCEL_SIZE // 80 m
 const WATER_TEXTURE = 'assets/scene/water/water-tile-v2.png'
 const WATER_BUMP_TEXTURE = 'assets/scene/water/water-bump.png'
 const WATER_Y = WATER_LEVEL
 const WATER_ALPHA = 0.95
-// One tile per parcel (16 m of world = one image repeat). Bigger = blurrier;
-// smaller = more visible repetition.
-const TILE_COUNT = 5
+// One image repeat per parcel keeps a constant tile density across scene
+// sizes (5 tiles for the demo, 50 for the BIG raft world).
 
-export function createWaterFloorV2(): Entity {
+export function createWaterFloorV2(parcelGrid: number = DEMO_PARCEL_GRID): Entity {
+  const totalSize = parcelGrid * PARCEL_SIZE_M
+  const tileCount = parcelGrid
+
   const entity = engine.addEntity()
   Transform.create(entity, {
-    position: Vector3.create(TOTAL_SIZE / 2, WATER_Y, TOTAL_SIZE / 2),
+    position: Vector3.create(totalSize / 2, WATER_Y, totalSize / 2),
     rotation: Quaternion.fromEulerDegrees(-90, 0, 0),
-    scale: Vector3.create(TOTAL_SIZE, TOTAL_SIZE, 1)
+    scale: Vector3.create(totalSize, totalSize, 1)
   })
 
-  MeshRenderer.setPlane(entity, buildTiledUVs(TILE_COUNT))
+  MeshRenderer.setPlane(entity, buildTiledUVs(tileCount))
 
   // Slow UV drift so the still texture looks like flowing water. The system
   // (systems/waterScroll.ts) overrides MeshRenderer.setPlane each frame.
@@ -41,7 +40,7 @@ export function createWaterFloorV2(): Entity {
     speedV: 0.025,
     offsetU: 0,
     offsetV: 0,
-    tileCount: TILE_COUNT
+    tileCount: tileCount
   })
 
   Material.setPbrMaterial(entity, {
