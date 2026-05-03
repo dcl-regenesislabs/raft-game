@@ -7,18 +7,15 @@
     "navmapThumbnail": "images/scene-thumbnail.jpg",
     "favicon": "favicon_asset"
   },
-  "owner": "",
+  "owner": "Kuruk",
   "contact": {
     "name": "SDK",
     "email": ""
   },
   "main": "bin/index.js",
-  "tags": [],
+  "tags": ["raft", "italy", "kuruk", "survival"],
   "worldConfiguration": {
-    "name": "italy2026.dcl.eth",
-    "placesConfig": {
-      "optOut": false
-    }
+    "name": "italy2026.dcl.eth"
   },
   "scene": {
     "parcels": [
