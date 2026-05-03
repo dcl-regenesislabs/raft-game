@@ -1,4 +1,5 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
+import { isMobile } from '@dcl/sdk/platform'
 
 import { type StatKind, getStat } from '../statsBars'
 import {
@@ -8,7 +9,9 @@ import {
   STATS_BAR_GAP,
   STATS_BAR_HEIGHT,
   STATS_BAR_LEFT,
+  STATS_BAR_LEFT_MOBILE,
   STATS_BAR_TEXTURE,
+  STATS_BAR_TOP_MOBILE,
   STATS_BAR_WIDTH,
   STATS_FILL_BOTTOM_PCT,
   STATS_FILL_LEFT_PCT,
@@ -22,17 +25,22 @@ import {
   STATS_ORDER
 } from '../theme'
 
-// Stack vertically, anchored to the bottom-left corner. STATS_ORDER drives
-// the visual order so the first entry renders on top.
+// Stack vertically, anchored to the bottom-left corner on desktop and to
+// the upper-left corner on mobile (the bottom-left corner is reserved for
+// the native joystick on touch devices). STATS_ORDER drives the visual
+// order so the first entry renders on top.
 export function StatsBars(): ReactEcs.JSX.Element {
   const totalHeight =
     STATS_ORDER.length * STATS_BAR_HEIGHT +
     (STATS_ORDER.length - 1) * STATS_BAR_GAP
+  const mobile = isMobile()
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { bottom: STATS_BAR_BOTTOM, left: STATS_BAR_LEFT },
+        position: mobile
+          ? { top: STATS_BAR_TOP_MOBILE, left: STATS_BAR_LEFT_MOBILE }
+          : { bottom: STATS_BAR_BOTTOM, left: STATS_BAR_LEFT },
         width: STATS_BAR_WIDTH,
         height: totalHeight,
         flexDirection: 'column'
