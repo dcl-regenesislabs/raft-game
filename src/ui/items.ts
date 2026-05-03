@@ -72,11 +72,12 @@ export const INVENTORY_GRID_SLOT_COUNT =
 
 const layout: (ItemDef | null)[] = [
   // ----- Bottom bar (0–4) -----
+  // Default loadout: the three core tools. The remaining bar slots and
+  // the entire inventory panel start empty; gameplay collectors will
+  // populate them as the player picks things up.
   TOOL('hook', 'images/hud/items/item-00.png', 'hook'),
   TOOL('hammer', 'images/hud/items/item-01.png', 'hammer'),
   TOOL('spear', 'images/hud/items/item-19.png', 'spear')
-  // Remaining bottom-bar (3–4) and the entire inventory grid (5–29) are
-  // intentionally empty — gameplay collectors will populate them.
 ]
 
 while (layout.length < INVENTORY_TOTAL_SLOTS) layout.push(null)

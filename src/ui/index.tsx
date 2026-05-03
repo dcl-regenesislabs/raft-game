@@ -12,6 +12,7 @@ import {
   releaseActionButton
 } from './actionButton'
 import {
+  addCollected,
   getCollectedCount,
   getPressProgress,
   getSelectedSlot,
@@ -144,6 +145,17 @@ const INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED = -10
 // Total cell count of the inventory-panel grid. Sourced from the shared
 // linear layout so adjusting `items.ts` flows through to the UI.
 const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_LAYOUT.length - BOTTOM_BAR_SLOT_COUNT
+
+// Test-only: seed every stackable item across the whole inventory (bottom
+// bar + grid) with a random count in [1, 200] so the count badges are
+// visible without having to actually collect anything in-world. Drop this
+// IIFE once the gameplay collectors fully populate the inventory.
+;(() => {
+  for (const item of INVENTORY_LAYOUT) {
+    if (item === null || !item.stackable) continue
+    addCollected(item.id, 1 + Math.floor(Math.random() * 200))
+  }
+})()
 
 // Count badge styling. Used by both the bottom-bar slots and the inventory
 // grid cells so the visual stays consistent.
