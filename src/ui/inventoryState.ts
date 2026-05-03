@@ -5,6 +5,7 @@
 import { InputAction, inputSystem } from '@dcl/sdk/ecs'
 
 import { type HeldItemKind, setHeldItem } from '../factories/heldItem'
+import { getFoodEffect } from './foodEffects'
 import { isInventoryOpen } from './inventoryToggle'
 import {
   BOTTOM_BAR_SLOT_COUNT,
@@ -12,6 +13,7 @@ import {
   ensureCollectibleSlot,
   getInventorySlot
 } from './items'
+import { restoreStat } from './statsBars'
 
 // The bottom bar shows the first BOTTOM_BAR_SLOT_COUNT entries of the
 // linear INVENTORY_LAYOUT defined in `items.ts`.
@@ -68,12 +70,46 @@ export function selectSlot(i: number): void {
   // display-only — clicking them is a no-op. Gate here so the gate covers
   // every caller, not just the bottom-bar UI.
   if (!isSlotSelectable(i)) return
+  const def = slotDef(i)
+  // Consumables (food, drink) eat one from the stack and apply stat
+  // effects instead of equipping. Press feedback still fires so the
+  // tap reads as acknowledged. Selection stays on whatever was equipped.
+  if (def !== null && def.consumable) {
+    pressElapsed[i] = 0
+    pressCount[i]++
+    pointerLockoutFromSelection = true
+    consumeFoodAt(i)
+    return
+  }
   selected = i
   pressElapsed[i] = 0
   pressCount[i]++
   pointerLockoutFromSelection = true
-  const kind = slotDef(i)?.heldKind ?? null
+  const kind = def?.heldKind ?? null
   if (kind) setHeldItem(kind)
+}
+
+// Subtract one of the food at slot `i` (no-op if the stack is empty) and
+// apply its hunger/thirst effects. Effects are expressed in the food
+// table's 0..100 scale; the stat layer stores 0..1, so each unit divides
+// by 100 here. "Bonus hunger" routes through `restoreStat` which allows
+// the underlying value to exceed 1 as a reserve.
+function consumeFoodAt(i: number): void {
+  const def = slotDef(i)
+  if (def === null || !def.consumable) return
+  const taken = subtractCollected(def.id, 1)
+  if (taken === 0) return
+  const effect = getFoodEffect(def.id)
+  if (effect === null) return
+  const hunger = (effect.hunger ?? 0) / 100
+  const hungerBonus = (effect.hungerBonus ?? 0) / 100
+  const thirst = (effect.thirst ?? 0) / 100
+  if (hunger !== 0 || hungerBonus !== 0) {
+    restoreStat('hunger', hunger, hungerBonus)
+  }
+  if (thirst !== 0) {
+    restoreStat('thirst', thirst)
+  }
 }
 
 // True until the player releases the pointer after the click that selected
