@@ -38,13 +38,7 @@ export function NotificationOverlay(): ReactEcs.JSX.Element | null {
         uiTransform={{
           width: NOTIFICATION_WIDTH,
           height: NOTIFICATION_HEIGHT,
-          margin: { top: Math.round(top) },
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: {
-            left: NOTIFICATION_PADDING_X,
-            right: NOTIFICATION_PADDING_X
-          }
+          margin: { top: Math.round(top) }
         }}
       >
         <Label
@@ -52,7 +46,15 @@ export function NotificationOverlay(): ReactEcs.JSX.Element | null {
           fontSize={NOTIFICATION_FONT_SIZE}
           color={NOTIFICATION_TEXT_COLOR}
           textAlign="middle-center"
-          uiTransform={{ flexGrow: 1, height: '100%' }}
+          uiTransform={{
+            positionType: 'absolute',
+            position: {
+              top: 0,
+              bottom: 0,
+              left: NOTIFICATION_PADDING_X,
+              right: NOTIFICATION_PADDING_X
+            }
+          }}
         />
       </Panel>
     </UiEntity>

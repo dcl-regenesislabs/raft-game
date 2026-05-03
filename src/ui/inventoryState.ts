@@ -17,7 +17,16 @@ import {
   ensureCollectibleSlot,
   getInventorySlot
 } from './items'
+import { showNotification } from './notification'
 import { restoreStat } from './statsBars'
+
+// Per-id warning surfaced when the player equips a food/drink that has a
+// negative side effect. Shown via the standard notification banner so the
+// player gets a clear "don't eat this" cue *before* committing to the bite.
+const FOOD_WARNINGS: Record<string, string> = {
+  saltWater: 'Salt water will dehydrate you — do not drink!',
+  rawFish: 'Raw fish will dehydrate you — cook it first!'
+}
 
 // The bottom bar shows the first BOTTOM_BAR_SLOT_COUNT entries of the
 // linear INVENTORY_LAYOUT defined in `items.ts`.
@@ -85,6 +94,8 @@ export function selectSlot(i: number): void {
   // which watches for the fire input and runs the consume animation.
   if (def.consumable) {
     setHeldFood(def.id, def.texture)
+    const warning = FOOD_WARNINGS[def.id]
+    if (warning !== undefined) showNotification(warning)
     return
   }
   const kind = def.heldKind

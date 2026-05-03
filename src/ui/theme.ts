@@ -141,12 +141,12 @@ export const CRAFT_BUTTON_LEFT_PCT_MOBILE = INVENTORY_BUTTON_LEFT_PCT_MOBILE - 8
 // `panel.png` background; the inventory grid is pinned to the bottom-left
 // corner at a smaller size so the centered panels have breathing room in
 // the middle of the screen.
-export const CRAFT_LIST_WIDTH = 240
-export const CRAFT_LIST_HEIGHT = 470
+export const CRAFT_LIST_WIDTH = 280
+export const CRAFT_LIST_HEIGHT = 540
 export const CRAFT_DETAILS_WIDTH = 360
 // Inventory grid size when shown alongside the craft panels. Smaller than
 // the standalone inventory so it doesn't dominate the bottom-left corner.
-export const CRAFT_INVENTORY_SIZE = 320
+export const CRAFT_INVENTORY_SIZE = 420
 export const CRAFT_INVENTORY_LEFT = 24
 export const CRAFT_INVENTORY_BOTTOM = 24
 // On mobile the bottom-left corner is taken by the joystick, so the
@@ -154,7 +154,7 @@ export const CRAFT_INVENTORY_BOTTOM = 24
 // bars normally sit (the bars are hidden while the craft menu is open,
 // so the slot is free). Smaller than desktop so it fits next to the
 // craft panels on a phone screen.
-export const CRAFT_INVENTORY_SIZE_MOBILE = 260
+export const CRAFT_INVENTORY_SIZE_MOBILE = 360
 export const CRAFT_INVENTORY_TOP_MOBILE = 100
 export const CRAFT_INVENTORY_LEFT_MOBILE = 0
 // Craft details panel grows with the recipe — header + description + the
@@ -178,15 +178,18 @@ export const CRAFT_DIVIDER_COLOR = Color4.create(0.3, 0.18, 0.1, 0.5)
 export const CRAFT_ROW_SELECTED_BG = Color4.create(0, 0, 0, 0.55)
 export const CRAFT_BUTTON_TEXTURE = 'images/hud/red_button.png'
 export const CRAFT_BUTTON_FG = Color4.White()
-export const CRAFT_BUTTON_W = 90
-export const CRAFT_BUTTON_H = 32
+// Source art is 324×152 (aspect ≈2.13). Rendered size keeps that ratio so
+// nine-slice corners aren't crushed against each other.
+export const CRAFT_BUTTON_W = 110
+export const CRAFT_BUTTON_H = 52
 // Frame sized to the peak press scale (1 + peakBonus, generously rounded
 // to 1.25×) so the button can grow without shifting the parent row.
 export const CRAFT_BUTTON_FRAME_W = Math.round(CRAFT_BUTTON_W * 1.25)
 export const CRAFT_BUTTON_FRAME_H = Math.round(CRAFT_BUTTON_H * 1.25)
-// red_button.png has rounded ends; nine-slice keeps the corners pixel-correct
-// when the size doesn't match the source aspect ratio.
-export const CRAFT_BUTTON_SLICE = 0.2
+// Painted bevel on red_button.png is ~12% of the source on every side;
+// matching the slice to the art keeps the corners pixel-correct without
+// stretching the lighter-red highlight strip into the center fill.
+export const CRAFT_BUTTON_SLICE = 0.12
 export const CRAFT_HAVE_OK_COLOR = Color4.create(0.7, 1, 0.5, 1)
 export const CRAFT_HAVE_LOW_COLOR = Color4.create(1, 0.55, 0.3, 1)
 

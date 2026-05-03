@@ -10,7 +10,7 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import type { UiTransformProps } from '@dcl/sdk/react-ecs'
 
-const PANEL_TEXTURE = 'images/hud/panel.png'
+const PANEL_TEXTURE = 'images/hud/panel_v2.png'
 const PANEL_BORDER_FRACTION = 0.18
 
 export interface PanelProps {

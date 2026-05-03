@@ -143,13 +143,13 @@ function CraftItemList(): ReactEcs.JSX.Element {
     >
       <UiEntity
         uiTransform={{
-          height: 36,
+          height: 44,
           flexDirection: 'row',
           alignItems: 'center'
         }}
       >
         <UiEntity
-          uiTransform={{ width: 32, height: 32 }}
+          uiTransform={{ width: 40, height: 40 }}
           uiBackground={{
             textureMode: 'stretch',
             texture: { src: CRAFT_BUTTON_ICON }
@@ -157,15 +157,16 @@ function CraftItemList(): ReactEcs.JSX.Element {
         />
         <Label
           value="CRAFT"
-          fontSize={18}
+          fontSize={22}
           color={CRAFT_TEXT_COLOR}
-          uiTransform={{ margin: { left: 8 } }}
+          textAlign="middle-left"
+          uiTransform={{ flexGrow: 1, height: '100%', margin: { left: 10 } }}
         />
       </UiEntity>
       <UiEntity
         uiTransform={{
           height: 1,
-          margin: { top: 4, bottom: 6 }
+          margin: { top: 6, bottom: 8 }
         }}
         uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
       />
@@ -184,17 +185,17 @@ function CraftItemRow(props: {
   return (
     <UiEntity
       uiTransform={{
-        height: 38,
+        height: 50,
         flexDirection: 'row',
         alignItems: 'center',
-        margin: { bottom: 3 },
-        padding: { left: 6, right: 6 }
+        margin: { bottom: 4 },
+        padding: { left: 8, right: 8 }
       }}
       uiBackground={selected ? { color: CRAFT_ROW_SELECTED_BG } : undefined}
       onMouseDown={() => selectCraftable(props.item.id)}
     >
       <UiEntity
-        uiTransform={{ width: 34, height: 34 }}
+        uiTransform={{ width: 44, height: 44 }}
         uiBackground={{
           textureMode: 'stretch',
           texture: { src: props.item.texture }
@@ -202,9 +203,10 @@ function CraftItemRow(props: {
       />
       <Label
         value={props.item.name}
-        fontSize={13}
+        fontSize={16}
         color={selected ? CRAFT_TEXT_LIGHT_COLOR : CRAFT_TEXT_COLOR}
-        uiTransform={{ flexGrow: 1, margin: { left: 8 } }}
+        textAlign="middle-left"
+        uiTransform={{ flexGrow: 1, height: '100%', margin: { left: 10 } }}
       />
     </UiEntity>
   )
@@ -250,7 +252,8 @@ function CraftDetails(): ReactEcs.JSX.Element | null {
           value={item.name}
           fontSize={20}
           color={CRAFT_TEXT_COLOR}
-          uiTransform={{ margin: { left: 10 } }}
+          textAlign="middle-left"
+          uiTransform={{ flexGrow: 1, height: '100%', margin: { left: 10 } }}
         />
       </UiEntity>
       <UiEntity
@@ -276,7 +279,13 @@ function CraftDetails(): ReactEcs.JSX.Element | null {
           margin: { top: 4, bottom: 4 }
         }}
       >
-        <Label value="REQUIRES" fontSize={16} color={CRAFT_TEXT_COLOR} />
+        <Label
+          value="REQUIRES"
+          fontSize={16}
+          color={CRAFT_TEXT_COLOR}
+          textAlign="middle-left"
+          uiTransform={{ height: '100%' }}
+        />
         <CraftActionButton item={item} />
       </UiEntity>
       {item.cost.map((cost) => (
@@ -330,7 +339,13 @@ function CraftActionButton(props: {
           startCraft(props.item.id)
         }}
       >
-        <Label value="CRAFT" fontSize={13} color={CRAFT_BUTTON_FG} />
+        <Label
+          value="CRAFT"
+          fontSize={13}
+          color={CRAFT_BUTTON_FG}
+          textAlign="middle-center"
+          uiTransform={{ width: '100%', height: '100%' }}
+        />
       </UiEntity>
     </UiEntity>
   )
@@ -367,12 +382,15 @@ function CraftCostRow(props: {
         value={label}
         fontSize={14}
         color={CRAFT_TEXT_COLOR}
-        uiTransform={{ flexGrow: 1, margin: { left: 8 } }}
+        textAlign="middle-left"
+        uiTransform={{ flexGrow: 1, height: '100%', margin: { left: 8 } }}
       />
       <Label
         value={`${have}/${props.cost.amount}`}
         fontSize={15}
         color={enough ? CRAFT_HAVE_OK_COLOR : CRAFT_HAVE_LOW_COLOR}
+        textAlign="middle-right"
+        uiTransform={{ height: '100%' }}
       />
     </UiEntity>
   )

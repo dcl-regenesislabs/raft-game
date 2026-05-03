@@ -49,7 +49,9 @@ export const HELD_ITEMS: Record<HeldItemKind, HeldItemConfig> = {
     // Held a touch closer than tools — food is a flat plane, so a smaller
     // forward offset reads as cradled in the hand rather than poked out.
     // Y rotation 180° flips the plane so the texture faces the camera.
-    offset: Vector3.create(0.3, -0.18, 0.55),
+    // Sits ~1/8 screen-height below the tools' rest pose so the icon
+    // doesn't crowd the crosshair while still reading as held.
+    offset: Vector3.create(0.3, -0.27, 0.55),
     rotation: Quaternion.fromEulerDegrees(0, 180, 0),
     // Bigger than the tools — the sprite is a flat icon, so it reads as
     // small unless we push the scale up.

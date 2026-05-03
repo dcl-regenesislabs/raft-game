@@ -15,6 +15,7 @@ import {
 } from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
+import { getFoodEffect } from '../ui/foodEffects'
 import {
   consumeFoodById,
   getCollectedCount,
@@ -22,124 +23,170 @@ import {
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
 
-// Eat gesture: pull the food sprite up toward the camera (mouth) and tilt it
-// briefly, then ease back to the rest pose. Effects (hunger / thirst) apply
-// on the gesture's peak frame so the visible "bite" lines up with the stat
-// bump. A short cooldown prevents auto-fire from an held button.
-const EAT_DURATION_S = 0.5
-const COOLDOWN_S = 0.35
-// Time within the gesture where the bite lands. Matches the half-sine peak
-// (intensity = 1) so the visible bring-to-mouth aligns with consumption.
-const EAT_BITE_FRAME_S = EAT_DURATION_S * 0.5
+// One-shot consume animation triggered on a single fire press. Two flavours
+// based on what's equipped:
+//   chew  — solid food. Pull-to-mouth pose with high-frequency jitter on
+//           top, reads as rapid bites. Used for fish, potato, pasta, etc.
+//   drink — water / liquid. Pull-to-mouth pose with a big pitch-back tilt,
+//           no jitter, reads as tipping a cup to pour. Used for fresh /
+//           salt water.
+// Effects (hunger/thirst) apply at the midpoint so the stat bump lines up
+// with the visible peak. A short cooldown after the gesture finishes
+// prevents auto-fire from a held button on desktop.
 
-// Camera-frame deltas applied additively on top of the rest pose + sway.
-// Negative Z brings the sprite closer to the camera, +Y raises it toward
-// the mouth, -X pulls it from the right hand toward screen center.
-const EAT_FORWARD_M = -0.3
-const EAT_UP_M = 0.18
-const EAT_SIDE_M = -0.22
-const EAT_PITCH_DEG = -25
-// Slight scale-up at the bite peak so the food reads as held close to the
-// camera rather than just translating in.
-const EAT_SCALE_BONUS = 0.25
+const CHEW_DURATION_S = 1.1
+const DRINK_DURATION_S = 0.8
+const COOLDOWN_S = 0.15
 
-// 0 while idle. > 0 once a bite is in flight; counts up to EAT_DURATION_S.
-let eatElapsed = 0
-let cooldownRemaining = 0
-// Guard so a single bite consumes one food, even if multiple frames land
-// inside the bite window.
-let consumedThisBite = false
+// Shared pull-toward-mouth pose. Camera-frame deltas added on top of the
+// rest pose + sway each frame.
+const EAT_FORWARD_M = -0.22
+const EAT_UP_M = 0.14
+const EAT_SIDE_M = -0.18
+const EAT_SCALE_BONUS = 0.18
+
+// Chew jitter — three de-synced sines so consecutive bites don't line up
+// into a clean vibration.
+const CHEW_PITCH_DEG = -18
+const CHEW_FREQ_HZ = 4.5
+const CHEW_AMP_FWD_M = 0.03
+const CHEW_AMP_UP_M = 0.018
+const CHEW_AMP_PITCH_DEG = 5
+
+// Drink: bigger pitch-back tilt mimes tipping the cup so the liquid pours
+// into the mouth. No jitter.
+const DRINK_PITCH_DEG = -25
+
+const TWO_PI = Math.PI * 2
+
+type EatKind = 'chew' | 'drink'
+
+let activeKind: EatKind | null = null
+let elapsed = 0
+let cooldown = 0
+let consumed = false
+// Monotonic phase for the chew jitter sines. Doesn't reset between bites
+// so consecutive chews don't visibly snap back to phase 0.
+let chewPhase = 0
 
 export function foodEatSystem(dt: number): void {
   const entity = getHeldItemEntity()
   if (entity === null) return
 
-  if (cooldownRemaining > 0) {
-    cooldownRemaining = Math.max(0, cooldownRemaining - dt)
-  }
+  if (cooldown > 0) cooldown = Math.max(0, cooldown - dt)
 
   const isFoodHeld = getHeldItemKind() === 'food'
 
-  // Trigger a new bite when food is equipped, no animation is in flight,
-  // and the cooldown has elapsed. Mirrors the spear gating: action button
-  // on mobile, IA_POINTER on desktop with the pointer captured. Inventory
-  // / craft panels block the trigger; in-flight bites are allowed to
-  // finish so the state machine clears cleanly.
+  // Single-press fire — chew/drink runs to completion regardless of whether
+  // the button stays held. Mobile uses the action-button edge flag, desktop
+  // uses IA_POINTER PET_DOWN with the pointer captured.
   const firePressed =
     !isInventoryActionLocked() &&
+    !isSelectionPointerLockoutActive() &&
     (isMobile()
       ? actionButtonJustPressed()
       : isPointerLocked() &&
-        inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN))
+        inputSystem.isTriggered(
+          InputAction.IA_POINTER,
+          PointerEventType.PET_DOWN
+        ))
 
   if (
     isFoodHeld &&
-    eatElapsed === 0 &&
-    cooldownRemaining === 0 &&
-    !isSelectionPointerLockoutActive() &&
+    activeKind === null &&
+    cooldown === 0 &&
     firePressed &&
     hasFoodInStack()
   ) {
-    eatElapsed = dt > 0 ? dt : 1e-6
-    cooldownRemaining = COOLDOWN_S
-    consumedThisBite = false
+    activeKind = classifyHeldFood()
+    elapsed = dt > 0 ? dt : 1e-6
+    cooldown = COOLDOWN_S
+    consumed = false
   }
 
-  if (eatElapsed === 0) return
+  if (activeKind === null) return
 
-  const previousElapsed = eatElapsed
-  eatElapsed += dt
+  const duration = activeKind === 'chew' ? CHEW_DURATION_S : DRINK_DURATION_S
+  const previous = elapsed
+  elapsed += dt
 
-  // Apply the food's effects the frame the bite crosses EAT_BITE_FRAME_S —
-  // locks the stat bump to the visible peak, and prevents a long frame
-  // from skipping the consume entirely.
-  if (
-    !consumedThisBite &&
-    previousElapsed < EAT_BITE_FRAME_S &&
-    eatElapsed >= EAT_BITE_FRAME_S
-  ) {
-    consumedThisBite = true
+  // Consume at the midpoint — locks the stat bump to the visible peak and
+  // prevents a long frame from skipping the consume entirely.
+  const halfway = duration * 0.5
+  if (!consumed && previous < halfway && elapsed >= halfway) {
+    consumed = true
     const foodId = getHeldFoodId()
     if (foodId !== null) consumeFoodById(foodId)
   }
 
-  if (eatElapsed >= EAT_DURATION_S) {
-    eatElapsed = 0
+  if (elapsed >= duration) {
+    activeKind = null
+    elapsed = 0
     return
   }
 
-  // Half-sine intensity: 0 at start → 1 at midpoint → 0 at end. Single
-  // curve handles bring-to-mouth and recover.
-  const u = eatElapsed / EAT_DURATION_S
-  const intensity = Math.sin(u * Math.PI)
+  const u = elapsed / duration
+  // Trapezoid envelope: ramp up, hold near 1, ramp down. Drink uses a
+  // longer ramp so the tilt-and-pour reads smoother; chew snaps in faster
+  // so the first bite feels punchy.
+  const rampPct = activeKind === 'chew' ? 0.18 : 0.3
+  const intensity = envelope(u, rampPct)
 
-  const fwdDelta = EAT_FORWARD_M * intensity
-  const upDelta = EAT_UP_M * intensity
-  const sideDelta = EAT_SIDE_M * intensity
-  const pitchDelta = EAT_PITCH_DEG * intensity
+  const fwdBase = EAT_FORWARD_M * intensity
+  const upBase = EAT_UP_M * intensity
+  const sideBase = EAT_SIDE_M * intensity
   const scaleBonus = 1 + EAT_SCALE_BONUS * intensity
+
+  let pitchBase = 0
+  let fwdJitter = 0
+  let upJitter = 0
+  let pitchJitter = 0
+  if (activeKind === 'chew') {
+    pitchBase = CHEW_PITCH_DEG * intensity
+    chewPhase += dt
+    const j = chewPhase * CHEW_FREQ_HZ * TWO_PI
+    fwdJitter = CHEW_AMP_FWD_M * intensity * Math.sin(j)
+    upJitter = CHEW_AMP_UP_M * intensity * Math.sin(j * 0.7 + 1.3)
+    pitchJitter = CHEW_AMP_PITCH_DEG * intensity * Math.sin(j * 1.1 + 0.4)
+  } else {
+    pitchBase = DRINK_PITCH_DEG * intensity
+  }
 
   const rest = getHeldItemRest()
   const m = Transform.getMutable(entity)
   m.position = Vector3.create(
-    m.position.x + sideDelta,
-    m.position.y + upDelta,
-    m.position.z + fwdDelta
+    m.position.x + sideBase,
+    m.position.y + upBase + upJitter,
+    m.position.z + fwdBase + fwdJitter
   )
-  // Pre-multiply: pitch in camera (parent) frame so the food tilts toward
-  // the screen regardless of the sprite's local rotation.
   m.rotation = Quaternion.multiply(
-    Quaternion.fromEulerDegrees(pitchDelta, 0, 0),
+    Quaternion.fromEulerDegrees(pitchBase + pitchJitter, 0, 0),
     m.rotation
   )
-  // Anchor the scale bump to the rest-pose scale (not the previous frame's
-  // scale) — otherwise the multiplier compounds across frames and the
-  // sprite balloons.
   m.scale = Vector3.create(
     rest.scale.x * scaleBonus,
     rest.scale.y * scaleBonus,
     rest.scale.z * scaleBonus
   )
+}
+
+function envelope(u: number, ramp: number): number {
+  if (u < ramp) return u / ramp
+  if (u > 1 - ramp) return (1 - u) / ramp
+  return 1
+}
+
+// Pure-thirst items (fresh/salt water) drink; everything that bumps hunger
+// — even fish that also takes thirst — chews.
+function classifyHeldFood(): EatKind {
+  const id = getHeldFoodId()
+  if (id === null) return 'chew'
+  const effect = getFoodEffect(id)
+  if (effect === null) return 'chew'
+  const hunger = effect.hunger ?? 0
+  const hungerBonus = effect.hungerBonus ?? 0
+  if (hunger === 0 && hungerBonus === 0) return 'drink'
+  return 'chew'
 }
 
 function hasFoodInStack(): boolean {
