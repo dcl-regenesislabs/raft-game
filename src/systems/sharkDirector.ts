@@ -6,8 +6,27 @@ import {
   Platform,
   PlatformUnderAttack,
   SharkAttack,
+  SharkAttackPhase,
   SharkOrbit
 } from '../components'
+import {
+  SHARK_APPROACH_DURATION_S,
+  SHARK_ATTACK_INTERVAL_S,
+  SHARK_BITE_DURATION_S,
+  SHARK_BITE_PITCH_DEG,
+  SHARK_BITE_SHAKE_AMP_DEG,
+  SHARK_BITE_SHAKE_HZ,
+  SHARK_BITE_Y_OFFSET,
+  SHARK_CENTER_LERP_K,
+  SHARK_MAX_COUNT,
+  SHARK_MIN_COUNT,
+  SHARK_PULSE_HZ,
+  SHARK_RADIUS_MARGIN,
+  SHARK_RADIUS_MIN,
+  SHARK_RESIZE_HYSTERESIS,
+  SHARK_RETURN_DURATION_S,
+  SHARK_TARGET_ARC_PER_SHARK
+} from '../config/gameConfig'
 import {
   PLATFORM_SIZE_X,
   PLATFORM_SIZE_Z,
@@ -16,6 +35,14 @@ import {
 } from '../factories/platform'
 import { WATER_LEVEL } from '../factories/sceneLevels'
 import { spawnRingShark } from '../factories/shark'
+import {
+  RAD_TO_DEG,
+  TAU,
+  clamp01,
+  easeOutCubic,
+  smoothingAlpha,
+  wrapAngle
+} from '../utils/math'
 import { resetSharkHits } from './sharkAttack'
 
 // Director responsibilities (per frame):
@@ -24,63 +51,12 @@ import { resetSharkHits } from './sharkAttack'
 //      fields each frame, so the patrol re-centers automatically.
 //   2. Cancel any in-flight attack whose target was destroyed externally
 //      (e.g. player used the destroy tool mid-bite).
-//   3. Schedule a new attack at most every ATTACK_INTERVAL_S, only when no
+//   3. Schedule a new attack at most every SHARK_ATTACK_INTERVAL_S, only when no
 //      shark is currently attacking and at least one destructible platform
 //      is still standing.
 //   4. Drive the attacker's transform through the approach → bite → return
 //      cycle. The orbit system early-returns on attackers so we have full
 //      control of their position and yaw during the cycle.
-
-// Phase encoding for SharkAttack.phase. Re-spacing after the attack is
-// handled by the orbit system itself (forward/backward-gap rule), so we
-// don't need a dedicated resync phase here — at the end of RETURN we
-// simply delete SharkAttack and the formation reflows naturally.
-const PHASE_APPROACH = 0
-const PHASE_BITE = 1
-const PHASE_RETURN = 2
-
-// --- tunables ---
-// Attacks pace at one every 5 minutes, and the clock only ticks while at
-// least one destructible (non-Main) platform exists — players who have only
-// the starter raft are never harassed.
-const ATTACK_INTERVAL_S = 5 * 60
-const APPROACH_DURATION_S = 2.0
-const BITE_DURATION_S = 5
-const RETURN_DURATION_S = 3.0
-// Exponential-smoothing rate for orbit center + radius (s⁻¹). Higher = snappier.
-const CENTER_LERP_K = 2.0
-// Floor for the orbit radius — keeps sharks at a sensible distance even with
-// just the base raft.
-const RADIUS_MIN = 12
-// Metres of clearance over the raft's max extent from centroid.
-const RADIUS_MARGIN = 4
-// Pulse frequency of the red↔wood tint during bite.
-const PULSE_HZ = 2
-// --- population sizing ---
-// Target arc length (metres) along the patrol ring between adjacent sharks.
-// Population scales so circumference / count ≈ this value. 25m gives 3
-// sharks at the base radius (≈12m) and grows as the raft expands.
-const SHARK_TARGET_ARC_PER_SHARK = 25
-const SHARK_MIN_COUNT = 3
-const SHARK_MAX_COUNT = 12
-// Hysteresis band around the ideal count — must drift this far from the
-// current count before we add or remove a shark. Prevents flapping when
-// the smoothed radius hovers near a boundary.
-const SHARK_RESIZE_HYSTERESIS = 0.6
-// Pitch (degrees) applied during the bite — negative tilts the nose up so
-// the head rises onto the deck while the tail drops into the water.
-const BITE_PITCH_DEG = -25
-// Side-to-side yaw shake during the bite — sells the "biting + tearing"
-// feel without moving the shark off the anchor.
-const BITE_SHAKE_AMP_DEG = 10
-const BITE_SHAKE_HZ = 4
-// Vertical offset (metres) applied to the bite anchor relative to the water
-// surface. Negative sinks the shark so only the head/snout breaches the deck
-// edge while the body stays submerged.
-const BITE_Y_OFFSET = -0.3
-
-const TAU = Math.PI * 2
-const RAD_TO_DEG = 180 / Math.PI
 
 // 4-connected grid neighbours, used to score how "exposed" a destructible
 // platform is. Tips of the raft (1 neighbour) get attacked first.
@@ -120,7 +96,7 @@ export function sharkDirectorSystem(dt: number): void {
     // frame and never starts off mid-air at the world origin.
     resizeSharkPopulation(target)
 
-    const alpha = 1 - Math.exp(-CENTER_LERP_K * dt)
+    const alpha = smoothingAlpha(SHARK_CENTER_LERP_K, dt)
     for (const [entity] of engine.getEntitiesWith(SharkOrbit)) {
       const orbit = SharkOrbit.getMutable(entity)
       orbit.centerX += (target.cx - orbit.centerX) * alpha
@@ -138,7 +114,7 @@ export function sharkDirectorSystem(dt: number): void {
   } else {
     timeSinceLastAttack = 0
   }
-  if (timeSinceLastAttack >= ATTACK_INTERVAL_S && !anySharkAttacking()) {
+  if (timeSinceLastAttack >= SHARK_ATTACK_INTERVAL_S && !anySharkAttacking()) {
     const choice = selectAttack()
     if (choice !== null) {
       beginAttack(choice.attacker, choice.target)
@@ -156,28 +132,35 @@ export function sharkDirectorSystem(dt: number): void {
 type PlatformTarget = { cx: number; cz: number; radius: number }
 
 function computePlatformTarget(): PlatformTarget | null {
-  let count = 0
+  // Single pass: snapshot positions while accumulating the centroid sums,
+  // then compute max-distance against the cached snapshot. Avoids walking
+  // the platform set twice and avoids re-paying the ECS query cost.
+  const positions: { x: number; z: number }[] = []
   let sumX = 0
   let sumZ = 0
   for (const [entity] of engine.getEntitiesWith(Platform, Transform)) {
     const p = Transform.get(entity).position
+    positions.push({ x: p.x, z: p.z })
     sumX += p.x
     sumZ += p.z
-    count++
   }
-  if (count === 0) return null
-  const cx = sumX / count
-  const cz = sumZ / count
+  if (positions.length === 0) return null
+  const cx = sumX / positions.length
+  const cz = sumZ / positions.length
 
-  let maxDist = 0
-  for (const [entity] of engine.getEntitiesWith(Platform, Transform)) {
-    const p = Transform.get(entity).position
+  let maxDistSq = 0
+  for (const p of positions) {
     const dx = p.x - cx
     const dz = p.z - cz
-    const d = Math.sqrt(dx * dx + dz * dz)
-    if (d > maxDist) maxDist = d
+    const d2 = dx * dx + dz * dz
+    if (d2 > maxDistSq) maxDistSq = d2
   }
-  return { cx, cz, radius: Math.max(RADIUS_MIN, maxDist + RADIUS_MARGIN) }
+  const maxDist = Math.sqrt(maxDistSq)
+  return {
+    cx,
+    cz,
+    radius: Math.max(SHARK_RADIUS_MIN, maxDist + SHARK_RADIUS_MARGIN)
+  }
 }
 
 // --- population manager ---
@@ -286,10 +269,6 @@ function removeSharkAtSmallestGap(
   engine.removeEntity(orbiting[victimIdx].entity)
 }
 
-function wrapAngle(value: number): number {
-  return ((value % TAU) + TAU) % TAU
-}
-
 // --- selection ---
 
 // True when at least one destructible platform (built by the player) exists.
@@ -307,7 +286,7 @@ function hasAttackablePlatform(): boolean {
 function anySharkAttacking(): boolean {
   for (const [entity] of engine.getEntitiesWith(SharkAttack)) {
     const a = SharkAttack.get(entity)
-    if (a.phase === PHASE_APPROACH || a.phase === PHASE_BITE) return true
+    if (a.phase === SharkAttackPhase.Approach || a.phase === SharkAttackPhase.Bite) return true
   }
   return false
 }
@@ -407,7 +386,7 @@ function beginAttack(attacker: Entity, target: Entity): void {
   const approachTarget = biteAnchorFor(target, startV)
   const platformCenter = platformCenterPos(target)
   const biteYaw = yawDegFromTo(approachTarget, platformCenter, attacker)
-  const biteRot = Quaternion.fromEulerDegrees(BITE_PITCH_DEG, biteYaw, 0)
+  const biteRot = Quaternion.fromEulerDegrees(SHARK_BITE_PITCH_DEG, biteYaw, 0)
   attackCache.set(attacker, {
     startPos: startV,
     approachTarget,
@@ -417,7 +396,7 @@ function beginAttack(attacker: Entity, target: Entity): void {
   })
   SharkAttack.create(attacker, {
     target,
-    phase: PHASE_APPROACH,
+    phase: SharkAttackPhase.Approach,
     elapsed: 0
   })
   PlatformUnderAttack.create(target)
@@ -432,7 +411,7 @@ function beginAttack(attacker: Entity, target: Entity): void {
 export function repelAttacker(entity: Entity): void {
   const attack = SharkAttack.getMutableOrNull(entity)
   if (attack === null) return
-  if (attack.phase !== PHASE_BITE) return
+  if (attack.phase !== SharkAttackPhase.Bite) return
 
   const target = attack.target
   if (PlatformUnderAttack.getOrNull(target) !== null) {
@@ -451,7 +430,7 @@ export function repelAttacker(entity: Entity): void {
     startPos: Vector3.create(tr.position.x, tr.position.y, tr.position.z),
     returnStartRot: copyRotation(tr.rotation)
   })
-  attack.phase = PHASE_RETURN
+  attack.phase = SharkAttackPhase.Return
   attack.elapsed = 0
 }
 
@@ -477,12 +456,12 @@ function biteAnchorFor(target: Entity, attackerStart: Vector3): Vector3 {
   } else {
     edgeZ = p.z + Math.sign(dz || 1) * halfZ
   }
-  return Vector3.create(edgeX, WATER_LEVEL + BITE_Y_OFFSET, edgeZ)
+  return Vector3.create(edgeX, WATER_LEVEL + SHARK_BITE_Y_OFFSET, edgeZ)
 }
 
 function platformCenterPos(target: Entity): Vector3 {
   const p = Transform.get(target).position
-  return Vector3.create(p.x, WATER_LEVEL + BITE_Y_OFFSET, p.z)
+  return Vector3.create(p.x, WATER_LEVEL + SHARK_BITE_Y_OFFSET, p.z)
 }
 
 function cancelStaleAttacks(): void {
@@ -492,7 +471,7 @@ function cancelStaleAttacks(): void {
     // return/resync the target has either been eaten by us (normal) or
     // already cleaned up; treating that as "stale" would loop the shark
     // back into return forever.
-    if (attack.phase !== PHASE_APPROACH && attack.phase !== PHASE_BITE) continue
+    if (attack.phase !== SharkAttackPhase.Approach && attack.phase !== SharkAttackPhase.Bite) continue
     if (Platform.getOrNull(attack.target) !== null) continue
     // Target was destroyed externally — abort to return phase from current
     // pose, slerping rotation back to a level swim during return.
@@ -501,7 +480,7 @@ function cancelStaleAttacks(): void {
       startPos: Vector3.create(tr.position.x, tr.position.y, tr.position.z),
       returnStartRot: copyRotation(tr.rotation)
     })
-    attack.phase = PHASE_RETURN
+    attack.phase = SharkAttackPhase.Return
     attack.elapsed = 0
     stopBite(entity)
   }
@@ -516,9 +495,9 @@ function advanceAttack(entity: Entity, dt: number): void {
     return
   }
 
-  if (attack.phase === PHASE_APPROACH) {
+  if (attack.phase === SharkAttackPhase.Approach) {
     const dest = cache.approachTarget ?? cache.startPos
-    const t = clamp01(attack.elapsed / APPROACH_DURATION_S)
+    const t = clamp01(attack.elapsed / SHARK_APPROACH_DURATION_S)
     const eased = easeOutCubic(t)
     setSharkPos(entity, lerpV3(cache.startPos, dest, eased))
     // Slerp orientation from the orbit pose toward the bite pose so the
@@ -530,36 +509,36 @@ function advanceAttack(entity: Entity, dt: number): void {
         eased
       )
     }
-    if (attack.elapsed >= APPROACH_DURATION_S) {
+    if (attack.elapsed >= SHARK_APPROACH_DURATION_S) {
       setSharkPos(entity, dest)
       if (cache.biteRot !== undefined) {
         Transform.getMutable(entity).rotation = cache.biteRot
       }
-      attack.phase = PHASE_BITE
+      attack.phase = SharkAttackPhase.Bite
       attack.elapsed = 0
       startBite(entity)
     }
     return
   }
 
-  if (attack.phase === PHASE_BITE) {
+  if (attack.phase === SharkAttackPhase.Bite) {
     const target = attack.target
     if (Platform.getOrNull(target) !== null) {
-      const pulse = 0.5 + 0.5 * Math.sin(TAU * PULSE_HZ * attack.elapsed)
+      const pulse = 0.5 + 0.5 * Math.sin(TAU * SHARK_PULSE_HZ * attack.elapsed)
       tintPlatform(target, pulse)
     }
     // Side-to-side yaw shake on top of the bite pose. Recomputing the base
     // yaw each frame is cheap and keeps it stable if the platform shifts.
     if (cache.approachTarget !== undefined && cache.platformCenter !== undefined) {
       const baseYaw = yawDegFromTo(cache.approachTarget, cache.platformCenter, entity)
-      const shake = BITE_SHAKE_AMP_DEG * Math.sin(TAU * BITE_SHAKE_HZ * attack.elapsed)
+      const shake = SHARK_BITE_SHAKE_AMP_DEG * Math.sin(TAU * SHARK_BITE_SHAKE_HZ * attack.elapsed)
       Transform.getMutable(entity).rotation = Quaternion.fromEulerDegrees(
-        BITE_PITCH_DEG,
+        SHARK_BITE_PITCH_DEG,
         baseYaw + shake,
         0
       )
     }
-    if (attack.elapsed >= BITE_DURATION_S) {
+    if (attack.elapsed >= SHARK_BITE_DURATION_S) {
       stopBite(entity)
       if (Platform.getOrNull(target) !== null) {
         destroyPlatformEntity(target)
@@ -569,13 +548,13 @@ function advanceAttack(entity: Entity, dt: number): void {
         startPos: Vector3.create(tr.position.x, tr.position.y, tr.position.z),
         returnStartRot: copyRotation(tr.rotation)
       })
-      attack.phase = PHASE_RETURN
+      attack.phase = SharkAttackPhase.Return
       attack.elapsed = 0
     }
     return
   }
 
-  if (attack.phase === PHASE_RETURN) {
+  if (attack.phase === SharkAttackPhase.Return) {
     // Lerp the shark back to its orbit slot, easing rotation to the
     // orbit-tangent pose so handoff to the orbit system is seamless.
     // The orbit system then re-spaces the formation via its forward/
@@ -586,7 +565,7 @@ function advanceAttack(entity: Entity, dt: number): void {
       orbit.y,
       orbit.centerZ + orbit.radius * Math.sin(orbit.phase)
     )
-    const t = clamp01(attack.elapsed / RETURN_DURATION_S)
+    const t = clamp01(attack.elapsed / SHARK_RETURN_DURATION_S)
     const eased = easeOutCubic(t)
     setSharkPos(entity, lerpV3(cache.startPos, orbitPos, eased))
     if (cache.returnStartRot !== undefined) {
@@ -599,7 +578,7 @@ function advanceAttack(entity: Entity, dt: number): void {
         eased
       )
     }
-    if (attack.elapsed >= RETURN_DURATION_S) {
+    if (attack.elapsed >= SHARK_RETURN_DURATION_S) {
       // Hand off to the orbit system — its spacing rule will smoothly
       // pull this shark back to its evenly-spaced slot at 0.7×/1.3×
       // speed without ever overtaking another shark.
@@ -649,15 +628,6 @@ function stopBite(entity: Entity): void {
       state.shouldReset = true
     }
   }
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v
-}
-
-function easeOutCubic(t: number): number {
-  const u = 1 - t
-  return 1 - u * u * u
 }
 
 function lerpV3(a: Vector3, b: Vector3, t: number): Vector3 {

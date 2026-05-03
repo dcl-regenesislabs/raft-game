@@ -1,6 +1,7 @@
 import { MeshRenderer, engine } from '@dcl/sdk/ecs'
 
 import { WaterScroll } from '../components'
+import { wrapUnit } from '../utils/math'
 
 // Per-frame UV drift. Re-emits the tiled plane's UVs offset by an
 // accumulating value so the still water texture appears to flow.
@@ -17,19 +18,12 @@ export function waterScrollSystem(dt: number): void {
     const u1 = u0 + n
     const v1 = v0 + n
 
-    const face = [
-      u0, v0, // BL
-      u1, v0, // BR
-      u1, v1, // TR
-      u0, v1  // TL
-    ]
-    // Both faces of the plane share the same mapping.
-    MeshRenderer.setPlane(entity, [...face, ...face])
+    // Both faces of the plane share the same mapping. The mesh-renderer
+    // call signals the visual update; the UV offsets above are the reason
+    // we touched the component mutably this frame.
+    MeshRenderer.setPlane(entity, [
+      u0, v0, u1, v0, u1, v1, u0, v1,
+      u0, v0, u1, v0, u1, v1, u0, v1
+    ])
   }
-}
-
-function wrapUnit(value: number): number {
-  // Keep offsets bounded so floating-point precision doesn't degrade over time.
-  // wrapMode REPEAT means any integer-shifted UV looks identical, so we wrap to [0,1).
-  return ((value % 1) + 1) % 1
 }
