@@ -4,7 +4,11 @@
 
 import { InputAction, inputSystem } from '@dcl/sdk/ecs'
 
-import { type HeldItemKind, setHeldItem } from '../factories/heldItem'
+import {
+  type HeldItemKind,
+  setHeldFood,
+  setHeldItem
+} from '../factories/heldItem'
 import { getFoodEffect } from './foodEffects'
 import { isInventoryOpen } from './inventoryToggle'
 import {
@@ -71,36 +75,33 @@ export function selectSlot(i: number): void {
   // every caller, not just the bottom-bar UI.
   if (!isSlotSelectable(i)) return
   const def = slotDef(i)
-  // Consumables (food, drink) eat one from the stack and apply stat
-  // effects instead of equipping. Press feedback still fires so the
-  // tap reads as acknowledged. Selection stays on whatever was equipped.
-  if (def !== null && def.consumable) {
-    pressElapsed[i] = 0
-    pressCount[i]++
-    pointerLockoutFromSelection = true
-    consumeFoodAt(i)
-    return
-  }
   selected = i
   pressElapsed[i] = 0
   pressCount[i]++
   pointerLockoutFromSelection = true
-  const kind = def?.heldKind ?? null
-  if (kind) setHeldItem(kind)
+  if (def === null) return
+  // Consumables (food, drink) equip as a textured plane held in front of
+  // the camera. The actual eating is deferred to `systems/foodEat.ts`,
+  // which watches for the fire input and runs the consume animation.
+  if (def.consumable) {
+    setHeldFood(def.id, def.texture)
+    return
+  }
+  const kind = def.heldKind
+  if (kind !== null) setHeldItem(kind)
 }
 
-// Subtract one of the food at slot `i` (no-op if the stack is empty) and
-// apply its hunger/thirst effects. Effects are expressed in the food
-// table's 0..100 scale; the stat layer stores 0..1, so each unit divides
-// by 100 here. "Bonus hunger" routes through `restoreStat` which allows
-// the underlying value to exceed 1 as a reserve.
-function consumeFoodAt(i: number): void {
-  const def = slotDef(i)
-  if (def === null || !def.consumable) return
-  const taken = subtractCollected(def.id, 1)
-  if (taken === 0) return
-  const effect = getFoodEffect(def.id)
-  if (effect === null) return
+// Subtract one of the named food (no-op if the stack is empty) and apply
+// its hunger/thirst effects. Effects are expressed in the food table's
+// 0..100 scale; the stat layer stores 0..1, so each unit divides by 100
+// here. "Bonus hunger" routes through `restoreStat` which allows the
+// underlying value to exceed 1 as a reserve. Returns true when one was
+// actually consumed so the caller can gate animation/feedback on success.
+export function consumeFoodById(id: string): boolean {
+  const taken = subtractCollected(id, 1)
+  if (taken === 0) return false
+  const effect = getFoodEffect(id)
+  if (effect === null) return true
   const hunger = (effect.hunger ?? 0) / 100
   const hungerBonus = (effect.hungerBonus ?? 0) / 100
   const thirst = (effect.thirst ?? 0) / 100
@@ -110,6 +111,7 @@ function consumeFoodAt(i: number): void {
   if (thirst !== 0) {
     restoreStat('thirst', thirst)
   }
+  return true
 }
 
 // True until the player releases the pointer after the click that selected

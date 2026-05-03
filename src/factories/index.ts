@@ -27,9 +27,11 @@ export { createFirstPersonArea } from './firstPersonArea'
 export {
   HELD_ITEMS,
   createHeldItem,
+  getHeldFoodId,
   getHeldItemEntity,
   getHeldItemKind,
   getHeldItemRest,
+  setHeldFood,
   setHeldItem
 } from './heldItem'
 export type { HeldItemConfig, HeldItemKind } from './heldItem'

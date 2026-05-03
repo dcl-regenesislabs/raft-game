@@ -14,9 +14,9 @@
     "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next"
   },
   "devDependencies": {
-    "@dcl/js-runtime": "7.22.5",
-    "@dcl/sdk": "latest",
-    "@dcl/asset-packs": "latest"
+    "@dcl/asset-packs": "latest",
+    "@dcl/js-runtime": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/safe-area-container/@dcl/js-runtime/dcl-js-runtime-7.22.6-25286497710.commit-b12fc03.tgz",
+    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/safe-area-container/dcl-sdk-7.22.6-25286497710.commit-b12fc03.tgz"
   },
   "engines": {
     "node": ">=16.0.0",

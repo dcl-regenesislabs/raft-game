@@ -21,6 +21,7 @@ import { constructionPlacementSystem } from './systems/constructionPlacement'
 import { createFallRescueSystem } from './systems/fallRescue'
 import { firstPersonItemSwaySystem } from './systems/firstPersonItemSway'
 import { floatingGarbageSystem } from './systems/floatingGarbage'
+import { foodEatSystem } from './systems/foodEat'
 import { garbageSpawnerSystem } from './systems/garbageSpawner'
 import { hammerSwingSystem } from './systems/hammerSwing'
 import { hookThrowAnimSystem } from './systems/hookThrowAnim'
@@ -63,6 +64,7 @@ export async function main(): Promise<void> {
   engine.addSystem(firstPersonItemSwaySystem)
   engine.addSystem(spearAttackSystem)
   engine.addSystem(hammerSwingSystem)
+  engine.addSystem(foodEatSystem)
   engine.addSystem(hookThrowAnimSystem)
   createSeabed(parcelGrid)
   createWaterFloorV2(parcelGrid)

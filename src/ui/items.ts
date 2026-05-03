@@ -68,16 +68,19 @@ const MATERIAL = (id: string, texture: string): ItemDef => ({
   consumable: false
 })
 
-// Food / drink. Stackable, selectable from the bottom bar, no held viewmodel
-// and no action button — selecting consumes one from the stack and applies
-// the food's effects to hunger/thirst. See `foodEffects.ts` for the table.
+// Food / drink. Stackable, selectable from the bottom bar. Selecting equips
+// the food as a Sprite3D held in front of the camera (see `heldItem.ts`).
+// The action button / IA_POINTER then triggers an eating gesture which
+// consumes one from the stack and applies the food's hunger/thirst effects.
+// See `foodEffects.ts` for the table and `systems/foodEat.ts` for the
+// gesture and consumption.
 const FOOD = (id: string, texture: string): ItemDef => ({
   id,
   texture,
   stackable: true,
   selectable: true,
-  heldKind: null,
-  hasAction: false,
+  heldKind: 'food',
+  hasAction: true,
   consumable: true
 })
 
