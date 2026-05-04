@@ -164,8 +164,7 @@ const MATERIAL_CATALOG: Record<string, ItemDef> = {
   plants: MATERIAL('plants', 'images/hud/items/item-04.png'),
   plastic: MATERIAL('plastic', 'images/hud/items/item-03.png'),
   rope: MATERIAL('rope', 'images/hud/items/item-05.png'),
-  metal: MATERIAL('metal', 'images/hud/items/item-08.png'),
-  potato: MATERIAL('potato', 'images/hud/items/item-13.png')
+  metal: MATERIAL('metal', 'images/hud/items/item-08.png')
 }
 
 const CRAFTED_CATALOG: Record<string, ItemDef> = {

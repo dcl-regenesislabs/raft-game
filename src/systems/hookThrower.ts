@@ -297,6 +297,16 @@ function advanceHook(dt: number, handPos: Vector3): void {
   followGrabbedItems()
 }
 
+// Barrel rope drop is weighted: rope is the bottleneck for the raft
+// recipe, so the barrel almost always coughs up at least one and
+// occasionally two — 75% / 10% / 15% for 1 / 2 / 0 ropes.
+function rollRopeDrop(): number {
+  const r = Math.random()
+  if (r < 0.75) return 1
+  if (r < 0.85) return 2
+  return 0
+}
+
 // Translate a hooked debris kind into inventory deposits. Most kinds map
 // 1:1 to a material, but barrels are a "loot box" that breaks open into a
 // random mix of crafting materials so they feel distinct from a plain log.
@@ -305,8 +315,8 @@ function bankGrabbedItem(kind: string): void {
     addCollected('wood', randInt(0, 1))
     addCollected('plants', randInt(0, 2))
     addCollected('plastic', randInt(0, 1))
-    addCollected('rope', randInt(0, 1))
-    addCollected('potato', randInt(0, 2))
+    addCollected('rope', rollRopeDrop())
+    addCollected('rawPotato', randInt(0, 2))
     return
   }
   addCollected(kind, 1)
