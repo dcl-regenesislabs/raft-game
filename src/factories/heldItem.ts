@@ -138,6 +138,7 @@ export function setHeldFood(foodId: string, texture: string): void {
   if (toolEntity === null || spriteEntity === null) return
   applySpriteTexture(spriteEntity, texture)
   applyRestPose(spriteEntity, HELD_ITEMS.food)
+  clearToolGlb(toolEntity)
   setVisible(toolEntity, false)
   setVisible(spriteEntity, true)
   heldKind = 'food'
@@ -154,16 +155,23 @@ export function setHeldCup(containerId: string, texture: string): void {
   if (toolEntity === null || spriteEntity === null) return
   applySpriteTexture(spriteEntity, texture)
   applyRestPose(spriteEntity, HELD_ITEMS.cup)
+  clearToolGlb(toolEntity)
   setVisible(toolEntity, false)
   setVisible(spriteEntity, true)
   heldKind = 'cup'
   heldFoodId = containerId
 }
 
-// Returns whichever child is currently active so the sway / gesture systems
-// write to the visible viewmodel and leave the hidden one alone.
+// Returns whichever child is currently active so the sway / gesture
+// systems write to the visible viewmodel and leave the hidden one
+// alone. Both sprite-based kinds ('food' and 'cup') route to the
+// sprite entity — routing 'cup' to the tool entity (as the original
+// code did) caused the sway/eat systems to drive the invisible hook
+// GLB's pose instead, and the stale GLB visibly leaked through under
+// some lighting/visibility conditions.
 export function getHeldItemEntity(): Entity | null {
-  return heldKind === 'food' ? spriteEntity : toolEntity
+  if (heldKind === 'food' || heldKind === 'cup') return spriteEntity
+  return toolEntity
 }
 
 export function getHeldItemKind(): HeldItemKind {
@@ -192,6 +200,14 @@ function applySpriteTexture(entity: Entity, texture: string): void {
     alphaTest: 0.5,
     castShadows: false
   })
+}
+
+// Strips the GLB off the tool entity so a stale model (e.g. the hook
+// the player started with) can't bleed through while a sprite-based
+// kind is equipped. VisibilityComponent alone wasn't a hard guarantee —
+// pairing visibility=false with an empty src is.
+function clearToolGlb(entity: Entity): void {
+  GltfContainer.createOrReplace(entity, { src: '' })
 }
 
 function setVisible(entity: Entity, visible: boolean): void {

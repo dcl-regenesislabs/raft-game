@@ -184,8 +184,8 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   // Each is a non-stackable container variant — see CRAFTED_CONTAINER
   // above for the mental model. Drinking them is handled by the
   // container-action system, not the food-eat counter.
-  saltWater: CRAFTED_CONTAINER('saltWater', 'images/hud/items/item-10.png'),
-  freshWater: CRAFTED_CONTAINER('freshWater', 'images/hud/items/item-11.png'),
+  saltWater: CRAFTED_CONTAINER('saltWater', 'images/hud/items/item-21.png'),
+  freshWater: CRAFTED_CONTAINER('freshWater', 'images/hud/items/item-10.png'),
   // Food. Effects in `foodEffects.ts`.
   rawFish: FOOD('rawFish', 'images/hud/items/item-12.png'),
   cookedFish: FOOD('cookedFish', 'images/hud/items/item-13.png'),
