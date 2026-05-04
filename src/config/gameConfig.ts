@@ -11,7 +11,7 @@
 // --- Debug -----------------------------------------------------------------
 // Pre-seeds the inventory with crafting materials at scene start so we can
 // exercise recipes without grinding. MUST be false on shipped builds.
-export const DEBUG_SEED_INVENTORY = true
+export const DEBUG_SEED_INVENTORY = false
 
 // --- Shark director --------------------------------------------------------
 // Initial patrol population. The director scales up/down each frame from
