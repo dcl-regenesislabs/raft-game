@@ -16,11 +16,16 @@ import { isCrafting } from './craftSession'
 import { pressBackground } from './inventoryDrag'
 import { isPurifying } from './purifySession'
 
-// No virtual canvas: numeric uiTransform values stay in logical pixels at
-// 1.0× regardless of window size, matching godot-explorer's HUD behaviour.
-// See `.agents/skills/local/mobile-ui-scaling/SKILL.md` (Rule 1).
+// Both platforms use a virtual canvas so the HUD scales with the viewport.
+// Mobile uses 720×720 (square reference matches portrait/landscape phone
+// proportions evenly); desktop uses 1920×1080 (1080p reference).
+// See `.agents/skills/local/mobile-ui-scaling/SKILL.md`.
 export function setupUi(): void {
-  ReactEcsRenderer.setUiRenderer(ui)
+  if (isMobile()) {
+    ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 720, virtualHeight: 720 })
+    return
+  }
+  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1920, virtualHeight: 1080 })
 }
 
 // Mobile is the only platform with hardware insets (notch / home indicator)
