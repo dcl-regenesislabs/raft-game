@@ -14,6 +14,7 @@ import { NotificationOverlay } from './components/Notification'
 import { StatsBars } from './components/StatsBars'
 import { isCrafting } from './craftSession'
 import { pressBackground } from './inventoryDrag'
+import { isPurifying } from './purifySession'
 
 // No virtual canvas: numeric uiTransform values stay in logical pixels at
 // 1.0× regardless of window size, matching godot-explorer's HUD behaviour.
@@ -38,10 +39,10 @@ function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs
 }
 
 function ui(): ReactEcs.JSX.Element {
-  // While a craft is running every interactive HUD element hides — the
-  // player can't act, only watch the progress bar fill. The bar reuses
-  // the hook charge meter style for visual consistency.
-  if (isCrafting()) {
+  // While a craft or purify is running every interactive HUD element
+  // hides — the player can't act, only watch the progress bar fill.
+  // The bar reuses the hook charge meter style for visual consistency.
+  if (isCrafting() || isPurifying()) {
     return (
       <SafeArea>
         <UiEntity

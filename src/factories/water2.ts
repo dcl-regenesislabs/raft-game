@@ -1,7 +1,9 @@
 import {
+  ColliderLayer,
   Entity,
   Material,
   MaterialTransparencyMode,
+  MeshCollider,
   MeshRenderer,
   TextureFilterMode,
   TextureWrapMode,
@@ -32,6 +34,11 @@ export function createWaterFloorV2(parcelGrid: number = DEMO_PARCEL_GRID): Entit
   })
 
   MeshRenderer.setPlane(entity, buildTiledUVs(tileCount))
+  // CL_POINTER lets the cup-fill system raycast (and the SDK pointer
+  // input layer click-target) the water surface without interfering
+  // with player physics — the player still walks on the raft, not the
+  // water plane.
+  MeshCollider.setPlane(entity, ColliderLayer.CL_POINTER)
 
   // Slow UV drift so the still texture looks like flowing water. The system
   // (systems/waterScroll.ts) overrides MeshRenderer.setPlane each frame.

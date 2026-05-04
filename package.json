@@ -1,7 +1,7 @@
 {
-  "name": "dcl-project",
+  "name": "raft-game",
   "version": "1.0.0",
-  "description": "SDK7 Template scene",
+  "description": "Raft Game — survive on a raft in Decentraland: fish, scavenge, craft, and build.",
   "scripts": {
     "start": "sdk-commands start",
     "deploy": "sdk-commands deploy",

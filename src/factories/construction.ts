@@ -1,4 +1,13 @@
-import { Entity, GltfContainer, Transform, engine } from '@dcl/sdk/ecs'
+import {
+  ColliderLayer,
+  Entity,
+  GltfContainer,
+  InputAction,
+  PointerEventType,
+  PointerEvents,
+  Transform,
+  engine
+} from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { PlatformConstruction } from '../components'
@@ -31,6 +40,19 @@ export const CONSTRUCTION_DECK_OFFSET_M = 0.52
 // PLATFORM_SIZE_Y world meters above the platform origin.
 const DECK_TOP_LOCAL_Y = CONSTRUCTION_DECK_OFFSET_M / PLATFORM_SIZE_Y
 
+// Hover-prompt text per construction kind. The grill prompt is just a
+// "not yet" placeholder until the cooking system lands; the purifier
+// prompt names the action so the player knows the thing they're meant
+// to do, even if they're not currently holding salt water.
+const HOVER_TEXT: Record<ConstructionKind, string> = {
+  grill: 'WORK IN PROGRESS',
+  purifier: 'PURIFY WATER'
+}
+// Max distance the SDK pointer-input layer will register hovers/clicks
+// against the construction. Roughly arm's length so the player has to
+// actually walk up to it, not click from across the raft.
+const HOVER_MAX_DISTANCE = 5
+
 export function createConstruction(
   platform: Entity,
   kind: ConstructionKind
@@ -49,7 +71,26 @@ export function createConstruction(
       visualSize / PLATFORM_SIZE_Z
     )
   })
-  GltfContainer.create(child, { src: SRC[kind] })
+  GltfContainer.create(child, {
+    src: SRC[kind],
+    // The GLB's own visible mesh acts as the click target — no overlay
+    // collider needed. Player can't walk through it either; that's
+    // governed by the platform deck and the player's existing collider.
+    visibleMeshesCollisionMask: ColliderLayer.CL_POINTER
+  })
+  PointerEvents.create(child, {
+    pointerEvents: [
+      {
+        eventType: PointerEventType.PET_DOWN,
+        eventInfo: {
+          button: InputAction.IA_POINTER,
+          hoverText: HOVER_TEXT[kind],
+          maxDistance: HOVER_MAX_DISTANCE,
+          showFeedback: true
+        }
+      }
+    ]
+  })
   PlatformConstruction.create(platform, { kind, child })
   return child
 }

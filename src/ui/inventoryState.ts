@@ -6,6 +6,7 @@ import { InputAction, inputSystem } from '@dcl/sdk/ecs'
 
 import {
   type HeldItemKind,
+  setHeldCup,
   setHeldFood,
   setHeldItem
 } from '../factories/heldItem'
@@ -15,7 +16,8 @@ import {
   BOTTOM_BAR_SLOT_COUNT,
   type ItemDef,
   ensureCollectibleSlot,
-  getInventorySlot
+  getInventorySlot,
+  transmuteSlot
 } from './items'
 import { showNotification } from './notification'
 import { restoreStat } from './statsBars'
@@ -89,17 +91,54 @@ export function selectSlot(i: number): void {
   pressCount[i]++
   pointerLockoutFromSelection = true
   if (def === null) return
-  // Consumables (food, drink) equip as a textured plane held in front of
-  // the camera. The actual eating is deferred to `systems/foodEat.ts`,
+  const warning = FOOD_WARNINGS[def.id]
+  if (warning !== undefined) showNotification(warning)
+  // Consumables (food) equip as a textured plane held in front of the
+  // camera. The actual eating is deferred to `systems/foodEat.ts`,
   // which watches for the fire input and runs the consume animation.
   if (def.consumable) {
     setHeldFood(def.id, def.texture)
-    const warning = FOOD_WARNINGS[def.id]
-    if (warning !== undefined) showNotification(warning)
+    return
+  }
+  // Containers (cup / salt-water cup / fresh-water cup) ride the same
+  // sprite-in-hand path as food but their fire press is captured by the
+  // container-action system instead. heldKind 'cup' tells foodEat to
+  // leave the press alone — it only consumes 'food'-kind items.
+  if (def.heldKind === 'cup') {
+    setHeldCup(def.id, def.texture)
     return
   }
   const kind = def.heldKind
   if (kind !== null) setHeldItem(kind)
+}
+
+// Drink the contents of a container slot: apply the effect for the
+// liquid (uses the same FOOD_EFFECTS table the food-eat path reads) and
+// transmute the slot back to an empty cup so the player keeps the
+// vessel. No-op if the slot is empty or doesn't currently hold a
+// drinkable container variant. Returns true on success so the caller
+// can gate animation/feedback on it.
+export function drinkContainerSlot(
+  slotIndex: number,
+  containerId: string
+): boolean {
+  const def = getInventorySlot(slotIndex)
+  if (def === null) return false
+  if (def.id !== containerId) return false
+  const effect = getFoodEffect(containerId)
+  if (!transmuteContainerSlot(slotIndex, 'cup')) return false
+  if (effect !== null) {
+    const hunger = (effect.hunger ?? 0) / 100
+    const hungerBonus = (effect.hungerBonus ?? 0) / 100
+    const thirst = (effect.thirst ?? 0) / 100
+    if (hunger !== 0 || hungerBonus !== 0) {
+      restoreStat('hunger', hunger, hungerBonus)
+    }
+    if (thirst !== 0) {
+      restoreStat('thirst', thirst)
+    }
+  }
+  return true
 }
 
 // Subtract one of the named food (no-op if the stack is empty) and apply
@@ -198,4 +237,29 @@ export function subtractCollected(kind: string, count: number = 1): number {
 
 export function getAllCollected(): ReadonlyMap<string, number> {
   return collectedCounts
+}
+
+// Convert a slot's item id in place (e.g. cup → saltWater → freshWater
+// → cup). Keeps the per-id `collectedCounts` map in lockstep so any
+// "do I have at least one?" check downstream sees the right answer.
+// Refreshes the held viewmodel when the transmuted slot is the one
+// currently equipped — otherwise the stale sprite would persist on the
+// camera until the player re-selected the slot.
+export function transmuteContainerSlot(
+  slotIndex: number,
+  newId: string
+): boolean {
+  const oldDef = getInventorySlot(slotIndex)
+  if (oldDef === null) return false
+  if (!transmuteSlot(slotIndex, newId)) return false
+  const oldCount = collectedCounts.get(oldDef.id) ?? 0
+  collectedCounts.set(oldDef.id, Math.max(0, oldCount - 1))
+  collectedCounts.set(newId, (collectedCounts.get(newId) ?? 0) + 1)
+  if (slotIndex === selected) {
+    const def = getInventorySlot(slotIndex)
+    if (def !== null && def.heldKind === 'cup') {
+      setHeldCup(def.id, def.texture)
+    }
+  }
+  return true
 }

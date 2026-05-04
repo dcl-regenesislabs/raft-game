@@ -114,6 +114,23 @@ const CRAFTED_PLACEABLE = (id: string, texture: string): ItemDef => ({
   consumable: false
 })
 
+// Container the player equips and uses on the world. Each container
+// instance occupies its own inventory slot — they're not stackable
+// because the slot's item id IS the container's state (empty cup /
+// salt-water cup / fresh-water cup). Filling, purifying, and drinking
+// transmute the slot's id in place via `transmuteSlot` rather than
+// shuffling stack counts. heldKind 'cup' renders as a sprite in front
+// of the camera.
+const CRAFTED_CONTAINER = (id: string, texture: string): ItemDef => ({
+  id,
+  texture,
+  stackable: false,
+  selectable: true,
+  heldKind: 'cup',
+  hasAction: true,
+  consumable: false
+})
+
 // Linear inventory layout. First BOTTOM_BAR_SLOT_COUNT entries map to the
 // bottom bar in left-to-right order; the rest fill the inventory panel
 // grid in row-major order. Pad with null to keep the array length at
@@ -125,14 +142,9 @@ export const INVENTORY_GRID_SLOT_COUNT =
 
 const layout: (ItemDef | null)[] = [
   // ----- Bottom bar (0–4) -----
-  // Default loadout: three core tools, then the two placeable construction
-  // items pre-pinned to the bar so the player can swap straight into them
-  // without opening the inventory grid first.
-  TOOL('hook', 'images/hud/items/item-00.png', 'hook'),
-  TOOL('hammer', 'images/hud/items/item-01.png', 'hammer'),
-  TOOL('spear', 'images/hud/items/item-19.png', 'spear'),
-  CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
-  CRAFTED_PLACEABLE('purifier', 'images/hud/items/item-06.png')
+  // Default loadout: just the hook. Everything else is earned through
+  // crafting, so the empty bar slots fill in as the player progresses.
+  TOOL('hook', 'images/hud/items/item-00.png', 'hook')
 ]
 
 while (layout.length < INVENTORY_TOTAL_SLOTS) layout.push(null)
@@ -167,10 +179,14 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
   fishingRod: CRAFTED_STACK('fishingRod', 'images/hud/items/item-15.png'),
   knife: CRAFTED_STACK('knife', 'images/hud/items/item-16.png'),
-  cup: CRAFTED_STACK('cup', 'images/hud/items/item-09.png'),
-  // Food + drink. Effects in `foodEffects.ts`.
-  saltWater: FOOD('saltWater', 'images/hud/items/item-10.png'),
-  freshWater: FOOD('freshWater', 'images/hud/items/item-11.png'),
+  cup: CRAFTED_CONTAINER('cup', 'images/hud/items/item-09.png'),
+  // Liquids live in cups: empty cup, salt-water cup, fresh-water cup.
+  // Each is a non-stackable container variant — see CRAFTED_CONTAINER
+  // above for the mental model. Drinking them is handled by the
+  // container-action system, not the food-eat counter.
+  saltWater: CRAFTED_CONTAINER('saltWater', 'images/hud/items/item-10.png'),
+  freshWater: CRAFTED_CONTAINER('freshWater', 'images/hud/items/item-11.png'),
+  // Food. Effects in `foodEffects.ts`.
   rawFish: FOOD('rawFish', 'images/hud/items/item-12.png'),
   cookedFish: FOOD('cookedFish', 'images/hud/items/item-13.png'),
   rawPotato: FOOD('rawPotato', 'images/hud/items/item-14.png'),
@@ -232,6 +248,21 @@ export function ensureCollectibleSlot(id: string): number {
   layout[target] = def
   ITEMS_BY_ID[def.id] = def
   return target
+}
+
+// Replace the item def occupying `slotIndex` with the catalog entry for
+// `newId`. Used by container-state transitions (empty cup → salt-water
+// cup → fresh-water cup → empty cup) so the slot stays put while its
+// contents change. Returns true iff the swap actually applied (slot in
+// range, currently occupied, and the new id resolves in either catalog).
+export function transmuteSlot(slotIndex: number, newId: string): boolean {
+  if (slotIndex < 0 || slotIndex >= layout.length) return false
+  if (layout[slotIndex] === null) return false
+  const next = MATERIAL_CATALOG[newId] ?? CRAFTED_CATALOG[newId]
+  if (next === undefined) return false
+  layout[slotIndex] = next
+  ITEMS_BY_ID[next.id] = next
+  return true
 }
 
 // Swap the contents of two inventory slots. Out-of-range or no-op (a===b)

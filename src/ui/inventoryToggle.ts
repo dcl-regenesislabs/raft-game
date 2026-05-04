@@ -9,6 +9,7 @@ import { InputModifier, engine } from '@dcl/sdk/ecs'
 import { isCraftOpen, setCraftOpen } from './craftToggle'
 import { isCrafting } from './craftSession'
 import { cancelSelection } from './inventoryDrag'
+import { isPurifying } from './purifySession'
 
 const PRESS_DURATION_S = 0.32
 const PRESS_PEAK_BONUS = 0.18
@@ -30,11 +31,18 @@ export function isInventoryOpen(): boolean {
 }
 
 // True while any HUD panel is up (inventory or craft), within the brief
-// post-close lockout window, or a craft is in progress. Tool systems
-// should gate item-action triggers on this so menu clicks don't leak
-// through to tool actions and players can't fire while crafting.
+// post-close lockout window, or a craft / purify is in progress. Tool
+// systems should gate item-action triggers on this so menu clicks
+// don't leak through to tool actions and players can't fire while a
+// timed task is running.
 export function isInventoryActionLocked(): boolean {
-  return open || postCloseLockoutSec > 0 || isCraftOpen() || isCrafting()
+  return (
+    open ||
+    postCloseLockoutSec > 0 ||
+    isCraftOpen() ||
+    isCrafting() ||
+    isPurifying()
+  )
 }
 
 // Direct setter — used by `craftToggle` to close the inventory when the
@@ -70,7 +78,7 @@ export function inventoryToggleResetSystem(dt: number): void {
   if (postCloseLockoutSec > 0) {
     postCloseLockoutSec = Math.max(0, postCloseLockoutSec - dt)
   }
-  const lock = open || isCrafting()
+  const lock = open || isCrafting() || isPurifying()
   if (lock === lastModifierApplied) return
   lastModifierApplied = lock
   InputModifier.createOrReplace(engine.PlayerEntity, {

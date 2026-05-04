@@ -18,10 +18,13 @@ import { isPointerLocked } from '../ui/cursorLock'
 import { getFoodEffect } from '../ui/foodEffects'
 import {
   consumeFoodById,
+  drinkContainerSlot,
   getCollectedCount,
+  getSelectedSlot,
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
+import { isWorldClickConsumed } from '../ui/worldClickGate'
 
 // One-shot consume animation triggered on a single fire press. Two flavours
 // based on what's equipped:
@@ -75,14 +78,21 @@ export function foodEatSystem(dt: number): void {
 
   if (cooldown > 0) cooldown = Math.max(0, cooldown - dt)
 
-  const isFoodHeld = getHeldItemKind() === 'food'
+  const heldKind = getHeldItemKind()
+  const isFoodHeld = heldKind === 'food'
+  const isDrinkContainerHeld = heldKind === 'cup' && isDrinkable(getHeldFoodId())
+  const isEdibleHeld = isFoodHeld || isDrinkContainerHeld
 
   // Single-press fire — chew/drink runs to completion regardless of whether
   // the button stays held. Mobile uses the action-button edge flag, desktop
-  // uses IA_POINTER PET_DOWN with the pointer captured.
+  // uses IA_POINTER PET_DOWN with the pointer captured. We also bail when
+  // an in-world entity already handled this frame's click (e.g. tapping
+  // the purifier with salt water held — we want the purify session, not
+  // a swig from the cup).
   const firePressed =
     !isInventoryActionLocked() &&
     !isSelectionPointerLockoutActive() &&
+    !isWorldClickConsumed() &&
     (isMobile()
       ? actionButtonJustPressed()
       : isPointerLocked() &&
@@ -92,13 +102,13 @@ export function foodEatSystem(dt: number): void {
         ))
 
   if (
-    isFoodHeld &&
+    isEdibleHeld &&
     activeKind === null &&
     cooldown === 0 &&
     firePressed &&
-    hasFoodInStack()
+    hasEdibleInStack()
   ) {
-    activeKind = classifyHeldFood()
+    activeKind = classifyHeldEdible()
     elapsed = dt > 0 ? dt : 1e-6
     cooldown = COOLDOWN_S
     consumed = false
@@ -111,12 +121,20 @@ export function foodEatSystem(dt: number): void {
   elapsed += dt
 
   // Consume at the midpoint — locks the stat bump to the visible peak and
-  // prevents a long frame from skipping the consume entirely.
+  // prevents a long frame from skipping the consume entirely. Containers
+  // (cup-of-water variants) transmute the slot back to an empty cup so
+  // the player keeps the vessel; food items just decrement the stack.
   const halfway = duration * 0.5
   if (!consumed && previous < halfway && elapsed >= halfway) {
     consumed = true
     const foodId = getHeldFoodId()
-    if (foodId !== null) consumeFoodById(foodId)
+    if (foodId !== null) {
+      if (getHeldItemKind() === 'cup') {
+        drinkContainerSlot(getSelectedSlot(), foodId)
+      } else {
+        consumeFoodById(foodId)
+      }
+    }
   }
 
   if (elapsed >= duration) {
@@ -177,8 +195,11 @@ function envelope(u: number, ramp: number): number {
 }
 
 // Pure-thirst items (fresh/salt water) drink; everything that bumps hunger
-// — even fish that also takes thirst — chews.
-function classifyHeldFood(): EatKind {
+// — even fish that also takes thirst — chews. Drink containers (held as
+// cup-kind) always drink regardless of effect shape, since the visual
+// "tipping a cup" gesture matches the container-with-liquid mental model.
+function classifyHeldEdible(): EatKind {
+  if (getHeldItemKind() === 'cup') return 'drink'
   const id = getHeldFoodId()
   if (id === null) return 'chew'
   const effect = getFoodEffect(id)
@@ -189,8 +210,18 @@ function classifyHeldFood(): EatKind {
   return 'chew'
 }
 
-function hasFoodInStack(): boolean {
+// True iff the held item is something the consume gesture can act on
+// right now — food with stock, or a drink container actually holding
+// liquid (an empty cup is held with this kind too but mustn't trigger).
+function hasEdibleInStack(): boolean {
   const id = getHeldFoodId()
   if (id === null) return false
   return getCollectedCount(id) > 0
+}
+
+// Salt-water and fresh-water cups are the two drinkable container
+// variants. An empty cup ('cup') falls through and won't trigger the
+// drink gesture even though it shares the 'cup' heldKind.
+function isDrinkable(id: string | null): boolean {
+  return id === 'saltWater' || id === 'freshWater'
 }

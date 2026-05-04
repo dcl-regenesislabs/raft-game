@@ -17,7 +17,9 @@ import {
 } from './factories'
 import { DEMO_PARCEL_GRID, FULL_PARCEL_GRID } from './factories/sceneLevels'
 import { getSceneMode } from './runtime/sceneMode'
+import { constructionInteractSystem } from './systems/constructionInteract'
 import { constructionPlacementSystem } from './systems/constructionPlacement'
+import { cupFillSystem } from './systems/cupFill'
 import { createFallRescueSystem } from './systems/fallRescue'
 import { firstPersonItemSwaySystem } from './systems/firstPersonItemSway'
 import { floatingGarbageSystem } from './systems/floatingGarbage'
@@ -44,6 +46,8 @@ import { addCollected } from './ui/inventoryState'
 import { inventoryToggleResetSystem } from './ui/inventoryToggle'
 import { tickNotification } from './ui/notification'
 import { pressPulseTickSystem } from './ui/pressPulse'
+import { purifySessionTickSystem } from './ui/purifySession'
+import { worldClickGateResetSystem } from './ui/worldClickGate'
 
 export async function main(): Promise<void> {
   // Detect which deployment we're running in. raft.dcl.eth is the FULL
@@ -64,6 +68,11 @@ export async function main(): Promise<void> {
   engine.addSystem(firstPersonItemSwaySystem)
   engine.addSystem(spearAttackSystem)
   engine.addSystem(hammerSwingSystem)
+  // Construction + cup-fill must run BEFORE foodEat so they can mark
+  // this frame's click as consumed (via worldClickGate) — otherwise a
+  // tap on the purifier with salt water held would also drain the cup.
+  engine.addSystem(constructionInteractSystem)
+  engine.addSystem(cupFillSystem)
   engine.addSystem(foodEatSystem)
   engine.addSystem(hookThrowAnimSystem)
   createSeabed(parcelGrid)
@@ -84,14 +93,17 @@ export async function main(): Promise<void> {
   engine.addSystem(hookThrowerSystem)
   engine.addSystem(inventoryInputSystem)
   engine.addSystem(craftSessionTickSystem)
+  engine.addSystem(purifySessionTickSystem)
   engine.addSystem(inventoryToggleResetSystem)
   engine.addSystem(craftToggleResetSystem)
   engine.addSystem(pressPulseTickSystem)
   engine.addSystem(tickNotification)
   engine.addSystem(dragResetSystem)
-  // Must be last so every consumer above sees the action-button edge flags
-  // for the current frame before they're cleared.
+  // Must be last so every consumer above sees the action-button edge
+  // flag and the world-click-consumed flag for the current frame
+  // before they're cleared.
   engine.addSystem(actionButtonResetSystem)
+  engine.addSystem(worldClickGateResetSystem)
   setupUi()
 
   if (DEBUG_SEED_INVENTORY) seedDebugInventory()
@@ -108,8 +120,12 @@ function seedDebugInventory(): void {
   addCollected('grill', 10)
   addCollected('purifier', 10)
   addCollected('platform', 10)
-  addCollected('saltWater', 10)
-  addCollected('freshWater', 10)
+  // Containers are non-stackable — each instance gets its own slot, so
+  // the seed only adds one of each variant. The cup goes in too so the
+  // player can test the empty-cup → fill flow without crafting first.
+  addCollected('cup', 1)
+  addCollected('saltWater', 1)
+  addCollected('freshWater', 1)
   addCollected('rawFish', 10)
   addCollected('rawPotato', 10)
   addCollected('cookedPotato', 10)

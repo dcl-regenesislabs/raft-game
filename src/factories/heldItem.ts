@@ -10,7 +10,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
-export type HeldItemKind = 'hook' | 'hammer' | 'spear' | 'food'
+export type HeldItemKind = 'hook' | 'hammer' | 'spear' | 'food' | 'cup'
 
 export interface HeldItemConfig {
   src: string
@@ -55,6 +55,15 @@ export const HELD_ITEMS: Record<HeldItemKind, HeldItemConfig> = {
     rotation: Quaternion.fromEulerDegrees(0, 180, 0),
     // Bigger than the tools — the sprite is a flat icon, so it reads as
     // small unless we push the scale up.
+    scale: Vector3.create(0.5, 0.5, 0.5)
+  },
+  // Containers (cup) reuse the food sprite path — same flat-plane in
+  // hand. Pose mirrors the food rest pose so swapping between cup ↔
+  // saltWater (which are visually similar) doesn't jolt.
+  cup: {
+    src: '',
+    offset: Vector3.create(0.3, -0.27, 0.55),
+    rotation: Quaternion.fromEulerDegrees(0, 180, 0),
     scale: Vector3.create(0.5, 0.5, 0.5)
   }
 }
@@ -106,10 +115,11 @@ export function createHeldItem(initial: HeldItemKind = 'hook'): Entity {
 
 export function setHeldItem(kind: HeldItemKind): void {
   if (toolEntity === null || spriteEntity === null) return
-  // 'food' kind requires a texture — callers must use setHeldFood. If
-  // somebody calls setHeldItem('food') directly there's no texture to
-  // show, so bail out instead of swapping to an empty sprite.
-  if (kind === 'food') return
+  // Sprite-based kinds ('food', 'cup') require a texture — callers must
+  // use setHeldFood / setHeldCup. If somebody calls setHeldItem with
+  // a sprite kind directly there's no texture to show, so bail out
+  // instead of swapping to an empty sprite.
+  if (kind === 'food' || kind === 'cup') return
   const cfg = HELD_ITEMS[kind]
   GltfContainer.createOrReplace(toolEntity, { src: cfg.src })
   applyRestPose(toolEntity, cfg)
@@ -126,18 +136,28 @@ export function setHeldItem(kind: HeldItemKind): void {
 // player fires.
 export function setHeldFood(foodId: string, texture: string): void {
   if (toolEntity === null || spriteEntity === null) return
-  const cfg = HELD_ITEMS.food
-  Material.setBasicMaterial(spriteEntity, {
-    texture: Material.Texture.Common({ src: texture }),
-    // Cutout transparency keeps the plane silhouette tight to the icon.
-    alphaTest: 0.5,
-    castShadows: false
-  })
-  applyRestPose(spriteEntity, cfg)
+  applySpriteTexture(spriteEntity, texture)
+  applyRestPose(spriteEntity, HELD_ITEMS.food)
   setVisible(toolEntity, false)
   setVisible(spriteEntity, true)
   heldKind = 'food'
   heldFoodId = foodId
+}
+
+// Equip a container (cup / saltWater / freshWater) as a Sprite3D. Same
+// render path as setHeldFood but `heldKind` is 'cup' so the food-eat
+// system's count-subtract path skips it. The container-action system
+// uses `heldFoodId` to know which container variant is active and what
+// the fire press should do (fill empty cup at water, purify at the
+// purifier, drink to swap the slot back to an empty cup).
+export function setHeldCup(containerId: string, texture: string): void {
+  if (toolEntity === null || spriteEntity === null) return
+  applySpriteTexture(spriteEntity, texture)
+  applyRestPose(spriteEntity, HELD_ITEMS.cup)
+  setVisible(toolEntity, false)
+  setVisible(spriteEntity, true)
+  heldKind = 'cup'
+  heldFoodId = containerId
 }
 
 // Returns whichever child is currently active so the sway / gesture systems
@@ -163,6 +183,15 @@ function applyRestPose(entity: Entity, cfg: HeldItemConfig): void {
   t.position = cfg.offset
   t.rotation = cfg.rotation
   t.scale = cfg.scale
+}
+
+function applySpriteTexture(entity: Entity, texture: string): void {
+  Material.setBasicMaterial(entity, {
+    texture: Material.Texture.Common({ src: texture }),
+    // Cutout transparency keeps the plane silhouette tight to the icon.
+    alphaTest: 0.5,
+    castShadows: false
+  })
 }
 
 function setVisible(entity: Entity, visible: boolean): void {

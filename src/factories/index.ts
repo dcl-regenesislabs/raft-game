@@ -31,6 +31,7 @@ export {
   getHeldItemEntity,
   getHeldItemKind,
   getHeldItemRest,
+  setHeldCup,
   setHeldFood,
   setHeldItem
 } from './heldItem'
