@@ -26,7 +26,11 @@ export function getPurifyProgress(): number {
 
 // Begin a purify cycle on the given slot. Caller must verify the slot
 // currently holds a salt-water cup; this function only checks that no
-// other purify is already in flight.
+// other purify is already in flight. The slot is locked in here and
+// re-used at completion — `isInventoryActionLocked()` returns true
+// while purifying so the player can't drag the slot away mid-cycle.
+// If a cancel-purify path is added later, it must reset `activeSlot`
+// alongside `active` or the next purify could transmute a stale slot.
 export function startPurify(slotIndex: number): boolean {
   if (active) return false
   active = true

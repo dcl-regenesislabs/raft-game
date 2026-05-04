@@ -99,9 +99,11 @@ export async function main(): Promise<void> {
   engine.addSystem(pressPulseTickSystem)
   engine.addSystem(tickNotification)
   engine.addSystem(dragResetSystem)
-  // Must be last so every consumer above sees the action-button edge
-  // flag and the world-click-consumed flag for the current frame
-  // before they're cleared.
+  // These two end-of-frame resets must be the last systems registered
+  // so every consumer above sees the action-button edge flag and the
+  // world-click-consumed flag for the current frame before they're
+  // cleared. Order between them doesn't matter — they touch
+  // independent state.
   engine.addSystem(actionButtonResetSystem)
   engine.addSystem(worldClickGateResetSystem)
   setupUi()
