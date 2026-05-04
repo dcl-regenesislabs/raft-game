@@ -7,12 +7,14 @@ import { ChargeReticle } from './components/ChargeReticle'
 import { CraftButton } from './components/CraftButton'
 import { CraftDoubleMenu } from './components/CraftMenu'
 import { CraftProgressBar } from './components/CraftProgressBar'
+import { DeathScreen } from './components/DeathScreen'
 import { DestroyBanner } from './components/DestroyBanner'
 import { InventoryButton } from './components/InventoryButton'
 import { InventoryPanel } from './components/InventoryPanel'
 import { NotificationOverlay } from './components/Notification'
 import { StatsBars } from './components/StatsBars'
 import { isCrafting } from './craftSession'
+import { isGameOver } from './gameOver'
 import { pressBackground } from './inventoryDrag'
 import { isPurifying } from './purifySession'
 
@@ -44,6 +46,16 @@ function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs
 }
 
 function ui(): ReactEcs.JSX.Element {
+  // Death overlay sits OUTSIDE the safe area so its dark backdrop covers
+  // the full viewport (notch / home-indicator strips included). All
+  // regular HUD elements suppress while dead.
+  if (isGameOver()) {
+    return (
+      <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
+        <DeathScreen />
+      </UiEntity>
+    )
+  }
   // While a craft or purify is running every interactive HUD element
   // hides — the player can't act, only watch the progress bar fill.
   // The bar reuses the hook charge meter style for visual consistency.

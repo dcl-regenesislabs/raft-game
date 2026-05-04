@@ -239,6 +239,20 @@ export function getAllCollected(): ReadonlyMap<string, number> {
   return collectedCounts
 }
 
+// Wipes the collected-counts ledger and snaps the bottom-bar selection
+// back to slot 0. Paired with `resetInventoryLayout()` for the death-screen
+// Play Again flow — the inventory layout reset would leave stale counts
+// pointing at item ids that no longer have a slot.
+export function resetInventoryState(): void {
+  collectedCounts.clear()
+  selected = 0
+  for (let i = 0; i < SLOT_COUNT; i++) {
+    pressElapsed[i] = PRESS_DURATION + 1
+    pressCount[i] = 0
+  }
+  pointerLockoutFromSelection = false
+}
+
 // Convert a slot's item id in place (e.g. cup → saltWater → freshWater
 // → cup). Keeps the per-id `collectedCounts` map in lockstep so any
 // "do I have at least one?" check downstream sees the right answer.

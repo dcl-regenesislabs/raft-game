@@ -264,6 +264,19 @@ export function transmuteSlot(slotIndex: number, newId: string): boolean {
   return true
 }
 
+// Wipe the inventory back to its starter loadout: the hook in slot 0 and
+// every other slot empty. Used by the death-screen Play Again flow so the
+// player restarts with the same baseline a fresh scene load gives them.
+export function resetInventoryLayout(): void {
+  for (let i = 0; i < layout.length; i++) layout[i] = null
+  const hook = TOOL('hook', 'images/hud/items/item-00.png', 'hook')
+  layout[0] = hook
+  // Drop everything but the hook from the by-id lookup so stale defs from
+  // previously-collected materials don't survive the reset.
+  for (const id of Object.keys(ITEMS_BY_ID)) delete ITEMS_BY_ID[id]
+  ITEMS_BY_ID[hook.id] = hook
+}
+
 // Swap the contents of two inventory slots. Out-of-range or no-op (a===b)
 // calls are silently ignored so callers can pass the raw drag-source /
 // drag-target pair without pre-validating.

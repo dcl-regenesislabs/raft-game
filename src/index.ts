@@ -41,6 +41,7 @@ import { setupUi } from './ui'
 import { actionButtonResetSystem } from './ui/actionButton'
 import { craftSessionTickSystem } from './ui/craftSession'
 import { craftToggleResetSystem } from './ui/craftToggle'
+import { gameOverInputLockSystem } from './ui/gameOver'
 import { dragResetSystem } from './ui/inventoryDrag'
 import { addCollected } from './ui/inventoryState'
 import { inventoryToggleResetSystem } from './ui/inventoryToggle'
@@ -96,6 +97,7 @@ export async function main(): Promise<void> {
   engine.addSystem(purifySessionTickSystem)
   engine.addSystem(inventoryToggleResetSystem)
   engine.addSystem(craftToggleResetSystem)
+  engine.addSystem(gameOverInputLockSystem)
   engine.addSystem(pressPulseTickSystem)
   engine.addSystem(tickNotification)
   engine.addSystem(dragResetSystem)

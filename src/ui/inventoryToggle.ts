@@ -8,6 +8,7 @@ import { InputModifier, engine } from '@dcl/sdk/ecs'
 
 import { isCraftOpen, setCraftOpen } from './craftToggle'
 import { isCrafting } from './craftSession'
+import { isGameOver } from './gameOver'
 import { cancelSelection } from './inventoryDrag'
 import { isPurifying } from './purifySession'
 
@@ -41,7 +42,8 @@ export function isInventoryActionLocked(): boolean {
     postCloseLockoutSec > 0 ||
     isCraftOpen() ||
     isCrafting() ||
-    isPurifying()
+    isPurifying() ||
+    isGameOver()
   )
 }
 

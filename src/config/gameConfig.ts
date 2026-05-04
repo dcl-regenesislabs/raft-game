@@ -67,6 +67,16 @@ export const LIFE_DAMAGE_SINGLE_PCT_PER_S = 0.75
 // Life damage per second when BOTH hunger AND thirst are at 0% (replaces,
 // does not stack with, the single-empty rate).
 export const LIFE_DAMAGE_BOTH_PCT_PER_S = 1.5
+// Unconditional life drain (independent of hunger/thirst). Set to a non-zero
+// value to reach the death screen quickly for testing the game-over flow.
+// MUST be 0 on shipped builds.
+export const LIFE_DRAIN_PCT_PER_S = 5
+
+// One-time life cost (percentage points) the player pays each time the
+// fall-rescue system bails them out of the water. Stacks with whatever
+// life they had on entry — repeat falls eventually trigger the death
+// screen.
+export const FALL_LIFE_DAMAGE_PCT = 25
 
 // --- Hook thrower ----------------------------------------------------------
 // Initial speed bounds along the aim direction. Charge ramps the throw
