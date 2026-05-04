@@ -4,6 +4,8 @@
 // cleared at the end of each frame by `actionButtonResetSystem`, registered
 // last in `index.ts` so every reader sees the edge during its own tick.
 
+import { isCupFillTargetActive } from '../systems/cupFill'
+import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { getSelectedSlot, getSlotHasAction } from './inventoryState'
 
 let pressed = false
@@ -42,10 +44,19 @@ export function actionButtonJustReleased(): boolean {
   return edgeReleased
 }
 
-// Visible only when the currently selected slot is flagged as having an
-// executable action (see `hasAction` on each SLOTS entry).
+// Visible only when the currently selected slot is flagged as having
+// an executable action (see `hasAction` on each SLOTS entry). The
+// empty-cup case adds a per-target gate: the action button means
+// "fill the cup with what I'm pointing at", so it should only surface
+// while the camera is actually aimed at water — otherwise the button
+// would dangle uselessly on the HUD whenever the player holds an
+// empty cup.
 export function isActionButtonAvailable(): boolean {
-  return getSlotHasAction(getSelectedSlot())
+  if (!getSlotHasAction(getSelectedSlot())) return false
+  if (getHeldItemKind() === 'cup' && getHeldFoodId() === 'cup') {
+    return isCupFillTargetActive()
+  }
+  return true
 }
 
 // Clears the single-frame edge flags. Must run after every system that reads
