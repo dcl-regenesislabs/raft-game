@@ -4,7 +4,7 @@
 // cleared at the end of each frame by `actionButtonResetSystem`, registered
 // last in `index.ts` so every reader sees the edge during its own tick.
 
-import { isCupFillTargetActive } from '../systems/cupFill'
+import { getCupTarget } from '../systems/cupFill'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { getSelectedSlot, getSlotHasAction } from './inventoryState'
 
@@ -54,7 +54,7 @@ export function actionButtonJustReleased(): boolean {
 export function isActionButtonAvailable(): boolean {
   if (!getSlotHasAction(getSelectedSlot())) return false
   if (getHeldItemKind() === 'cup' && getHeldFoodId() === 'cup') {
-    return isCupFillTargetActive()
+    return getCupTarget() === 'water'
   }
   return true
 }

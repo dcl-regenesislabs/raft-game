@@ -1,6 +1,8 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { isMobile } from '@dcl/sdk/platform'
 
+import { getHeldFoodId, getHeldItemKind } from '../../factories/heldItem'
+import { getCupTarget } from '../../systems/cupFill'
 import {
   getActionButtonScale,
   isActionButtonAvailable,
@@ -10,6 +12,7 @@ import {
 } from '../actionButton'
 import { getSelectedSlot, getSlotItem } from '../inventoryState'
 import { isInventoryOpen } from '../inventoryToggle'
+import { getItem } from '../items'
 import {
   ACTION_BUTTON_FRAME,
   ACTION_BUTTON_ICON_INSET_PCT,
@@ -31,7 +34,8 @@ import {
 export function ActionButton(): ReactEcs.JSX.Element | null {
   if (!isMobile() || !isActionButtonAvailable() || isInventoryOpen()) return null
   const pressed = isActionButtonPressed()
-  const iconTexture = getSlotItem(getSelectedSlot())?.texture ?? null
+  const iconTexture =
+    contextualIconTexture() ?? getSlotItem(getSelectedSlot())?.texture ?? null
   const scaledSize = Math.round(ACTION_BUTTON_SIZE * getActionButtonScale())
   return (
     <UiEntity
@@ -91,4 +95,17 @@ export function ActionButton(): ReactEcs.JSX.Element | null {
       </UiEntity>
     </UiEntity>
   )
+}
+
+// Returns a context-specific icon texture when the action the button
+// will execute differs from "use the equipped item" — e.g. holding a
+// salt-water cup while aimed at a placed purifier means pressing the
+// button kicks off the purify session, so the icon shows the purifier
+// instead of the salt-water cup. Returns null when the default
+// equipped-slot texture should win.
+function contextualIconTexture(): string | null {
+  if (getHeldItemKind() !== 'cup') return null
+  if (getHeldFoodId() !== 'saltWater') return null
+  if (getCupTarget() !== 'purifier') return null
+  return getItem('purifier')?.texture ?? null
 }

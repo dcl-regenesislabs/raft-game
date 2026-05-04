@@ -8,7 +8,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { isMobile } from '@dcl/sdk/platform'
 
-import { WaterScroll } from '../components'
+import { PlatformConstruction, WaterScroll } from '../components'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
@@ -25,40 +25,47 @@ import {
   unregisterCameraForwardRaycast
 } from './raft/shared'
 
-// Manages the empty-cup → salt-water-cup transition. Three things each
-// frame:
-//   1. Toggle PointerEvents on the water plane so the SDK only shows
-//      the "FILL CUP" hover prompt when the player is actually holding
-//      an empty cup. Other times the water surface stays inert.
-//   2. Track whether the camera is currently aimed at water via a
-//      continuous CL_POINTER raycast, registered only while the empty
-//      cup is held. The action-button HUD reads this so the button
-//      only surfaces (and only fires) when there's water in front.
-//   3. On fire — either a direct entity-targeted click on the water,
-//      or the mobile action button while looking at water — transmute
-//      the equipped cup slot to a salt-water cup.
+// Manages everything cup-related that depends on what the camera is
+// currently aimed at:
+//   1. Toggles a "FILL CUP" PointerEvents prompt on the water plane
+//      so the SDK only shows the hover cue while an empty cup is held.
+//   2. Runs a continuous CL_POINTER raycast whenever any cup-kind
+//      item is held and classifies the first hit as 'water',
+//      'purifier', 'grill', or null. The HUD reads this through
+//      `getCupTarget()` to swap the action-button icon contextually
+//      (e.g. salt-water cup + purifier target → purifier icon).
+//   3. Fires an empty-cup fill when the player taps the water (direct
+//      entity-targeted click) or presses the mobile action button
+//      while looking at water.
 
 const HOVER_TEXT = 'FILL CUP'
 // Pointer reach matches the construction prompt — player has to lean
 // over the edge of the raft, not click from anywhere on the deck.
 const HOVER_MAX_DISTANCE = 8
 
+export type CupTarget = 'water' | 'purifier' | 'grill' | null
+
 let waterEntityCached: Entity | null = null
 let raycasterActive = false
-let lookingAtWater = false
+let currentTarget: CupTarget = null
 
 export function cupFillSystem(_dt: number): void {
   const water = findWaterEntity()
   if (water === null) return
 
-  const cupHeld = getHeldItemKind() === 'cup' && getHeldFoodId() === 'cup'
-  syncWaterPointer(water, cupHeld)
-  syncRaycaster(water, cupHeld)
+  const heldKind = getHeldItemKind()
+  const heldId = getHeldFoodId()
+  const cupKindHeld = heldKind === 'cup'
+  const emptyCupHeld = cupKindHeld && heldId === 'cup'
 
-  if (!cupHeld) {
-    lookingAtWater = false
+  syncWaterPointer(water, emptyCupHeld)
+  syncRaycaster(water, cupKindHeld)
+
+  if (!cupKindHeld) {
+    currentTarget = null
     return
   }
+  if (!emptyCupHeld) return
   if (isInventoryActionLocked()) return
   if (isSelectionPointerLockoutActive()) return
   if (!isPointerLocked()) return
@@ -75,7 +82,8 @@ export function cupFillSystem(_dt: number): void {
     PointerEventType.PET_DOWN,
     water
   )
-  const actionButtonFire = isMobile() && actionButtonJustPressed() && lookingAtWater
+  const actionButtonFire =
+    isMobile() && actionButtonJustPressed() && currentTarget === 'water'
   if (!tappedWater && !actionButtonFire) return
 
   const slot = getSelectedSlot()
@@ -87,11 +95,11 @@ export function cupFillSystem(_dt: number): void {
   consumeWorldClick()
 }
 
-// True when the camera-forward raycast is currently hitting the water
-// plane AND an empty cup is held. Read by the HUD so the action button
-// can hide itself when there's nothing to fill from.
-export function isCupFillTargetActive(): boolean {
-  return lookingAtWater
+// Current camera-forward target while a cup-kind item is held. Returns
+// null whenever the player isn't holding a cup variant or the raycast
+// hasn't landed on a recognised entity.
+export function getCupTarget(): CupTarget {
+  return currentTarget
 }
 
 function findWaterEntity(): Entity | null {
@@ -130,13 +138,30 @@ function syncRaycaster(water: Entity, shouldRaycast: boolean): void {
   if (shouldRaycast === raycasterActive) return
   if (shouldRaycast) {
     registerCameraForwardRaycast(HOVER_MAX_DISTANCE, (result) => {
-      const firstId = result.hits[0]?.entityId
-      lookingAtWater = firstId !== undefined && (firstId as Entity) === water
+      currentTarget = classifyHit(water, result.hits[0]?.entityId)
     })
     raycasterActive = true
   } else {
     unregisterCameraForwardRaycast()
     raycasterActive = false
-    lookingAtWater = false
+    currentTarget = null
   }
+}
+
+function classifyHit(water: Entity, hitId: number | undefined): CupTarget {
+  if (hitId === undefined) return null
+  const hit = hitId as Entity
+  if (hit === water) return 'water'
+  // Map a placed-construction child entity back to its kind by scanning
+  // PlatformConstruction. Cheap — there are at most a handful of placed
+  // constructions on the raft, and the raycast handler runs once per
+  // frame.
+  for (const [, pc] of engine.getEntitiesWith(PlatformConstruction)) {
+    if (pc.child === hit) {
+      if (pc.kind === 'purifier') return 'purifier'
+      if (pc.kind === 'grill') return 'grill'
+      return null
+    }
+  }
+  return null
 }
