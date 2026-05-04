@@ -5,8 +5,7 @@ import {
   INVENTORY_BUTTON_ICON_INSET_PCT,
   INVENTORY_BUTTON_SIZE,
   INVENTORY_BUTTON_TEXTURE,
-  INVENTORY_BUTTON_TEXTURE_OPEN,
-  INVENTORY_BUTTON_TOP
+  INVENTORY_BUTTON_TEXTURE_OPEN
 } from '../theme'
 
 // Top-row toggle button (inventory backpack, craft saw). Both buttons share
@@ -21,6 +20,8 @@ export interface IconButtonProps {
   open: boolean
   scale: number
   iconTexture: string
+  // Distance (px) from the safe-area top edge to the button frame.
+  top: number
   // Distance (px) from the safe-area right edge to the button frame.
   right: number
   onPress: () => void
@@ -33,7 +34,7 @@ export function IconButton(props: IconButtonProps): ReactEcs.JSX.Element {
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: INVENTORY_BUTTON_TOP, right: props.right },
+        position: { top: props.top, right: props.right },
         width: INVENTORY_BUTTON_FRAME,
         height: INVENTORY_BUTTON_FRAME,
         alignItems: 'center',

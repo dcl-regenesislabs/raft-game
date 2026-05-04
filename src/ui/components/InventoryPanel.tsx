@@ -31,8 +31,9 @@ import { ItemCountBadge } from './ItemCountBadge'
 // linear layout so adjusting `items.ts` flows through to the UI.
 const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_LAYOUT.length - BOTTOM_BAR_SLOT_COUNT
 
-// Fullscreen overlay centered on the screen. Renders nothing while the
-// inventory is closed.
+// Fullscreen overlay anchored to the top-middle so the panel sits at
+// the top of the screen rather than dead-center. Renders nothing while
+// the inventory is closed.
 export function InventoryPanel(): ReactEcs.JSX.Element | null {
   if (!isInventoryOpen()) return null
   return (
@@ -44,10 +45,12 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
         height: '100%',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'flex-start'
       }}
     >
-      <InventoryGrid />
+      <UiEntity uiTransform={{ margin: { top: -20 } }}>
+        <InventoryGrid />
+      </UiEntity>
     </UiEntity>
   )
 }

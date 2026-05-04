@@ -108,11 +108,15 @@ export const COUNT_BADGE_FG = Color4.White()
 export const INVENTORY_BUTTON_TEXTURE = 'images/hud/button.png'
 export const INVENTORY_BUTTON_TEXTURE_OPEN = 'images/hud/selected-button.png'
 export const INVENTORY_BUTTON_ICON = 'images/hud/backpack.png'
-export const INVENTORY_BUTTON_SIZE = ACTION_BUTTON_SIZE
-// Distance from the safe-area top edge to the button frame.
-export const INVENTORY_BUTTON_TOP = 24
+// Smaller than the action button (hook): the backpack/craft pair sits
+// at the top edge as menu toggles, not as in-game tools, so they should
+// read as secondary chrome rather than dominating the screen.
+export const INVENTORY_BUTTON_SIZE = 140
+// Pulled slightly above the safe-area top edge so the circular frames
+// nest visually into the corner. Shared by both top-right buttons.
+export const INVENTORY_BUTTON_TOP = -15
 // Distance from the safe-area right edge to the backpack frame.
-export const INVENTORY_BUTTON_RIGHT = 32
+export const INVENTORY_BUTTON_RIGHT = 100
 // Same trick as the action button: an outer frame sized to the peak-press
 // scale prevents the button from shifting when it grows.
 export const INVENTORY_BUTTON_FRAME = Math.round(INVENTORY_BUTTON_SIZE * 1.25)
@@ -120,9 +124,10 @@ export const INVENTORY_BUTTON_ICON_INSET_PCT = 24
 
 export const CRAFT_BUTTON_ICON = 'images/hud/saw.png'
 // Sit one button-size to the left of the backpack so visible edges are
-// flush (no gap from the frame padding around either button).
+// flush (no gap from the frame padding around either button). The -30
+// nudge tightens the gap further so the pair reads as a unit.
 export const CRAFT_BUTTON_RIGHT =
-  INVENTORY_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE
+  INVENTORY_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
 
 // --- Craft double-menu -----------------------------------------------------
 // The list and details panels render centered using the nine-sliced
@@ -133,9 +138,9 @@ export const CRAFT_BUTTON_RIGHT =
 export const CRAFT_LIST_WIDTH = 280
 export const CRAFT_LIST_HEIGHT = 540
 export const CRAFT_DETAILS_WIDTH = 360
-export const CRAFT_INVENTORY_SIZE = 360
-export const CRAFT_INVENTORY_TOP = 24
-export const CRAFT_INVENTORY_LEFT = 24
+export const CRAFT_INVENTORY_SIZE = 375
+export const CRAFT_INVENTORY_TOP = 85
+export const CRAFT_INVENTORY_LEFT = -20
 // Craft details panel grows with the recipe — header + description + the
 // REQUIRES row + one row per material.
 export const CRAFT_DETAILS_BASE_HEIGHT = 280

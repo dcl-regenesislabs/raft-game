@@ -56,52 +56,28 @@ import { InventoryGrid } from './InventoryPanel'
 // in `index.ts`.
 const craftActionPulse = createPressPulse()
 
-// Two-pane menu: recipe list on the left, recipe details on the right,
-// centered on screen. A smaller copy of the inventory grid is anchored to
-// the top-left corner so the player can see their materials — the stats
-// bars normally there are hidden while the craft menu is open, so the
-// corner is free. Renders nothing while closed.
+// Single horizontal row anchored to the top-left edge: mini inventory,
+// then the recipe list, then the recipe details panel — flush against
+// each other so the three elements read as one craft surface. The stats
+// bars normally in the top-left corner are hidden while the craft menu
+// is open, so this row is free to claim that real estate. Renders
+// nothing while closed.
 export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
   if (!isCraftOpen()) return null
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: 0, left: 0 },
-        width: '100%',
-        height: '100%'
+        position: { top: CRAFT_INVENTORY_TOP, left: CRAFT_INVENTORY_LEFT },
+        flexDirection: 'row',
+        alignItems: 'flex-start'
       }}
     >
-      <UiEntity
-        uiTransform={{
-          positionType: 'absolute',
-          position: { top: CRAFT_INVENTORY_TOP, left: CRAFT_INVENTORY_LEFT }
-        }}
-      >
-        <InventoryGrid size={CRAFT_INVENTORY_SIZE} />
-      </UiEntity>
-      <UiEntity
-        uiTransform={{
-          positionType: 'absolute',
-          position: { top: 0, left: 0 },
-          width: '100%',
-          height: '100%',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        <UiEntity
-          uiTransform={{
-            flexDirection: 'row',
-            alignItems: 'center'
-          }}
-        >
-          <CraftItemList />
-          <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
-          <CraftDetails />
-        </UiEntity>
-      </UiEntity>
+      <InventoryGrid size={CRAFT_INVENTORY_SIZE} />
+      <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
+      <CraftItemList />
+      <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
+      <CraftDetails />
     </UiEntity>
   )
 }
@@ -113,6 +89,7 @@ function CraftItemList(): ReactEcs.JSX.Element {
         width: CRAFT_LIST_WIDTH,
         height: CRAFT_LIST_HEIGHT,
         flexDirection: 'column',
+        margin: { left: -25, top: -60 },
         padding: {
           top: CRAFT_PANEL_PADDING_TOP,
           bottom: CRAFT_PANEL_PADDING_BOTTOM,
