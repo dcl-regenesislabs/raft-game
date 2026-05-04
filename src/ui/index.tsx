@@ -66,14 +66,7 @@ function ui(): ReactEcs.JSX.Element {
   return (
     <SafeArea>
       <UiEntity
-        uiTransform={{
-          width: '100%',
-          height: '100%',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          padding: { top: 80 }
-        }}
+        uiTransform={{ width: '100%', height: '100%' }}
         // Any click that doesn't land on a slot (or on the slot's parents
         // forwarding the press) cancels the current swap selection. Slot
         // handlers set `interactionThisFrame` so this background handler

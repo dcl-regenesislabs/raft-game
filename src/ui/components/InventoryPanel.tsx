@@ -1,6 +1,5 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 
 import { isCraftOpen } from '../craftToggle'
 import {
@@ -32,14 +31,10 @@ import { ItemCountBadge } from './ItemCountBadge'
 // linear layout so adjusting `items.ts` flows through to the UI.
 const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_LAYOUT.length - BOTTOM_BAR_SLOT_COUNT
 
-// Fullscreen overlay holding the inventory grid, centered just above the
-// bottom bar. Renders nothing while the inventory is closed.
+// Fullscreen overlay centered on the screen. Renders nothing while the
+// inventory is closed.
 export function InventoryPanel(): ReactEcs.JSX.Element | null {
   if (!isInventoryOpen()) return null
-  // Mirror the bottom bar's mobile right-shift so the inventory's left edge
-  // tracks the bar's left edge across platforms.
-  const mobile = isMobile()
-  const barShiftX = mobile ? Math.round(INVENTORY_PANEL_SIZE / 5) : 0
   return (
     <UiEntity
       uiTransform={{
@@ -52,9 +47,7 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
         justifyContent: 'center'
       }}
     >
-      <UiEntity uiTransform={{ margin: { left: barShiftX, bottom: '10%' } }}>
-        <InventoryGrid />
-      </UiEntity>
+      <InventoryGrid />
     </UiEntity>
   )
 }

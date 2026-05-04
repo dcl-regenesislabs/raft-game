@@ -1,6 +1,5 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 
 import {
   getSelectedDragSlot,
@@ -15,13 +14,10 @@ import {
 import { isInventoryOpen } from '../inventoryToggle'
 import { BOTTOM_BAR_SLOT_COUNT, getInventorySlot } from '../items'
 import {
-  BAR_BOTTOM_DESKTOP,
-  BAR_BOTTOM_MOBILE,
-  BAR_HEIGHT_DESKTOP,
-  BAR_HEIGHT_MOBILE,
+  BAR_BOTTOM,
+  BAR_HEIGHT,
   BAR_TEXTURE,
-  BAR_WIDTH_DESKTOP,
-  BAR_WIDTH_MOBILE,
+  BAR_WIDTH,
   GLOW_ALPHA_PEAK_BONUS,
   GLOW_ALPHA_SELECTED,
   GLOW_COLOR,
@@ -36,30 +32,19 @@ import {
 import { shakeOffset } from '../utils/shake'
 import { ItemCountBadge } from './ItemCountBadge'
 
-// Bottom-anchored toolbar holding BOTTOM_BAR_SLOT_COUNT slots. The painted
+// Bottom-center toolbar holding BOTTOM_BAR_SLOT_COUNT slots. The painted
 // background art positions the cells; each slot is positioned absolutely
 // at its measured cell centre so the items line up with the painting at
 // any bar size.
 export function BottomBar(): ReactEcs.JSX.Element {
-  // isMobile() (from @dcl/sdk/platform) is the authoritative platform check —
-  // canvas width in virtual pixels is unreliable since DCL phones report
-  // large widths.
-  const mobile = isMobile()
-  const barWidth = mobile ? BAR_WIDTH_MOBILE : BAR_WIDTH_DESKTOP
-  const barHeight = mobile ? BAR_HEIGHT_MOBILE : BAR_HEIGHT_DESKTOP
-  const barBottom = mobile ? BAR_BOTTOM_MOBILE : BAR_BOTTOM_DESKTOP
-  // Shift the mobile bar to the right by 1/5 of its width so it doesn't sit
-  // dead-center under the action button on touch devices.
-  const barShiftX = mobile ? Math.round(barWidth / 5) : 0
   return (
     <UiEntity
       uiTransform={{
-        width: barWidth,
-        height: barHeight,
+        width: BAR_WIDTH,
+        height: BAR_HEIGHT,
         positionType: 'absolute',
-        position: { bottom: barBottom },
-        alignSelf: 'center',
-        margin: { left: barShiftX }
+        position: { bottom: BAR_BOTTOM, left: '50%' },
+        margin: { left: -Math.round(BAR_WIDTH / 2) }
       }}
       uiBackground={{
         textureMode: 'stretch',
@@ -67,7 +52,7 @@ export function BottomBar(): ReactEcs.JSX.Element {
       }}
     >
       {Array.from({ length: BOTTOM_BAR_SLOT_COUNT }, (_, i) => (
-        <Slot key={i} index={i} barWidth={barWidth} barHeight={barHeight} />
+        <Slot key={i} index={i} barWidth={BAR_WIDTH} barHeight={BAR_HEIGHT} />
       ))}
     </UiEntity>
   )

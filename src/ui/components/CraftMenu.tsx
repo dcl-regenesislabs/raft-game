@@ -1,6 +1,5 @@
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 
 import {
   CRAFTABLE_ITEMS,
@@ -36,12 +35,9 @@ import {
   CRAFT_DIVIDER_COLOR,
   CRAFT_HAVE_LOW_COLOR,
   CRAFT_HAVE_OK_COLOR,
-  CRAFT_INVENTORY_BOTTOM,
   CRAFT_INVENTORY_LEFT,
-  CRAFT_INVENTORY_LEFT_MOBILE,
   CRAFT_INVENTORY_SIZE,
-  CRAFT_INVENTORY_SIZE_MOBILE,
-  CRAFT_INVENTORY_TOP_MOBILE,
+  CRAFT_INVENTORY_TOP,
   CRAFT_LIST_HEIGHT,
   CRAFT_LIST_WIDTH,
   CRAFT_PANEL_GAP,
@@ -61,12 +57,12 @@ import { InventoryGrid } from './InventoryPanel'
 const craftActionPulse = createPressPulse()
 
 // Two-pane menu: recipe list on the left, recipe details on the right,
-// with a smaller copy of the inventory grid pinned to the bottom-left
-// corner so the player can see their materials. Renders nothing while
-// closed.
+// centered on screen. A smaller copy of the inventory grid is anchored to
+// the top-left corner so the player can see their materials — the stats
+// bars normally there are hidden while the craft menu is open, so the
+// corner is free. Renders nothing while closed.
 export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
   if (!isCraftOpen()) return null
-  const mobile = isMobile()
   return (
     <UiEntity
       uiTransform={{
@@ -76,29 +72,14 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
         height: '100%'
       }}
     >
-      {/* Inventory pinned to the bottom-left on desktop. On mobile the
-          bottom-left is reserved for the joystick, so the grid moves to
-          the top-left where the (now hidden) stats bars normally sit. */}
       <UiEntity
         uiTransform={{
           positionType: 'absolute',
-          position: mobile
-            ? {
-                top: CRAFT_INVENTORY_TOP_MOBILE,
-                left: CRAFT_INVENTORY_LEFT_MOBILE
-              }
-            : {
-                bottom: CRAFT_INVENTORY_BOTTOM,
-                left: CRAFT_INVENTORY_LEFT
-              }
+          position: { top: CRAFT_INVENTORY_TOP, left: CRAFT_INVENTORY_LEFT }
         }}
       >
-        <InventoryGrid
-          size={mobile ? CRAFT_INVENTORY_SIZE_MOBILE : CRAFT_INVENTORY_SIZE}
-        />
+        <InventoryGrid size={CRAFT_INVENTORY_SIZE} />
       </UiEntity>
-      {/* List + details centered in the middle of the screen. The bottom
-          margin lifts them off the bottom bar. */}
       <UiEntity
         uiTransform={{
           positionType: 'absolute',
@@ -113,8 +94,7 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
         <UiEntity
           uiTransform={{
             flexDirection: 'row',
-            alignItems: 'center',
-            margin: { bottom: '8%' }
+            alignItems: 'center'
           }}
         >
           <CraftItemList />

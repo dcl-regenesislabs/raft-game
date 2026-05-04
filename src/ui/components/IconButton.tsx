@@ -1,12 +1,9 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
-import { isMobile } from '@dcl/sdk/platform'
 
 import {
   INVENTORY_BUTTON_FRAME,
-  INVENTORY_BUTTON_FRAME_MOBILE,
   INVENTORY_BUTTON_ICON_INSET_PCT,
   INVENTORY_BUTTON_SIZE,
-  INVENTORY_BUTTON_SIZE_MOBILE,
   INVENTORY_BUTTON_TEXTURE,
   INVENTORY_BUTTON_TEXTURE_OPEN,
   INVENTORY_BUTTON_TOP
@@ -15,42 +12,30 @@ import {
 // Top-row toggle button (inventory backpack, craft saw). Both buttons share
 // the same circular art and centering logic; the only differences are:
 //   - which inner icon they render,
-//   - how they pin horizontally (mobile %-anchor vs desktop right-inset),
+//   - distance from the safe-area right edge,
 //   - what state controls "open" vs "closed",
 //   - what runs on press.
-// Encapsulating the layout here keeps the two call sites tiny.
+// All anchored top-right with a single `right` offset that maps each
+// button into the same row.
 export interface IconButtonProps {
   open: boolean
   scale: number
   iconTexture: string
-  // Desktop right-edge inset (pixels) and mobile left-edge anchor (% of
-  // canvas width). Both are read each render — `isMobile()` picks one.
-  rightDesktop: number
-  leftPctMobile: number
+  // Distance (px) from the safe-area right edge to the button frame.
+  right: number
   onPress: () => void
   key?: number | string
 }
 
 export function IconButton(props: IconButtonProps): ReactEcs.JSX.Element {
-  const mobile = isMobile()
-  const baseSize = mobile ? INVENTORY_BUTTON_SIZE_MOBILE : INVENTORY_BUTTON_SIZE
-  const frameSize = mobile ? INVENTORY_BUTTON_FRAME_MOBILE : INVENTORY_BUTTON_FRAME
-  const scaledSize = Math.round(baseSize * props.scale)
+  const scaledSize = Math.round(INVENTORY_BUTTON_SIZE * props.scale)
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: mobile
-          ? {
-              top: INVENTORY_BUTTON_TOP,
-              left: `${props.leftPctMobile}%`
-            }
-          : {
-              top: INVENTORY_BUTTON_TOP,
-              right: props.rightDesktop
-            },
-        width: frameSize,
-        height: frameSize,
+        position: { top: INVENTORY_BUTTON_TOP, right: props.right },
+        width: INVENTORY_BUTTON_FRAME,
+        height: INVENTORY_BUTTON_FRAME,
         alignItems: 'center',
         justifyContent: 'center'
       }}
