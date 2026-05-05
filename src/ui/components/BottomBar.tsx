@@ -18,8 +18,10 @@ import { BOTTOM_BAR_SLOT_COUNT, getInventorySlot } from '../items'
 import {
   BAR_BOTTOM,
   BAR_HEIGHT,
+  BAR_SCALE,
   BAR_TEXTURE,
   BAR_WIDTH,
+  COOK_NON_INGREDIENT_TINT,
   GLOW_ALPHA_PEAK_BONUS,
   GLOW_ALPHA_SELECTED,
   GLOW_COLOR,
@@ -39,15 +41,16 @@ import { ItemCountBadge } from './ItemCountBadge'
 // at its measured cell centre so the items line up with the painting at
 // any bar size.
 export function BottomBar(): ReactEcs.JSX.Element {
+  const width = Math.round(BAR_WIDTH * BAR_SCALE)
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
         position: { bottom: BAR_BOTTOM, left: '50%' },
-        margin: { left: -Math.round(BAR_WIDTH / 2) }
+        margin: { left: -Math.round(width / 2) }
       }}
     >
-      <BottomBarSurface width={BAR_WIDTH} />
+      <BottomBarSurface width={width} />
     </UiEntity>
   )
 }
@@ -193,7 +196,14 @@ function Slot(props: {
             }}
             uiBackground={{
               textureMode: 'stretch',
-              texture: { src: display.texture }
+              texture: { src: display.texture },
+              // Dim non-ingredient icons while the cook menu is open so
+              // the player sees at a glance which hot-bar slots can be
+              // dropped into a recipe and which can't.
+              color:
+                cookOpen && !display.ingredient
+                  ? COOK_NON_INGREDIENT_TINT
+                  : undefined
             }}
           />
         )}

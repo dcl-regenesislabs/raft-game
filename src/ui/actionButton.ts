@@ -4,7 +4,7 @@
 // cleared at the end of each frame by `actionButtonResetSystem`, registered
 // last in `index.ts` so every reader sees the edge during its own tick.
 
-import { getCupTarget } from '../systems/cupFill'
+import { getLookAtTarget } from '../systems/lookAtTarget'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { getSelectedSlot, getSlotHasAction } from './inventoryState'
 
@@ -51,10 +51,16 @@ export function actionButtonJustReleased(): boolean {
 // while the camera is actually aimed at water — otherwise the button
 // would dangle uselessly on the HUD whenever the player holds an
 // empty cup.
+//
+// Looking at a placed grill ALWAYS surfaces the button regardless of the
+// held slot's own action, because the grill override (open the cook
+// menu) is the dominant action whenever the camera is on a grill — see
+// `ActionButton.tsx` for the matching icon swap.
 export function isActionButtonAvailable(): boolean {
+  if (getLookAtTarget() === 'grill') return true
   if (!getSlotHasAction(getSelectedSlot())) return false
   if (getHeldItemKind() === 'cup' && getHeldFoodId() === 'cup') {
-    return getCupTarget() === 'water'
+    return getLookAtTarget() === 'water'
   }
   return true
 }

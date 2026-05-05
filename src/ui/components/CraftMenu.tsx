@@ -15,7 +15,8 @@ import {
 import {
   getSelectedCraftableId,
   isCraftOpen,
-  selectCraftable
+  selectCraftable,
+  setCraftOpen
 } from '../craftToggle'
 import { getCollectedCount } from '../inventoryState'
 import { getMaterialDef } from '../items'
@@ -29,6 +30,8 @@ import {
   CRAFT_BUTTON_ICON,
   CRAFT_BUTTON_TEXTURE,
   CRAFT_BUTTON_W,
+  CLOSE_BUTTON_CRAFT_MARGIN_RIGHT,
+  CLOSE_BUTTON_CRAFT_MARGIN_TOP,
   CRAFT_DETAILS_BASE_HEIGHT,
   CRAFT_DETAILS_ROW_HEIGHT,
   CRAFT_DETAILS_WIDTH,
@@ -51,6 +54,7 @@ import {
   CRAFT_TEXT_DIM_COLOR,
   CRAFT_TEXT_LIGHT_COLOR
 } from '../theme'
+import { CloseButton } from './CloseButton'
 import { InventoryWithBar } from './InventoryWithBar'
 
 // Module-level pulse so the same animation clock survives across the
@@ -263,6 +267,16 @@ function CraftDetails(): ReactEcs.JSX.Element | null {
           textAlign="middle-left"
           uiTransform={{ flexGrow: 1, height: '100%', margin: { left: 10 } }}
         />
+        <UiEntity
+          uiTransform={{
+            margin: {
+              top: CLOSE_BUTTON_CRAFT_MARGIN_TOP,
+              right: CLOSE_BUTTON_CRAFT_MARGIN_RIGHT
+            }
+          }}
+        >
+          <CloseButton onPress={() => setCraftOpen(false)} />
+        </UiEntity>
       </UiEntity>
       <UiEntity
         uiTransform={{

@@ -19,7 +19,7 @@ import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import { isPurifying, startPurify } from '../ui/purifySession'
 import { showNotification } from '../ui/notification'
 import { consumeWorldClick } from '../ui/worldClickGate'
-import { getCupTarget } from './cupFill'
+import { getLookAtTarget } from './lookAtTarget'
 
 // Handles fire presses landing on a placed PURIFIER or GRILL via two
 // paths each frame:
@@ -29,14 +29,14 @@ import { getCupTarget } from './cupFill'
 //     currently aimed at a construction of that kind. This is what
 //     lets the contextual icon swap on the action button (e.g. salt
 //     water + purifier in view → button shows the purifier icon and
-//     pressing it kicks off the purify session).
+//     pressing it kicks off the purify session; aiming at a grill
+//     swaps the button to the grill icon and opens the cook menu).
 //
 // Per-kind behaviour:
 //   purifier — if the player is holding a salt-water cup, kick off the
 //     4-second purify session (the slot transmutes to a fresh-water
 //     cup on completion). Otherwise nudge the player toward salt water.
-//   grill    — placeholder. Cooking isn't wired up yet, so we just
-//     surface a notification mirroring the hover prompt.
+//   grill    — opens the cook menu.
 //
 // Either way the click is marked consumed so a global handler (e.g.
 // the food-eat drink path) doesn't also fire on the same press.
@@ -48,7 +48,7 @@ export function constructionInteractSystem(_dt: number): void {
   if (!isPointerLocked()) return
 
   const actionButton = isMobile() && actionButtonJustPressed()
-  const cupTarget = getCupTarget()
+  const lookTarget = getLookAtTarget()
 
   for (const [, pc] of engine.getEntitiesWith(PlatformConstruction)) {
     const child = pc.child
@@ -59,8 +59,8 @@ export function constructionInteractSystem(_dt: number): void {
     )
     const buttonHits =
       actionButton &&
-      ((pc.kind === 'purifier' && cupTarget === 'purifier') ||
-        (pc.kind === 'grill' && cupTarget === 'grill'))
+      ((pc.kind === 'purifier' && lookTarget === 'purifier') ||
+        (pc.kind === 'grill' && lookTarget === 'grill'))
     if (!tapped && !buttonHits) continue
 
     if (pc.kind === 'grill') {

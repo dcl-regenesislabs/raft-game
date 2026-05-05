@@ -74,24 +74,23 @@ export function getCookableById(id: string): CookableItem | null {
 
 // Recipe matcher for the drop-and-cook menu. Cells are SYMBOLIC: each
 // holds one ingredient type, never two of the same. `inputs` is the
-// list of placed cell contents (nulls allowed but ignored); `fuel` is
-// the id in the burner cell or null. A recipe matches when its set of
-// ingredient ids equals the set of placed ids AND the fuel id matches.
-// Recipe quantities are NOT consulted here — they're enforced
-// separately by the cook session, which checks the player's inventory
-// totals at COOK time. This way the player gets a recipe preview as
-// soon as they've placed the right TYPES of ingredients, even if their
-// inventory doesn't yet hold enough of each.
+// list of placed cell contents (nulls allowed but ignored). A recipe
+// matches when its set of ingredient ids equals the set of placed ids.
+//
+// Fuel (wood) is intentionally NOT part of the match — the player gets
+// a recipe preview as soon as they've placed the right INGREDIENTS,
+// even before dropping wood in the burner. The fuel requirement is
+// enforced separately by the cook session before the COOK button
+// enables. Recipe quantities are also not consulted here; they're
+// enforced at COOK time against the player's inventory totals.
 export function matchCookRecipe(
-  inputs: readonly (string | null)[],
-  fuel: string | null
+  inputs: readonly (string | null)[]
 ): CookableItem | null {
   const placed = new Set<string>()
   for (const id of inputs) {
     if (id !== null) placed.add(id)
   }
   for (const recipe of COOKABLE_ITEMS) {
-    if (recipe.fuel.itemId !== fuel) continue
     if (recipe.ingredients.length !== placed.size) continue
     let matches = true
     for (const ing of recipe.ingredients) {

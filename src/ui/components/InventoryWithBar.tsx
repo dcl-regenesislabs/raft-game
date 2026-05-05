@@ -1,6 +1,11 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 
-import { BAR_HEIGHT, BAR_WIDTH, INVENTORY_PANEL_SIZE } from '../theme'
+import {
+  BAR_HEIGHT,
+  BAR_SCALE,
+  BAR_WIDTH,
+  INVENTORY_PANEL_SIZE
+} from '../theme'
 import { BottomBarSurface } from './BottomBar'
 import { InventoryGrid } from './InventoryPanel'
 
@@ -29,12 +34,14 @@ export function InventoryWithBar(props: {
   size?: number
 }): ReactEcs.JSX.Element {
   const size = props.size ?? INVENTORY_PANEL_SIZE
-  // Bar PNG aspect ratio is BAR_WIDTH:BAR_HEIGHT (4:1). The bar's UI
-  // width matches the grid so the painted frames line up at the same
-  // x extents; height stays proportional so the painted cells aren't
-  // distorted.
-  const barHeight = Math.round(size * (BAR_HEIGHT / BAR_WIDTH))
+  // Bar PNG aspect ratio is BAR_WIDTH:BAR_HEIGHT (4:1). Bar UI width is
+  // a fraction of the grid so the hot-bar reads as a smaller surface
+  // tucked under the inventory; height stays proportional so the
+  // painted cells aren't distorted.
+  const barWidth = Math.round(size * BAR_SCALE)
+  const barHeight = Math.round(barWidth * (BAR_HEIGHT / BAR_WIDTH))
   const overlap = Math.round(barHeight * BAR_OVERLAP_FRACTION_OF_HEIGHT)
+  const barLeft = Math.round((size - barWidth) / 2)
   // Container reserves the full footprint of grid + bar minus the
   // overlap, so the surrounding layout sees one rectangle.
   const totalHeight = size + barHeight - overlap
@@ -53,12 +60,12 @@ export function InventoryWithBar(props: {
       <UiEntity
         uiTransform={{
           positionType: 'absolute',
-          position: { top: size - overlap, left: 0 },
-          width: size,
+          position: { top: size - overlap, left: barLeft },
+          width: barWidth,
           height: barHeight
         }}
       >
-        <BottomBarSurface width={size} />
+        <BottomBarSurface width={barWidth} />
       </UiEntity>
     </UiEntity>
   )

@@ -31,6 +31,7 @@ import { hammerSwingSystem } from './systems/hammerSwing'
 import { hookThrowAnimSystem } from './systems/hookThrowAnim'
 import { hookThrowerSystem } from './systems/hookThrower'
 import { inventoryInputSystem } from './systems/inventoryInput'
+import { lookAtTargetSystem } from './systems/lookAtTarget'
 import { raftBuilderSystem } from './systems/raftBuilder'
 import { sharkAttackSystem } from './systems/sharkAttack'
 import { sharkDirectorSystem } from './systems/sharkDirector'
@@ -72,6 +73,11 @@ export async function main(): Promise<void> {
   engine.addSystem(firstPersonItemSwaySystem)
   engine.addSystem(spearAttackSystem)
   engine.addSystem(hammerSwingSystem)
+  // lookAtTargetSystem owns the camera-forward raycast that classifies
+  // what the player is currently aiming at (water / purifier / grill).
+  // Must run before `constructionInteract` and `cupFill` so they read a
+  // fresh target this frame.
+  engine.addSystem(lookAtTargetSystem)
   // Construction + cup-fill must run BEFORE foodEat so they can mark
   // this frame's click as consumed (via worldClickGate) — otherwise a
   // tap on the purifier with salt water held would also drain the cup.

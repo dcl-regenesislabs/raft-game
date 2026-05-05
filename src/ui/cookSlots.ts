@@ -51,9 +51,10 @@ export function getPickedIngredient(): string | null {
 // Item id of the recipe whose ingredient set matches the current cell
 // layout, or null if it doesn't. The output preview slot mirrors this;
 // the cook session uses it as the eligibility check before debiting
-// quantities.
+// quantities. Fuel is NOT part of this match — the burner only gates
+// the COOK button (see `canStartCook`).
 export function getMatchingRecipe(): CookableItem | null {
-  return matchCookRecipe(inputs, fuel)
+  return matchCookRecipe(inputs)
 }
 
 // Pick an inventory item to place in the next-clicked cook cell. Only

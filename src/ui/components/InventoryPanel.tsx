@@ -9,7 +9,7 @@ import {
   isSwapModeActive,
   pressSlot
 } from '../inventoryDrag'
-import { isInventoryOpen } from '../inventoryToggle'
+import { isInventoryOpen, setInventoryOpen } from '../inventoryToggle'
 import {
   BOTTOM_BAR_SLOT_COUNT,
   INVENTORY_LAYOUT,
@@ -17,6 +17,9 @@ import {
 } from '../items'
 import {
   BAR_BOTTOM,
+  CLOSE_BUTTON_INVENTORY_RIGHT,
+  CLOSE_BUTTON_INVENTORY_TOP,
+  COOK_NON_INGREDIENT_TINT,
   GLOW_ALPHA_PEAK_BONUS,
   GLOW_COLOR,
   INVENTORY_CELL_CENTERS_PCT,
@@ -28,6 +31,7 @@ import {
   INVENTORY_PANEL_TEXTURE
 } from '../theme'
 import { shakeOffset } from '../utils/shake'
+import { CloseButton } from './CloseButton'
 import { InventoryWithBar } from './InventoryWithBar'
 import { ItemCountBadge } from './ItemCountBadge'
 
@@ -43,6 +47,11 @@ const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_LAYOUT.length - BOTTOM_BAR_SLOT_COU
 // Renders nothing while the inventory is closed.
 export function InventoryPanel(): ReactEcs.JSX.Element | null {
   if (!isInventoryOpen()) return null
+  // Close button overlaps the inventory's painted top-right wood frame
+  // so the player has a clear "close this panel" affordance without an
+  // added header bar — the inventory grid itself has no title space to
+  // share, unlike the craft and cook panels. Tune the offsets via
+  // CLOSE_BUTTON_INVENTORY_TOP / CLOSE_BUTTON_INVENTORY_RIGHT in theme.ts.
   return (
     <UiEntity
       uiTransform={{
@@ -52,6 +61,17 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
       }}
     >
       <InventoryWithBar />
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: {
+            top: CLOSE_BUTTON_INVENTORY_TOP,
+            right: CLOSE_BUTTON_INVENTORY_RIGHT
+          }
+        }}
+      >
+        <CloseButton onPress={() => setInventoryOpen(false)} />
+      </UiEntity>
     </UiEntity>
   )
 }
@@ -175,7 +195,14 @@ function InventoryCell(props: {
             }}
             uiBackground={{
               textureMode: 'stretch',
-              texture: { src: display.texture }
+              texture: { src: display.texture },
+              // Dim non-ingredient icons while the cook menu is open so
+              // the player sees at a glance which slots can be dropped
+              // into a recipe and which can't.
+              color:
+                cookOpen && !display.ingredient
+                  ? COOK_NON_INGREDIENT_TINT
+                  : undefined
             }}
           />
         )}

@@ -9,7 +9,11 @@
 // Quantities only matter at this layer.
 
 import { type CookableItem } from './cookableItems'
-import { consumePlacedCells, getMatchingRecipe } from './cookSlots'
+import {
+  consumePlacedCells,
+  getCookFuel,
+  getMatchingRecipe
+} from './cookSlots'
 import {
   addCollected,
   getCollectedCount,
@@ -31,13 +35,19 @@ export function getCookProgress(): number {
   return Math.min(1, elapsedSec / activeDurationSec)
 }
 
-// True iff a recipe is matched AND the player has enough of each
-// ingredient (and the fuel) to satisfy the recipe quantities. The cook
-// menu also uses this to enable / dim the COOK button.
+// True iff a recipe is matched, the burner holds the matching fuel,
+// AND the player has enough of each ingredient (and fuel) to satisfy
+// recipe quantities. The cook menu uses this to enable/dim the COOK
+// button.
+//
+// Recipe matching itself ignores fuel (so the output preview shows
+// from ingredients alone) — wood is checked here instead so the COOK
+// button only lights up once the burner is fed.
 export function canStartCook(): boolean {
   if (isCooking()) return false
   const recipe = getMatchingRecipe()
   if (recipe === null) return false
+  if (getCookFuel() !== recipe.fuel.itemId) return false
   for (const ing of recipe.ingredients) {
     if (getCollectedCount(ing.itemId) < ing.amount) return false
   }

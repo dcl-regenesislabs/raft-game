@@ -18,6 +18,10 @@ export const BAR_TEXTURE = 'images/hud/bottom-bar.png'
 export const BAR_WIDTH = 600
 export const BAR_HEIGHT = 150
 export const BAR_BOTTOM = 24
+// Global hot-bar scale. Applied wherever the bar is rendered (standalone
+// `BottomBar` and the bar inside `InventoryWithBar`) so both surfaces
+// shrink together. Height tracks width via the painted aspect ratio.
+export const BAR_SCALE = 0.96
 // Painted cell positions, measured from the source PNG (2508×627) by sampling
 // the cream pixels. The cells are NOT evenly distributed across the bar:
 // the wood frame leaves ~9% margin on each end and the cells sit ~17% apart
@@ -191,12 +195,19 @@ export const CRAFT_HAVE_LOW_COLOR = Color4.create(1, 0.55, 0.3, 1)
 // the painted layout image inside the wood frame with breathing room.
 export const COOK_DETAILS_WIDTH = 400
 export const COOK_DETAILS_HEIGHT = 540
-export const COOK_PANEL_GAP = 12
+// Negative pulls the cook panel left so its painted wood frame overlaps
+// the inventory's right edge — the two surfaces read as one cooking
+// station. Bump toward 0 (or positive) to add breathing room.
+export const COOK_PANEL_GAP = -20
 // Red have/need badge shown in the bottom-right of a placed cell when
 // the matched recipe wants more of that ingredient than the player
 // currently has. Sits on top of the icon.
 export const COOK_SHORTAGE_BG = Color4.create(0.85, 0.18, 0.18, 0.9)
 export const COOK_SHORTAGE_FG = Color4.White()
+// Tint multiplied onto inventory item icons that are NOT cook ingredients
+// while the cook menu is open. Dims the icon to read as "this can't be
+// dropped into the cook recipe" without hiding it entirely.
+export const COOK_NON_INGREDIENT_TINT = Color4.create(0.35, 0.35, 0.35, 0.55)
 // The cook recipe area uses a single painted layout PNG as its
 // background — the 2x2 input grid, arrow, output cell and fuel cell are
 // all part of the texture. Item icons are positioned absolutely on top
@@ -223,6 +234,32 @@ export const COOK_FUEL_CENTER_PCT: readonly [number, number] = [22.5, 85.1]
 export const COOK_INPUT_ICON_SIZE_PCT = 14
 export const COOK_OUTPUT_ICON_SIZE_PCT = 22
 export const COOK_FUEL_ICON_SIZE_PCT = 13
+
+// --- Close button (shared across panels) -----------------------------------
+// Round wood-framed red X button used in the top-right corner of the
+// craft, inventory, and cook panels. One image, one size — the visual
+// stays consistent so the player learns "circle X = close this panel"
+// once and recognizes it everywhere.
+export const CLOSE_BUTTON_TEXTURE = 'images/hud/close_button.png'
+export const CLOSE_BUTTON_SIZE = 48
+// Per-panel nudge values. Each panel positions its close button slightly
+// differently — these knobs let you tune the offset on one panel without
+// touching the others. Positive values push the button down/right;
+// negative values push it up/left.
+//
+// Inventory panel: anchored absolutely to the top-right corner of the
+// inventory grid. `TOP`/`RIGHT` are pixel offsets — negative values pull
+// the button outside the grid frame so it overlaps the painted wood
+// border instead of crowding the cells inside.
+export const CLOSE_BUTTON_INVENTORY_TOP = 24
+export const CLOSE_BUTTON_INVENTORY_RIGHT = 24
+// Craft details (HAMMER) panel: lives inside the header row, after the
+// title label. `MARGIN_*` shifts it relative to that flow position.
+export const CLOSE_BUTTON_CRAFT_MARGIN_TOP = -130
+export const CLOSE_BUTTON_CRAFT_MARGIN_RIGHT = -60
+// Cook panel: same flow-position pattern as the craft details header.
+export const CLOSE_BUTTON_COOK_MARGIN_TOP = -130
+export const CLOSE_BUTTON_COOK_MARGIN_RIGHT = -60
 
 // --- Notification banner ---------------------------------------------------
 // Sits above every other HUD element and slides in from offscreen when

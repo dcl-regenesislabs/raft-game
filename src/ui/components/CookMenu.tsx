@@ -34,6 +34,8 @@ import {
   COOK_PANEL_GAP,
   COOK_SHORTAGE_BG,
   COOK_SHORTAGE_FG,
+  CLOSE_BUTTON_COOK_MARGIN_RIGHT,
+  CLOSE_BUTTON_COOK_MARGIN_TOP,
   CRAFT_BUTTON_FG,
   CRAFT_BUTTON_FRAME_H,
   CRAFT_BUTTON_FRAME_W,
@@ -41,17 +43,13 @@ import {
   CRAFT_BUTTON_TEXTURE,
   CRAFT_BUTTON_W,
   CRAFT_DIVIDER_COLOR,
-  CRAFT_INVENTORY_BOTTOM_DESKTOP,
-  CRAFT_INVENTORY_LEFT,
-  CRAFT_INVENTORY_LEFT_DESKTOP,
   CRAFT_INVENTORY_SIZE,
-  CRAFT_INVENTORY_TOP,
   CRAFT_PANEL_PADDING_BOTTOM,
   CRAFT_PANEL_PADDING_TOP,
   CRAFT_PANEL_PADDING_X,
-  CRAFT_TEXT_COLOR,
-  CRAFT_TEXT_LIGHT_COLOR
+  CRAFT_TEXT_COLOR
 } from '../theme'
+import { CloseButton } from './CloseButton'
 import { InventoryWithBar } from './InventoryWithBar'
 
 // Module-level pulse so the same animation clock survives across the
@@ -76,52 +74,29 @@ const cookActionPulse = createPressPulse()
 // shared with the craft menu so the two surfaces feel consistent.
 export function CookMenu(): ReactEcs.JSX.Element | null {
   if (!isCookOpen()) return null
-  if (isMobile()) {
-    return (
-      <UiEntity
-        uiTransform={{
-          positionType: 'absolute',
-          position: { top: CRAFT_INVENTORY_TOP, left: CRAFT_INVENTORY_LEFT },
-          flexDirection: 'row',
-          alignItems: 'flex-start'
-        }}
-      >
-        <InventoryWithBar size={CRAFT_INVENTORY_SIZE} />
-        <UiEntity uiTransform={{ width: COOK_PANEL_GAP, height: 1 }} />
-        <CookPanel />
-      </UiEntity>
-    )
-  }
+  // Inventory + cook panel ride together as one row, centered on the
+  // canvas. The inventory hugs the left side of the cook panel so the
+  // player's slot list is always visible right next to the recipe.
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
         position: { top: 0, left: 0 },
         width: '100%',
-        height: '100%'
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row'
       }}
     >
-      <UiEntity
-        uiTransform={{
-          positionType: 'absolute',
-          position: {
-            bottom: CRAFT_INVENTORY_BOTTOM_DESKTOP,
-            left: CRAFT_INVENTORY_LEFT_DESKTOP
-          }
-        }}
-      >
-        <InventoryWithBar size={CRAFT_INVENTORY_SIZE} />
-      </UiEntity>
-      <UiEntity
-        uiTransform={{
-          positionType: 'absolute',
-          position: { top: 0, left: 0 },
-          width: '100%',
-          height: '100%',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
+      <InventoryWithBar size={CRAFT_INVENTORY_SIZE} />
+      {/* COOK_PANEL_GAP is applied as a left margin on the cook panel
+          wrapper. Negative values pull the cook panel left so its
+          painted wood frame overlaps the inventory's right edge — the
+          two surfaces read as one cooking station. (A negative WIDTH
+          spacer would just be clamped to 0 by the layout engine, so
+          margin is the only knob that works here.) */}
+      <UiEntity uiTransform={{ margin: { left: COOK_PANEL_GAP } }}>
         <CookPanel />
       </UiEntity>
     </UiEntity>
@@ -177,30 +152,16 @@ function CookHeader(): ReactEcs.JSX.Element {
         textAlign="middle-left"
         uiTransform={{ flexGrow: 1, height: '100%' }}
       />
-      <CookCloseButton />
-    </UiEntity>
-  )
-}
-
-function CookCloseButton(): ReactEcs.JSX.Element {
-  return (
-    <UiEntity
-      uiTransform={{
-        width: 32,
-        height: 32,
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-      uiBackground={{ color: Color4.create(0, 0, 0, 0.35) }}
-      onMouseDown={() => closeCookMenu()}
-    >
-      <Label
-        value="X"
-        fontSize={16}
-        color={CRAFT_TEXT_LIGHT_COLOR}
-        textAlign="middle-center"
-        uiTransform={{ width: '100%', height: '100%' }}
-      />
+      <UiEntity
+        uiTransform={{
+          margin: {
+            top: CLOSE_BUTTON_COOK_MARGIN_TOP,
+            right: CLOSE_BUTTON_COOK_MARGIN_RIGHT
+          }
+        }}
+      >
+        <CloseButton onPress={() => closeCookMenu()} />
+      </UiEntity>
     </UiEntity>
   )
 }
