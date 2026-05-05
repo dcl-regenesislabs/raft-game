@@ -138,9 +138,13 @@ export const CRAFT_BUTTON_RIGHT =
 export const CRAFT_LIST_WIDTH = 280
 export const CRAFT_LIST_HEIGHT = 540
 export const CRAFT_DETAILS_WIDTH = 360
-export const CRAFT_INVENTORY_SIZE = 375
+export const CRAFT_INVENTORY_SIZE = 400
 export const CRAFT_INVENTORY_TOP = 85
 export const CRAFT_INVENTORY_LEFT = -20
+// Desktop anchors the mini craft inventory + list + details row to the
+// bottom-left, matching the stats bars' desktop anchor.
+export const CRAFT_INVENTORY_LEFT_DESKTOP = 40
+export const CRAFT_INVENTORY_BOTTOM_DESKTOP = 40
 // Craft details panel grows with the recipe — header + description + the
 // REQUIRES row + one row per material.
 export const CRAFT_DETAILS_BASE_HEIGHT = 280
@@ -170,12 +174,55 @@ export const CRAFT_BUTTON_H = 52
 // to 1.25×) so the button can grow without shifting the parent row.
 export const CRAFT_BUTTON_FRAME_W = Math.round(CRAFT_BUTTON_W * 1.25)
 export const CRAFT_BUTTON_FRAME_H = Math.round(CRAFT_BUTTON_H * 1.25)
-// Painted bevel on red_button.png is ~12% of the source on every side;
-// matching the slice to the art keeps the corners pixel-correct without
-// stretching the lighter-red highlight strip into the center fill.
-export const CRAFT_BUTTON_SLICE = 0.12
+// `red_button.png` is rendered at the source's 2.13:1 aspect ratio
+// (CRAFT_BUTTON_W / CRAFT_BUTTON_H, and the death-screen 1.6× variant
+// keeps that ratio). A plain stretch reproduces the art 1:1 with no
+// slicing math — nine-slicing here only mis-sized the corners because
+// the texture is non-square (324×152).
 export const CRAFT_HAVE_OK_COLOR = Color4.create(0.7, 1, 0.5, 1)
 export const CRAFT_HAVE_LOW_COLOR = Color4.create(1, 0.55, 0.3, 1)
+
+// --- Cooking menu ----------------------------------------------------------
+// Two-panel cooking surface: recipe list on the left, recipe details
+// on the right with a 2x2 ingredient grid → output cell + fuel slot
+// underneath. Sized to feel like a "book" pair similar to the craft
+// menu but tighter — fewer columns of info, no mini inventory.
+// The cook menu is a single panel (no recipe list) — width/height keep
+// the painted layout image inside the wood frame with breathing room.
+export const COOK_DETAILS_WIDTH = 400
+export const COOK_DETAILS_HEIGHT = 540
+export const COOK_PANEL_GAP = 12
+// Red have/need badge shown in the bottom-right of a placed cell when
+// the matched recipe wants more of that ingredient than the player
+// currently has. Sits on top of the icon.
+export const COOK_SHORTAGE_BG = Color4.create(0.85, 0.18, 0.18, 0.9)
+export const COOK_SHORTAGE_FG = Color4.White()
+// The cook recipe area uses a single painted layout PNG as its
+// background — the 2x2 input grid, arrow, output cell and fuel cell are
+// all part of the texture. Item icons are positioned absolutely on top
+// at the painted cell centers. Source PNG is 874×754; cell centers and
+// sizes were sampled from the painted cream interiors.
+export const COOK_LAYOUT_TEXTURE = 'images/hud/cook_layout.png'
+export const COOK_LAYOUT_WIDTH = 300
+export const COOK_LAYOUT_HEIGHT = Math.round((COOK_LAYOUT_WIDTH * 754) / 874)
+// Cell center positions, % of the painted texture (x: of width, y: of
+// height). Input cells form the 2x2 grid; output is the larger right
+// cell; fuel sits in its own cell beneath the grid with a fire icon
+// already painted into the texture above it.
+export const COOK_INPUT_CENTERS_PCT: ReadonlyArray<readonly [number, number]> = [
+  [11.7, 13.3],
+  [33.4, 13.3],
+  [11.7, 38.2],
+  [33.4, 38.2]
+]
+export const COOK_OUTPUT_CENTER_PCT: readonly [number, number] = [80.8, 25.7]
+export const COOK_FUEL_CENTER_PCT: readonly [number, number] = [22.5, 85.1]
+// Cell sizes as a fraction of the painted texture width — the painted
+// cream interiors the icons sit in. Inputs and fuel are the same square
+// size; output is roughly 1.6× larger.
+export const COOK_INPUT_ICON_SIZE_PCT = 14
+export const COOK_OUTPUT_ICON_SIZE_PCT = 22
+export const COOK_FUEL_ICON_SIZE_PCT = 13
 
 // --- Notification banner ---------------------------------------------------
 // Sits above every other HUD element and slides in from offscreen when
@@ -201,6 +248,11 @@ export const STATS_BAR_GAP = 6
 // on desktop. Left edge hugs the safe area.
 export const STATS_BAR_TOP = 100
 export const STATS_BAR_LEFT = 0
+// Desktop pins the stats column to the bottom-left instead — keeps the
+// top edge clear for the player nameplate / debug chrome and matches the
+// mini craft inventory anchor on the same platform.
+export const STATS_BAR_LEFT_DESKTOP = 40
+export const STATS_BAR_BOTTOM_DESKTOP = 40
 // Painted dark-track inset within the bar art. Fill grows from FILL_LEFT
 // rightward up to FILL_RIGHT_LIMIT at 100%. Right limit stops at the
 // painted dark-track edge so 100% doesn't bleed onto the wood frame.

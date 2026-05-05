@@ -6,6 +6,8 @@
 
 import { InputModifier, engine } from '@dcl/sdk/ecs'
 
+import { isCooking } from './cookSession'
+import { isCookOpen, setCookOpen } from './cookToggle'
 import { isCraftOpen, setCraftOpen } from './craftToggle'
 import { isCrafting } from './craftSession'
 import { isGameOver } from './gameOver'
@@ -41,7 +43,9 @@ export function isInventoryActionLocked(): boolean {
     open ||
     postCloseLockoutSec > 0 ||
     isCraftOpen() ||
+    isCookOpen() ||
     isCrafting() ||
+    isCooking() ||
     isPurifying() ||
     isGameOver()
   )
@@ -67,20 +71,28 @@ export function toggleInventory(): void {
   // Press feedback fires here because it represents the user clicking
   // the inventory button — not the state change itself.
   pressElapsedSec = 0
-  // Mutually exclusive with craft: opening the inventory closes the craft
-  // panel so only one panel is up at a time.
+  // Mutually exclusive with craft and cook: opening the inventory closes
+  // either of those so only one panel is up at a time.
   if (next && isCraftOpen()) setCraftOpen(false)
+  if (next && isCookOpen()) setCookOpen(false)
 }
 
 // Runs every frame: advances the press-pulse clock, and on any change to
 // the lock state writes an InputModifier to the player. Movement locks
-// when the inventory is up OR while a craft session is running.
+// when the inventory or craft panel is up OR while a craft / purify
+// session is running.
 export function inventoryToggleResetSystem(dt: number): void {
   if (pressElapsedSec <= PRESS_DURATION_S) pressElapsedSec += dt
   if (postCloseLockoutSec > 0) {
     postCloseLockoutSec = Math.max(0, postCloseLockoutSec - dt)
   }
-  const lock = open || isCrafting() || isPurifying()
+  const lock =
+    open ||
+    isCraftOpen() ||
+    isCookOpen() ||
+    isCrafting() ||
+    isCooking() ||
+    isPurifying()
   if (lock === lastModifierApplied) return
   lastModifierApplied = lock
   InputModifier.createOrReplace(engine.PlayerEntity, {

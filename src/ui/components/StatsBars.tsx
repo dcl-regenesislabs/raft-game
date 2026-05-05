@@ -1,3 +1,4 @@
+import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 
 import { isCraftOpen } from '../craftToggle'
@@ -5,9 +6,11 @@ import { type StatKind, getStat } from '../statsBars'
 import {
   STAT_FILL_COLORS,
   STAT_ICON_TEXTURES,
+  STATS_BAR_BOTTOM_DESKTOP,
   STATS_BAR_GAP,
   STATS_BAR_HEIGHT,
   STATS_BAR_LEFT,
+  STATS_BAR_LEFT_DESKTOP,
   STATS_BAR_TEXTURE,
   STATS_BAR_TOP,
   STATS_BAR_WIDTH,
@@ -23,9 +26,10 @@ import {
   STATS_ORDER
 } from '../theme'
 
-// Stack vertically, anchored to the top-left corner of the safe area on
-// both platforms. STATS_ORDER drives the visual order so the first entry
-// renders on top.
+// Stack vertically. Mobile pins the column to the top-left of the safe
+// area; desktop pins it to the bottom-left so the bars sit out of the
+// way of the centered chrome at the top of the viewport.
+// STATS_ORDER drives the visual order so the first entry renders on top.
 export function StatsBars(): ReactEcs.JSX.Element | null {
   // Hide while the craft menu is open — the menu covers the same screen
   // real estate (especially on mobile) and the bars would otherwise show
@@ -34,11 +38,14 @@ export function StatsBars(): ReactEcs.JSX.Element | null {
   const totalHeight =
     STATS_ORDER.length * STATS_BAR_HEIGHT +
     (STATS_ORDER.length - 1) * STATS_BAR_GAP
+  const position = isMobile()
+    ? { top: STATS_BAR_TOP, left: STATS_BAR_LEFT }
+    : { bottom: STATS_BAR_BOTTOM_DESKTOP, left: STATS_BAR_LEFT_DESKTOP }
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: STATS_BAR_TOP, left: STATS_BAR_LEFT },
+        position,
         width: STATS_BAR_WIDTH,
         height: totalHeight,
         flexDirection: 'column'

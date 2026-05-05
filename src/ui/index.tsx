@@ -4,6 +4,7 @@ import ReactEcs, { ReactEcsRenderer, SafeAreaContainer, UiEntity } from '@dcl/sd
 import { ActionButton } from './components/ActionButton'
 import { BottomBar } from './components/BottomBar'
 import { ChargeReticle } from './components/ChargeReticle'
+import { CookMenu } from './components/CookMenu'
 import { CraftButton } from './components/CraftButton'
 import { CraftDoubleMenu } from './components/CraftMenu'
 import { CraftProgressBar } from './components/CraftProgressBar'
@@ -13,21 +14,22 @@ import { InventoryButton } from './components/InventoryButton'
 import { InventoryPanel } from './components/InventoryPanel'
 import { NotificationOverlay } from './components/Notification'
 import { StatsBars } from './components/StatsBars'
+import { isCooking } from './cookSession'
+import { isCookOpen } from './cookToggle'
 import { isCrafting } from './craftSession'
+import { isCraftOpen } from './craftToggle'
 import { isGameOver } from './gameOver'
 import { pressBackground } from './inventoryDrag'
+import { isInventoryOpen } from './inventoryToggle'
 import { isPurifying } from './purifySession'
 
-// Both platforms use a virtual canvas so the HUD scales with the viewport.
-// Mobile uses 720×720 (square reference matches portrait/landscape phone
-// proportions evenly); desktop uses 1920×1080 (1080p reference).
+// Both platforms use the same 1366×768 virtual canvas (entry-level
+// laptop reference) so a single set of pixel constants in `theme.ts`
+// lays out the HUD on every aspect ratio — proportional scaling fills
+// the viewport in both directions.
 // See `.agents/skills/local/mobile-ui-scaling/SKILL.md`.
 export function setupUi(): void {
-  if (isMobile()) {
-    ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 720, virtualHeight: 720 })
-    return
-  }
-  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1920, virtualHeight: 1080 })
+  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1366, virtualHeight: 768 })
 }
 
 // Mobile is the only platform with hardware insets (notch / home indicator)
@@ -56,10 +58,11 @@ function ui(): ReactEcs.JSX.Element {
       </UiEntity>
     )
   }
-  // While a craft or purify is running every interactive HUD element
-  // hides — the player can't act, only watch the progress bar fill.
-  // The bar reuses the hook charge meter style for visual consistency.
-  if (isCrafting() || isPurifying()) {
+  // While a craft, cook or purify is running every interactive HUD
+  // element hides — the player can't act, only watch the progress bar
+  // fill. The bar reuses the hook charge meter style for visual
+  // consistency.
+  if (isCrafting() || isPurifying() || isCooking()) {
     return (
       <SafeArea>
         <UiEntity
@@ -86,13 +89,17 @@ function ui(): ReactEcs.JSX.Element {
         onMouseDown={pressBackground}
       >
         <DestroyBanner />
-        <BottomBar />
-        <StatsBars />
-        <ActionButton />
-        <InventoryButton />
-        <CraftButton />
+        {/* Standalone hot-bar hides while a panel is up — the inventory
+            panel and the craft menu both render their own bar attached
+            under the inventory grid via <InventoryWithBar/>. */}
+        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && <BottomBar />}
+        {!isCookOpen() && <StatsBars />}
+        {!isCookOpen() && <ActionButton />}
+        {!isCookOpen() && <InventoryButton />}
+        {!isCookOpen() && <CraftButton />}
         <InventoryPanel />
         <CraftDoubleMenu />
+        <CookMenu />
         <ChargeReticle />
         <NotificationOverlay />
       </UiEntity>

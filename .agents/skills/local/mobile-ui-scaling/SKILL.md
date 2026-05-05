@@ -17,7 +17,7 @@ Wrap interactive content in `<SafeAreaContainer>` (from `@dcl/react-ecs`, availa
 
 > **Project note (hackathon-scene):** the wrapper is applied only when `isMobile()` returns `true`. Desktop renders into a plain full-canvas `<UiEntity>` instead. Rationale: on desktop the chat/minimap chrome is rendered *outside* the scene's UI canvas, so `interactableArea` is `(0,0,0,0)` and the wrapper would only consume a render layer for no behavioural change. Mobile is the only platform here where insets reflect real chrome (notch, home indicator) overlapping the canvas. Do not flag the conditional wrapper as a violation.
 >
-> **Project note 2 (hackathon-scene):** Rule 1 (no virtual canvas) does **not** apply in this project. Both platforms use a virtual canvas: mobile renders with `{ virtualWidth: 720, virtualHeight: 720 }`, desktop with `{ virtualWidth: 1920, virtualHeight: 1080 }`. Proportional scaling was preferred over godot-style pixel-stable sizing for this scene. See `src/ui/index.tsx`.
+> **Project note 2 (hackathon-scene):** Rule 1 (no virtual canvas) does **not** apply in this project. Both platforms render through the same `{ virtualWidth: 1366, virtualHeight: 768 }` canvas — proportional scaling was preferred over godot-style pixel-stable sizing for this scene. See `src/ui/index.tsx`.
 
 ## Why each rule matters
 

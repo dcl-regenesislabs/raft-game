@@ -13,7 +13,6 @@ import {
   CRAFT_BUTTON_FRAME_H,
   CRAFT_BUTTON_FRAME_W,
   CRAFT_BUTTON_H,
-  CRAFT_BUTTON_SLICE,
   CRAFT_BUTTON_TEXTURE,
   CRAFT_BUTTON_W,
   CRAFT_TEXT_COLOR,
@@ -113,14 +112,8 @@ function PlayAgainButton(props: { fade: number }): ReactEcs.JSX.Element {
           justifyContent: 'center'
         }}
         uiBackground={{
-          textureMode: 'nine-slices',
+          textureMode: 'stretch',
           texture: { src: CRAFT_BUTTON_TEXTURE },
-          textureSlices: {
-            top: CRAFT_BUTTON_SLICE,
-            right: CRAFT_BUTTON_SLICE,
-            bottom: CRAFT_BUTTON_SLICE,
-            left: CRAFT_BUTTON_SLICE
-          },
           color: Color4.create(1, 1, 1, props.fade)
         }}
         onMouseDown={() => {

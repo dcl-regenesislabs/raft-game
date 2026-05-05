@@ -40,12 +40,11 @@ export const CONSTRUCTION_DECK_OFFSET_M = 0.52
 // PLATFORM_SIZE_Y world meters above the platform origin.
 const DECK_TOP_LOCAL_Y = CONSTRUCTION_DECK_OFFSET_M / PLATFORM_SIZE_Y
 
-// Hover-prompt text per construction kind. The grill prompt is just a
-// "not yet" placeholder until the cooking system lands; the purifier
-// prompt names the action so the player knows the thing they're meant
-// to do, even if they're not currently holding salt water.
+// Hover-prompt text per construction kind. Names the action so the
+// player knows what tapping the construction will do, regardless of
+// what they're currently holding.
 const HOVER_TEXT: Record<ConstructionKind, string> = {
-  grill: 'WORK IN PROGRESS',
+  grill: 'COOK',
   purifier: 'PURIFY WATER'
 }
 // Max distance the SDK pointer-input layer will register hovers/clicks

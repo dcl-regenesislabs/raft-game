@@ -9,14 +9,15 @@ import { isMobile } from '@dcl/sdk/platform'
 import { PlatformConstruction } from '../components'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
+import { openCookMenu } from '../ui/cookToggle'
 import { isPointerLocked } from '../ui/cursorLock'
 import {
   getSelectedSlot,
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
-import { showNotification } from '../ui/notification'
 import { isPurifying, startPurify } from '../ui/purifySession'
+import { showNotification } from '../ui/notification'
 import { consumeWorldClick } from '../ui/worldClickGate'
 import { getCupTarget } from './cupFill'
 
@@ -63,7 +64,7 @@ export function constructionInteractSystem(_dt: number): void {
     if (!tapped && !buttonHits) continue
 
     if (pc.kind === 'grill') {
-      showNotification('Grill: WORK IN PROGRESS')
+      openCookMenu()
       consumeWorldClick()
       return
     }

@@ -1,3 +1,4 @@
+import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 
@@ -26,7 +27,6 @@ import {
   CRAFT_BUTTON_FRAME_W,
   CRAFT_BUTTON_H,
   CRAFT_BUTTON_ICON,
-  CRAFT_BUTTON_SLICE,
   CRAFT_BUTTON_TEXTURE,
   CRAFT_BUTTON_W,
   CRAFT_DETAILS_BASE_HEIGHT,
@@ -35,7 +35,9 @@ import {
   CRAFT_DIVIDER_COLOR,
   CRAFT_HAVE_LOW_COLOR,
   CRAFT_HAVE_OK_COLOR,
+  CRAFT_INVENTORY_BOTTOM_DESKTOP,
   CRAFT_INVENTORY_LEFT,
+  CRAFT_INVENTORY_LEFT_DESKTOP,
   CRAFT_INVENTORY_SIZE,
   CRAFT_INVENTORY_TOP,
   CRAFT_LIST_HEIGHT,
@@ -49,47 +51,96 @@ import {
   CRAFT_TEXT_DIM_COLOR,
   CRAFT_TEXT_LIGHT_COLOR
 } from '../theme'
-import { InventoryGrid } from './InventoryPanel'
+import { InventoryWithBar } from './InventoryWithBar'
 
 // Module-level pulse so the same animation clock survives across the
 // React-ECS render rebuilds. Ticked by `pressPulseTickSystem` registered
 // in `index.ts`.
 const craftActionPulse = createPressPulse()
 
-// Single horizontal row anchored to the top-left edge: mini inventory,
-// then the recipe list, then the recipe details panel — flush against
-// each other so the three elements read as one craft surface. The stats
-// bars normally in the top-left corner are hidden while the craft menu
-// is open, so this row is free to claim that real estate. Renders
-// nothing while closed.
+// Mobile: single horizontal row anchored to the top-left edge — mini
+// inventory, recipe list, recipe details — flush against each other so
+// the three elements read as one craft surface. The stats bars normally
+// in the top-left corner are hidden while the craft menu is open, so
+// this row is free to claim that real estate.
+//
+// Desktop: the mini inventory detaches and pins to the bottom-left
+// (matching the stats bars' desktop anchor); the list + details cluster
+// floats top-center.
+//
+// Renders nothing while closed.
 export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
   if (!isCraftOpen()) return null
+  if (isMobile()) {
+    return (
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: { top: CRAFT_INVENTORY_TOP, left: CRAFT_INVENTORY_LEFT },
+          flexDirection: 'row',
+          alignItems: 'flex-start'
+        }}
+      >
+        <InventoryWithBar size={CRAFT_INVENTORY_SIZE} />
+        <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
+        <CraftItemList />
+        <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
+        <CraftDetails />
+      </UiEntity>
+    )
+  }
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: CRAFT_INVENTORY_TOP, left: CRAFT_INVENTORY_LEFT },
-        flexDirection: 'row',
-        alignItems: 'flex-start'
+        position: { top: 0, left: 0 },
+        width: '100%',
+        height: '100%'
       }}
     >
-      <InventoryGrid size={CRAFT_INVENTORY_SIZE} />
-      <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
-      <CraftItemList />
-      <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
-      <CraftDetails />
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: {
+            bottom: CRAFT_INVENTORY_BOTTOM_DESKTOP,
+            left: CRAFT_INVENTORY_LEFT_DESKTOP
+          }
+        }}
+      >
+        <InventoryWithBar size={CRAFT_INVENTORY_SIZE} />
+      </UiEntity>
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: { top: 0, left: 0 },
+          width: '100%',
+          height: '100%',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          justifyContent: 'center'
+        }}
+      >
+        <CraftItemList />
+        <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
+        <CraftDetails />
+      </UiEntity>
     </UiEntity>
   )
 }
 
 function CraftItemList(): ReactEcs.JSX.Element {
+  // Mobile tucks the list a bit up-and-left so it visually meshes with
+  // the mini inventory directly to its left. Desktop floats the
+  // list+details cluster on its own at top-center, so the nudge would
+  // just push it off-axis.
+  const margin = isMobile() ? { left: -25, top: -60 } : undefined
   return (
     <Panel
       uiTransform={{
         width: CRAFT_LIST_WIDTH,
         height: CRAFT_LIST_HEIGHT,
         flexDirection: 'column',
-        margin: { left: -25, top: -60 },
+        margin,
         padding: {
           top: CRAFT_PANEL_PADDING_TOP,
           bottom: CRAFT_PANEL_PADDING_BOTTOM,
@@ -276,14 +327,8 @@ function CraftActionButton(props: {
           justifyContent: 'center'
         }}
         uiBackground={{
-          textureMode: 'nine-slices',
+          textureMode: 'stretch',
           texture: { src: CRAFT_BUTTON_TEXTURE },
-          textureSlices: {
-            top: CRAFT_BUTTON_SLICE,
-            right: CRAFT_BUTTON_SLICE,
-            bottom: CRAFT_BUTTON_SLICE,
-            left: CRAFT_BUTTON_SLICE
-          },
           // Dim the button when materials are short so the player gets a
           // visual cue that pressing it won't start a craft.
           color: enabled

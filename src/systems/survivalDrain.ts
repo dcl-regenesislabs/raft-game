@@ -2,7 +2,6 @@ import {
   HUNGER_DRAIN_PCT_PER_S,
   LIFE_DAMAGE_BOTH_PCT_PER_S,
   LIFE_DAMAGE_SINGLE_PCT_PER_S,
-  LIFE_DRAIN_PCT_PER_S,
   THIRST_DRAIN_PCT_PER_S
 } from '../config/gameConfig'
 import { isGameOver, triggerGameOver } from '../ui/gameOver'
@@ -23,12 +22,6 @@ export function survivalDrainSystem(dt: number): void {
 
   adjustStat('hunger', -HUNGER_DRAIN_PCT_PER_S * PCT * dt)
   adjustStat('thirst', -THIRST_DRAIN_PCT_PER_S * PCT * dt)
-
-  // Unconditional drain runs alongside the hunger/thirst-gated damage —
-  // a testing hook for exercising the death screen quickly.
-  if (LIFE_DRAIN_PCT_PER_S > 0) {
-    adjustStat('life', -LIFE_DRAIN_PCT_PER_S * PCT * dt)
-  }
 
   const hungerEmpty = getStat('hunger') <= 0
   const thirstEmpty = getStat('thirst') <= 0

@@ -10,6 +10,7 @@ import {
   pressActionButton,
   releaseActionButton
 } from '../actionButton'
+import { isCraftOpen } from '../craftToggle'
 import { getSelectedSlot, getSlotItem } from '../inventoryState'
 import { isInventoryOpen } from '../inventoryToggle'
 import { getItem } from '../items'
@@ -24,13 +25,19 @@ import {
 } from '../theme'
 
 // Mobile-only fire button anchored to the middle-right of the safe area.
-// Hidden on desktop, while the inventory panel is open, or while the held
-// tool has no associated action.
+// Hidden on desktop, while the inventory or craft panel is open, or while
+// the held tool has no associated action.
 //
 // The frame is sized to the peak press scale so the button can grow with
 // its press animation without shifting the parent.
 export function ActionButton(): ReactEcs.JSX.Element | null {
-  if (!isMobile() || !isActionButtonAvailable() || isInventoryOpen()) return null
+  if (
+    !isMobile() ||
+    !isActionButtonAvailable() ||
+    isInventoryOpen() ||
+    isCraftOpen()
+  )
+    return null
   const pressed = isActionButtonPressed()
   const iconTexture =
     contextualIconTexture() ?? getSlotItem(getSelectedSlot())?.texture ?? null

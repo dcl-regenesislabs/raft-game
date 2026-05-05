@@ -3,6 +3,7 @@
 // inventory behave as a mutually-exclusive toggle group — opening one
 // closes the other so only a single panel is on screen at a time.
 
+import { setCookOpen } from './cookToggle'
 import { setInventoryOpen } from './inventoryToggle'
 import { CRAFTABLE_ITEMS } from './craftableItems'
 
@@ -32,9 +33,12 @@ export function toggleCraft(): void {
   // Press feedback fires here because it represents the user clicking
   // the craft button — not the state change itself.
   pressElapsedSec = 0
-  // Mutually exclusive with the inventory: opening craft closes the
-  // inventory so only one panel is up at a time.
-  if (next) setInventoryOpen(false)
+  // Mutually exclusive with the inventory and cook menu: opening craft
+  // closes either of those so only one panel is up at a time.
+  if (next) {
+    setInventoryOpen(false)
+    setCookOpen(false)
+  }
 }
 
 export function getSelectedCraftableId(): string | null {

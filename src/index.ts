@@ -1,18 +1,20 @@
 import { SkyboxTime, engine } from '@dcl/sdk/ecs'
 
 import {
-  DEBUG_SEED_INVENTORY,
+  DEBUG_MODE,
   SHARK_INITIAL_COUNT,
   SHARK_INITIAL_RADIUS
 } from './config/gameConfig'
 import {
   GRID_ORIGIN,
   configureGridOrigin,
+  createConstruction,
   createFirstPersonArea,
   createHeldItem,
   createPlatform,
   createSeabed,
   createWaterFloorV2,
+  gridCellToWorld,
   spawnRingShark
 } from './factories'
 import { DEMO_PARCEL_GRID, FULL_PARCEL_GRID } from './factories/sceneLevels'
@@ -39,6 +41,7 @@ import { survivalDrainSystem } from './systems/survivalDrain'
 import { waterScrollSystem } from './systems/waterScroll'
 import { setupUi } from './ui'
 import { actionButtonResetSystem } from './ui/actionButton'
+import { cookSessionTickSystem } from './ui/cookSession'
 import { craftSessionTickSystem } from './ui/craftSession'
 import { craftToggleResetSystem } from './ui/craftToggle'
 import { gameOverInputLockSystem } from './ui/gameOver'
@@ -94,6 +97,7 @@ export async function main(): Promise<void> {
   engine.addSystem(hookThrowerSystem)
   engine.addSystem(inventoryInputSystem)
   engine.addSystem(craftSessionTickSystem)
+  engine.addSystem(cookSessionTickSystem)
   engine.addSystem(purifySessionTickSystem)
   engine.addSystem(inventoryToggleResetSystem)
   engine.addSystem(craftToggleResetSystem)
@@ -110,32 +114,63 @@ export async function main(): Promise<void> {
   engine.addSystem(worldClickGateResetSystem)
   setupUi()
 
-  if (DEBUG_SEED_INVENTORY) seedDebugInventory()
+  if (DEBUG_MODE) {
+    seedDebugInventory()
+    seedDebugWorld()
+  }
 }
 
 // Pre-seeds the inventory with crafting materials so recipes can be exercised
-// without grinding garbage pickups. Gated by `DEBUG_SEED_INVENTORY` in
+// without grinding garbage pickups. Gated by `DEBUG_MODE` in
 // `config/gameConfig.ts` — flip that off before shipping.
 function seedDebugInventory(): void {
+  // Materials
   addCollected('wood', 1000)
+  addCollected('plants', 1000)
   addCollected('plastic', 1000)
   addCollected('rope', 1000)
   addCollected('metal', 1000)
-  addCollected('grill', 10)
-  addCollected('purifier', 10)
+  // Crafted stackables / placeables. hammer/spear are non-stackable and
+  // already reserved in the default bottom-bar layout, so seeding them
+  // here would just allocate duplicate slots.
+  addCollected('fishingRod', 10)
+  addCollected('knife', 10)
   addCollected('platform', 10)
+  addCollected('purifier', 10)
+  addCollected('grill', 10)
   // Containers are non-stackable — each instance gets its own slot, so
   // the seed only adds one of each variant. The cup goes in too so the
   // player can test the empty-cup → fill flow without crafting first.
   addCollected('cup', 1)
   addCollected('saltWater', 1)
   addCollected('freshWater', 1)
+  // Food.
   addCollected('rawFish', 10)
+  addCollected('cookedFish', 10)
   addCollected('rawPotato', 10)
   addCollected('cookedPotato', 10)
-  addCollected('cookedFish', 10)
   addCollected('pasta', 10)
   addCollected('cookedFishPasta', 10)
+}
+
+// Spawns the 8 platforms surrounding the main raft (the king-move ring
+// around grid cell (0, 0)) and pre-places a grill on the east tile and
+// a water purifier on the west tile so cooking / purification flows can
+// be exercised without crafting first. Gated by `DEBUG_MODE`.
+function seedDebugWorld(): void {
+  const ringOffsets: ReadonlyArray<readonly [number, number]> = [
+    [-1, -1], [0, -1], [1, -1],
+    [-1,  0],          [1,  0],
+    [-1,  1], [0,  1], [1,  1]
+  ]
+  for (const [gx, gz] of ringOffsets) {
+    const platform = createPlatform(gridCellToWorld(gx, gz), {
+      gridX: gx,
+      gridZ: gz
+    })
+    if (gx === 1 && gz === 0) createConstruction(platform, 'grill')
+    else if (gx === -1 && gz === 0) createConstruction(platform, 'purifier')
+  }
 }
 
 function spawnSharks(): void {

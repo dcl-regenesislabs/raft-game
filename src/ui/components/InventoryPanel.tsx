@@ -1,6 +1,8 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 
+import { isCookOpen } from '../cookToggle'
+import { getPickedIngredient, pickIngredient } from '../cookSlots'
 import { isCraftOpen } from '../craftToggle'
 import {
   getSelectedDragSlot,
@@ -14,6 +16,7 @@ import {
   getInventorySlot
 } from '../items'
 import {
+  BAR_BOTTOM,
   GLOW_ALPHA_PEAK_BONUS,
   GLOW_COLOR,
   INVENTORY_CELL_CENTERS_PCT,
@@ -25,32 +28,30 @@ import {
   INVENTORY_PANEL_TEXTURE
 } from '../theme'
 import { shakeOffset } from '../utils/shake'
+import { InventoryWithBar } from './InventoryWithBar'
 import { ItemCountBadge } from './ItemCountBadge'
 
 // Total cell count of the inventory-panel grid. Sourced from the shared
 // linear layout so adjusting `items.ts` flows through to the UI.
 const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_LAYOUT.length - BOTTOM_BAR_SLOT_COUNT
 
-// Fullscreen overlay anchored to the top-middle so the panel sits at
-// the top of the screen rather than dead-center. Renders nothing while
-// the inventory is closed.
+// Bottom-center panel: 5×5 inventory grid stacked on top of the 5-slot
+// hot-bar. Anchored where the standalone `BottomBar` normally lives so the
+// hot-bar visually stays put when the inventory opens — the grid grows
+// upward from the bar. The standalone `BottomBar` is hidden by `ui()`
+// while the inventory is open so the bar shown here is the only one.
+// Renders nothing while the inventory is closed.
 export function InventoryPanel(): ReactEcs.JSX.Element | null {
   if (!isInventoryOpen()) return null
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: 0, left: 0 },
-        width: '100%',
-        height: '100%',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start'
+        position: { bottom: BAR_BOTTOM, left: '50%' },
+        margin: { left: -Math.round(INVENTORY_PANEL_SIZE / 2) }
       }}
     >
-      <UiEntity uiTransform={{ margin: { top: -20 } }}>
-        <InventoryGrid />
-      </UiEntity>
+      <InventoryWithBar />
     </UiEntity>
   )
 }
@@ -95,9 +96,13 @@ function InventoryCell(props: {
   const globalIndex = BOTTOM_BAR_SLOT_COUNT + props.index
   const display = getInventorySlot(globalIndex)
 
-  const swapActive = isSwapModeActive()
-  const isSwapSelected = getSelectedDragSlot() === globalIndex
-  const shouldShake = swapActive && !isSwapSelected && display !== null
+  const cookOpen = isCookOpen()
+  const swapActive = !cookOpen && isSwapModeActive()
+  const isSwapSelected = !cookOpen && getSelectedDragSlot() === globalIndex
+  const isCookPicked =
+    cookOpen && display !== null && getPickedIngredient() === display.id
+  const shouldShake =
+    (swapActive && !isSwapSelected && display !== null) || isCookPicked
 
   const inset = isSwapSelected
     ? INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED
@@ -120,6 +125,13 @@ function InventoryCell(props: {
         // selection, no swap, the player just sees their materials and
         // crafted stock alongside the recipe.
         if (isCraftOpen()) return
+        // While the cook menu is open, clicking an inventory slot picks
+        // up its item as the next placement instead of starting a swap.
+        // Non-ingredient items are silently ignored by `pickIngredient`.
+        if (isCookOpen()) {
+          if (display !== null) pickIngredient(display.id)
+          return
+        }
         pressSlot(globalIndex)
       }}
     >

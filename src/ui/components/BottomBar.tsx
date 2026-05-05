@@ -1,6 +1,8 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 
+import { isCookOpen } from '../cookToggle'
+import { getPickedIngredient, pickIngredient } from '../cookSlots'
 import {
   getSelectedDragSlot,
   isSwapModeActive,
@@ -40,19 +42,38 @@ export function BottomBar(): ReactEcs.JSX.Element {
   return (
     <UiEntity
       uiTransform={{
-        width: BAR_WIDTH,
-        height: BAR_HEIGHT,
         positionType: 'absolute',
         position: { bottom: BAR_BOTTOM, left: '50%' },
         margin: { left: -Math.round(BAR_WIDTH / 2) }
       }}
+    >
+      <BottomBarSurface width={BAR_WIDTH} />
+    </UiEntity>
+  )
+}
+
+// Inline variant — same painted bar + slots, but laid out by the parent
+// instead of anchored to the viewport. Used by `InventoryWithBar` so the
+// hot-bar can attach directly under the inventory grid (and scale to a
+// smaller width inside the craft menu).
+export function BottomBarSurface(props: {
+  width?: number
+}): ReactEcs.JSX.Element {
+  const width = props.width ?? BAR_WIDTH
+  // Source art is BAR_WIDTH × BAR_HEIGHT — keep the aspect ratio when
+  // resizing so the painted cells stay aligned with the absolute slot
+  // positions computed below.
+  const height = Math.round(width * (BAR_HEIGHT / BAR_WIDTH))
+  return (
+    <UiEntity
+      uiTransform={{ width, height }}
       uiBackground={{
         textureMode: 'stretch',
         texture: { src: BAR_TEXTURE }
       }}
     >
       {Array.from({ length: BOTTOM_BAR_SLOT_COUNT }, (_, i) => (
-        <Slot key={i} index={i} barWidth={BAR_WIDTH} barHeight={BAR_HEIGHT} />
+        <Slot key={i} index={i} barWidth={width} barHeight={height} />
       ))}
     </UiEntity>
   )
@@ -70,10 +91,17 @@ function Slot(props: {
   const pressLinear = getPressProgress(props.index)
   const pressEase = pressLinear * pressLinear
 
-  const swapActive = isSwapModeActive()
-  const isSwapSelected = getSelectedDragSlot() === props.index
+  const cookOpen = isCookOpen()
+  const swapActive = !cookOpen && isSwapModeActive()
+  const isSwapSelected = !cookOpen && getSelectedDragSlot() === props.index
   const display = getInventorySlot(props.index)
-  const shouldShake = swapActive && !isSwapSelected && display !== null
+  // While the cook menu is up, "shaking" instead means "this slot is the
+  // currently picked ingredient" — same visual cue, repurposed so the
+  // player can see which inventory item they're about to drop.
+  const isCookPicked =
+    cookOpen && display !== null && getPickedIngredient() === display.id
+  const shouldShake =
+    (swapActive && !isSwapSelected && display !== null) || isCookPicked
 
   // Resting size depends on state. Swap-selected wins because the picked-up
   // item should be the visually largest; otherwise fall back to the existing
@@ -116,6 +144,10 @@ function Slot(props: {
         justifyContent: 'center'
       }}
       onMouseDown={() => {
+        if (isCookOpen()) {
+          if (display !== null) pickIngredient(display.id)
+          return
+        }
         if (isInventoryOpen()) pressSlot(props.index)
         else selectSlot(props.index)
       }}

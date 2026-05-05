@@ -11,6 +11,8 @@ import { Entity, InputModifier, engine } from '@dcl/sdk/ecs'
 import { MainPlatform, Platform } from '../components'
 import { setHeldItem } from '../factories/heldItem'
 import { destroyPlatformEntity } from '../factories/platform'
+import { clearCookSlots } from './cookSlots'
+import { setCookOpen } from './cookToggle'
 import { setCraftOpen } from './craftToggle'
 import { resetInventoryState } from './inventoryState'
 import { setInventoryOpen } from './inventoryToggle'
@@ -68,6 +70,11 @@ export function playAgain(): void {
   setHeldItem('hook')
   setInventoryOpen(false)
   setCraftOpen(false)
+  setCookOpen(false)
+  // setCookOpen returns slot contents only on open→closed transitions;
+  // if the menu was already closed at death-time, the slots may still
+  // hold whatever the player had picked, so wipe them explicitly.
+  clearCookSlots()
   dead = false
   elapsedSec = 0
 }

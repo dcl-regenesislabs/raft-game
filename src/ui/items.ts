@@ -28,6 +28,12 @@ export interface ItemDef {
   // equipping, one is removed from the stack and the food's effects table
   // applies to the player's stats. See `foodEffects.ts`.
   consumable: boolean
+  // Items the cook menu accepts as a drop target — raw foods that turn
+  // into cooked dishes plus the fuel (wood) that the burner consumes.
+  // While the cook menu is open, clicking an inventory slot whose item
+  // has `ingredient: true` picks it up so the next click on a cook cell
+  // places one unit there. Non-ingredient slots ignore cook-menu clicks.
+  ingredient: boolean
 }
 
 const TOOL = (
@@ -41,7 +47,8 @@ const TOOL = (
   selectable: true,
   heldKind,
   hasAction: true,
-  consumable: false
+  consumable: false,
+  ingredient: false
 })
 
 // Tools that don't yet have a first-person viewmodel or action wired up.
@@ -55,17 +62,26 @@ const PENDING_TOOL = (id: string, texture: string): ItemDef => ({
   selectable: true,
   heldKind: null,
   hasAction: false,
-  consumable: false
+  consumable: false,
+  ingredient: false
 })
 
-const MATERIAL = (id: string, texture: string): ItemDef => ({
+// Stackable resource (`wood`, `metal`, …). `ingredient` defaults off; the
+// few materials the cook menu accepts (currently just wood as fuel) opt
+// in by passing `ingredient: true`.
+const MATERIAL = (
+  id: string,
+  texture: string,
+  opts: { ingredient?: boolean } = {}
+): ItemDef => ({
   id,
   texture,
   stackable: true,
   selectable: false,
   heldKind: null,
   hasAction: false,
-  consumable: false
+  consumable: false,
+  ingredient: opts.ingredient ?? false
 })
 
 // Food / drink. Stackable, selectable from the bottom bar. Selecting equips
@@ -73,15 +89,21 @@ const MATERIAL = (id: string, texture: string): ItemDef => ({
 // The action button / IA_POINTER then triggers an eating gesture which
 // consumes one from the stack and applies the food's hunger/thirst effects.
 // See `foodEffects.ts` for the table and `systems/foodEat.ts` for the
-// gesture and consumption.
-const FOOD = (id: string, texture: string): ItemDef => ({
+// gesture and consumption. Raw foods opt into the cook menu via
+// `ingredient: true`; cooked foods don't (you can't re-cook them).
+const FOOD = (
+  id: string,
+  texture: string,
+  opts: { ingredient?: boolean } = {}
+): ItemDef => ({
   id,
   texture,
   stackable: true,
   selectable: true,
   heldKind: 'food',
   hasAction: true,
-  consumable: true
+  consumable: true,
+  ingredient: opts.ingredient ?? false
 })
 
 // Items the player gets from crafting. Stackable entries collapse into
@@ -96,7 +118,8 @@ const CRAFTED_STACK = (id: string, texture: string): ItemDef => ({
   selectable: false,
   heldKind: null,
   hasAction: false,
-  consumable: false
+  consumable: false,
+  ingredient: false
 })
 
 // Stackable, equippable item that doesn't swap the first-person viewmodel
@@ -111,7 +134,8 @@ const CRAFTED_PLACEABLE = (id: string, texture: string): ItemDef => ({
   selectable: true,
   heldKind: null,
   hasAction: true,
-  consumable: false
+  consumable: false,
+  ingredient: false
 })
 
 // Container the player equips and uses on the world. Each container
@@ -128,7 +152,8 @@ const CRAFTED_CONTAINER = (id: string, texture: string): ItemDef => ({
   selectable: true,
   heldKind: 'cup',
   hasAction: true,
-  consumable: false
+  consumable: false,
+  ingredient: false
 })
 
 // Linear inventory layout. First BOTTOM_BAR_SLOT_COUNT entries map to the
@@ -142,9 +167,14 @@ export const INVENTORY_GRID_SLOT_COUNT =
 
 const layout: (ItemDef | null)[] = [
   // ----- Bottom bar (0–4) -----
-  // Default loadout: just the hook. Everything else is earned through
-  // crafting, so the empty bar slots fill in as the player progresses.
-  TOOL('hook', 'images/hud/items/item-00.png', 'hook')
+  // Fixed default loadout. Stackable placeables (grill, purifier) sit in
+  // the bar with zero count until the player crafts one — the slot acts
+  // as a permanent reservation so the bar layout never reshuffles.
+  TOOL('hook', 'images/hud/items/item-00.png', 'hook'),
+  TOOL('hammer', 'images/hud/items/item-01.png', 'hammer'),
+  TOOL('spear', 'images/hud/items/item-19.png', 'spear'),
+  CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
+  CRAFTED_PLACEABLE('purifier', 'images/hud/items/item-06.png')
 ]
 
 while (layout.length < INVENTORY_TOTAL_SLOTS) layout.push(null)
@@ -160,7 +190,9 @@ export const INVENTORY_LAYOUT: readonly (ItemDef | null)[] = layout
 // pickup of each material lands in the leftmost empty slot (so it pops up
 // on the bottom bar before overflowing into the panel grid).
 const MATERIAL_CATALOG: Record<string, ItemDef> = {
-  wood: MATERIAL('wood', 'images/hud/items/item-02.png'),
+  // Wood doubles as the cook menu's fuel — `ingredient: true` so the
+  // burner slot accepts it. Other materials never enter the cook flow.
+  wood: MATERIAL('wood', 'images/hud/items/item-02.png', { ingredient: true }),
   plants: MATERIAL('plants', 'images/hud/items/item-04.png'),
   plastic: MATERIAL('plastic', 'images/hud/items/item-03.png'),
   rope: MATERIAL('rope', 'images/hud/items/item-05.png'),
@@ -185,12 +217,14 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   // container-action system, not the food-eat counter.
   saltWater: CRAFTED_CONTAINER('saltWater', 'images/hud/items/item-21.png'),
   freshWater: CRAFTED_CONTAINER('freshWater', 'images/hud/items/item-10.png'),
-  // Food. Effects in `foodEffects.ts`.
-  rawFish: FOOD('rawFish', 'images/hud/items/item-12.png'),
+  // Food. Effects in `foodEffects.ts`. Raw foods (and pasta) flag as
+  // ingredients so the cook menu accepts them as inputs; cooked dishes
+  // don't, you can't re-cook them.
+  rawFish: FOOD('rawFish', 'images/hud/items/item-12.png', { ingredient: true }),
   cookedFish: FOOD('cookedFish', 'images/hud/items/item-13.png'),
-  rawPotato: FOOD('rawPotato', 'images/hud/items/item-14.png'),
+  rawPotato: FOOD('rawPotato', 'images/hud/items/item-14.png', { ingredient: true }),
   cookedPotato: FOOD('cookedPotato', 'images/hud/items/item-17.png'),
-  pasta: FOOD('pasta', 'images/hud/items/item-18.png'),
+  pasta: FOOD('pasta', 'images/hud/items/item-18.png', { ingredient: true }),
   cookedFishPasta: FOOD('cookedFishPasta', 'images/hud/items/item-13.png')
 }
 
@@ -269,12 +303,21 @@ export function transmuteSlot(slotIndex: number, newId: string): boolean {
 // player restarts with the same baseline a fresh scene load gives them.
 export function resetInventoryLayout(): void {
   for (let i = 0; i < layout.length; i++) layout[i] = null
-  const hook = TOOL('hook', 'images/hud/items/item-00.png', 'hook')
-  layout[0] = hook
-  // Drop everything but the hook from the by-id lookup so stale defs from
-  // previously-collected materials don't survive the reset.
+  const starters: ItemDef[] = [
+    TOOL('hook', 'images/hud/items/item-00.png', 'hook'),
+    TOOL('hammer', 'images/hud/items/item-01.png', 'hammer'),
+    TOOL('spear', 'images/hud/items/item-19.png', 'spear'),
+    CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
+    CRAFTED_PLACEABLE('purifier', 'images/hud/items/item-06.png')
+  ]
+  // Drop everything from the by-id lookup so stale defs from previously
+  // collected materials don't survive the reset; re-seed with the starter
+  // loadout below.
   for (const id of Object.keys(ITEMS_BY_ID)) delete ITEMS_BY_ID[id]
-  ITEMS_BY_ID[hook.id] = hook
+  for (let i = 0; i < starters.length; i++) {
+    layout[i] = starters[i]
+    ITEMS_BY_ID[starters[i].id] = starters[i]
+  }
 }
 
 // Swap the contents of two inventory slots. Out-of-range or no-op (a===b)
