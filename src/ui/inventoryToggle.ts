@@ -6,7 +6,6 @@
 
 import { InputModifier, engine } from '@dcl/sdk/ecs'
 
-import { isCooking } from './cookSession'
 import { isCookOpen, setCookOpen } from './cookToggle'
 import { isCraftOpen, setCraftOpen } from './craftToggle'
 import { isCrafting } from './craftSession'
@@ -45,7 +44,6 @@ export function isInventoryActionLocked(): boolean {
     isCraftOpen() ||
     isCookOpen() ||
     isCrafting() ||
-    isCooking() ||
     isPurifying() ||
     isGameOver()
   )
@@ -91,7 +89,6 @@ export function inventoryToggleResetSystem(dt: number): void {
     isCraftOpen() ||
     isCookOpen() ||
     isCrafting() ||
-    isCooking() ||
     isPurifying()
   if (lock === lastModifierApplied) return
   lastModifierApplied = lock

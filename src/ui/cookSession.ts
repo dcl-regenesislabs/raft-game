@@ -1,38 +1,47 @@
-// Active cooking session. Triggered by pressing COOK in the cook menu
-// once the placed ingredient SET matches a recipe AND the player's
-// inventory holds at least the recipe's required QUANTITIES of every
-// ingredient (incl. fuel). Pressing COOK debits those quantities,
-// clears the cells, runs a timer with the HUD hidden behind a centered
-// progress bar, and grants the matched recipe's output on completion.
+// Place-and-wait cooking. Pressing COOK debits the recipe's quantities,
+// closes the menu, spawns the flame + ingredient sprites on the grill
+// platform that the menu was opened on, and writes an `ActiveCook`
+// component on that platform. From there the world drives the timeline:
+// `systems/grillCook` ticks elapsed time and transitions the visuals
+// (ingredients → plate → coal). The HUD does NOT lock — the player
+// roams while the food cooks.
 //
-// Note: cell placements themselves are symbolic — see `cookSlots.ts`.
+// Cell placements themselves stay symbolic — see `cookSlots.ts`.
 // Quantities only matter at this layer.
 
-import { type CookableItem } from './cookableItems'
+import { Entity } from '@dcl/sdk/ecs'
+
+import { ActiveCook, CookStatus, PlatformConstruction } from '../components'
+import {
+  createFlameSprite,
+  createIngredientSprites
+} from '../factories/cookingSprites'
 import {
   consumePlacedCells,
   getCookFuel,
   getMatchingRecipe
 } from './cookSlots'
+import { closeCookMenu } from './cookToggle'
 import {
-  addCollected,
   getCollectedCount,
   subtractCollected
 } from './inventoryState'
 
-const COOK_DEFAULT_SEC = 4
+// The grill platform entity the open cook menu targets. Set by
+// `openCookMenu(grill)` in `cookToggle.ts`; consumed by `startCook`
+// to know WHERE to spawn the cook sprites.
+let activeCookGrill: Entity | null = null
 
-let activeRecipe: CookableItem | null = null
-let activeDurationSec = COOK_DEFAULT_SEC
-let elapsedSec = 0
-
-export function isCooking(): boolean {
-  return activeRecipe !== null
+export function setActiveCookGrill(grill: Entity): void {
+  activeCookGrill = grill
 }
 
-export function getCookProgress(): number {
-  if (activeRecipe === null) return 0
-  return Math.min(1, elapsedSec / activeDurationSec)
+export function clearActiveCookGrill(): void {
+  activeCookGrill = null
+}
+
+export function getActiveCookGrill(): Entity | null {
+  return activeCookGrill
 }
 
 // True iff a recipe is matched, the burner holds the matching fuel,
@@ -42,9 +51,10 @@ export function getCookProgress(): number {
 //
 // Recipe matching itself ignores fuel (so the output preview shows
 // from ingredients alone) — wood is checked here instead so the COOK
-// button only lights up once the burner is fed.
+// button only lights up once the burner is fed. We also block the
+// button if the targeted grill already has an `ActiveCook` — the grill
+// can only host one cook at a time.
 export function canStartCook(): boolean {
-  if (isCooking()) return false
   const recipe = getMatchingRecipe()
   if (recipe === null) return false
   if (getCookFuel() !== recipe.fuel.itemId) return false
@@ -52,6 +62,9 @@ export function canStartCook(): boolean {
     if (getCollectedCount(ing.itemId) < ing.amount) return false
   }
   if (getCollectedCount(recipe.fuel.itemId) < recipe.fuel.amount) return false
+  if (activeCookGrill === null) return false
+  if (PlatformConstruction.getOrNull(activeCookGrill) === null) return false
+  if (ActiveCook.getOrNull(activeCookGrill) !== null) return false
   return true
 }
 
@@ -59,6 +72,10 @@ export function startCook(): boolean {
   if (!canStartCook()) return false
   const recipe = getMatchingRecipe()
   if (recipe === null) return false
+  const grill = activeCookGrill
+  if (grill === null) return false
+  const construction = PlatformConstruction.getOrNull(grill)
+  if (construction === null) return false
   // Debit recipe quantities — placement was symbolic so the inventory
   // hasn't been touched yet.
   for (const ing of recipe.ingredients) {
@@ -66,18 +83,17 @@ export function startCook(): boolean {
   }
   subtractCollected(recipe.fuel.itemId, recipe.fuel.amount)
   consumePlacedCells()
-  activeRecipe = recipe
-  activeDurationSec = recipe.cookSec ?? COOK_DEFAULT_SEC
-  elapsedSec = 0
+  // Spawn the world-side sprites and tag the grill with cook state.
+  const flame = createFlameSprite(grill, construction.yawDeg)
+  const ingredientSprites = createIngredientSprites(grill, construction.yawDeg, recipe)
+  ActiveCook.create(grill, {
+    recipeId: recipe.id,
+    elapsedSec: 0,
+    status: CookStatus.Cooking,
+    fireSprite: flame,
+    foodSprites: ingredientSprites,
+    bobPhase: Math.random() * Math.PI * 2
+  })
+  closeCookMenu()
   return true
-}
-
-export function cookSessionTickSystem(dt: number): void {
-  if (activeRecipe === null) return
-  elapsedSec += dt
-  if (elapsedSec >= activeDurationSec) {
-    addCollected(activeRecipe.id, 1)
-    activeRecipe = null
-    elapsedSec = 0
-  }
 }

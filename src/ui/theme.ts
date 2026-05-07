@@ -82,6 +82,25 @@ export const ACTION_BUTTON_FRAME = Math.round(ACTION_BUTTON_SIZE * 1.25)
 // fits within the painted cream center rather than the brown ring.
 export const ACTION_BUTTON_ICON_INSET_PCT = 22
 
+// --- Rotate buttons (top-middle, placement-mode only) ---------------------
+// Two circular buttons (left/right arrows) shown at the top-middle of the
+// safe area while a construction is being placed. Reuse the same circular
+// frame art as the other top-row toggles so the HUD vocabulary stays
+// consistent.
+export const ROTATE_BUTTON_TEXTURE = 'images/hud/button.png'
+export const ROTATE_BUTTON_SIZE = 110
+export const ROTATE_BUTTON_TOP = 24
+// Gap between the two buttons (px). Pulled in tight so the pair reads as
+// one rotation control.
+export const ROTATE_BUTTON_GAP = 16
+export const ROTATE_BUTTON_LABEL_COLOR = Color4.create(0.3, 0.18, 0.1, 1)
+export const ROTATE_BUTTON_LABEL_SIZE = 48
+// Desktop key-hint glyph rendered under the arrow ("E" / "F"). Sits just
+// inside the bottom edge of the wood-framed circle so the central arrow
+// stays the dominant glyph.
+export const ROTATE_BUTTON_KEY_HINT_SIZE = 18
+export const ROTATE_BUTTON_KEY_HINT_BOTTOM = 12
+
 // --- Inventory panel -------------------------------------------------------
 // The art (`inventory.png`) is a 900×900 PNG with a 5×5 grid of cream cells
 // inset in a brown frame. Cell centers and widths were sampled from the

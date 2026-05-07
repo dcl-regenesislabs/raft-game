@@ -6,11 +6,11 @@ import {
   Transform,
   engine
 } from '@dcl/sdk/ecs'
-import { Color4, Vector3 } from '@dcl/sdk/math'
+import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import {
   type ConstructionKind,
-  CONSTRUCTION_DECK_OFFSET_M,
+  getConstructionDeckOffset,
   getConstructionGlb,
   getConstructionVisualSize
 } from './construction'
@@ -21,11 +21,6 @@ import {
 const DEFAULT_DIM = Color4.create(0.2, 0.7, 0.3, 1)
 const DEFAULT_BRIGHT = Color4.create(0.5, 1.0, 0.6, 1)
 const BLINK_RATE = Math.PI * 2
-
-// Same world offset the factory uses when placing the real entity — the
-// hovered preview must match the committed placement exactly, otherwise
-// the construction will visibly jump on commit.
-const DECK_TOP_OFFSET_M = CONSTRUCTION_DECK_OFFSET_M
 
 export type SpectralPalette = {
   dim?: Color4
@@ -38,6 +33,11 @@ type State = {
   dim: Color4
   bright: Color4
   visualSize: number
+  // Same world offset the factory uses when placing the real entity —
+  // stored per ghost so the hovered preview matches the committed
+  // placement exactly, otherwise the construction visibly jumps on
+  // commit.
+  deckOffsetM: number
 }
 
 const states = new Map<Entity, State>()
@@ -73,27 +73,30 @@ export function createSpectralConstruction(
     blinkPhase: 0,
     dim,
     bright,
-    visualSize
+    visualSize,
+    deckOffsetM: getConstructionDeckOffset(kind)
   })
   return ghost
 }
 
 // Snaps the ghost to the world position of the hovered platform's deck top.
 // `platformTopWorld` is the platform Transform's world position; this lifts
-// the ghost an extra DECK_TOP_OFFSET_M so it sits ON the deck rather than
-// inside it.
+// the ghost by the kind-specific deck offset so it sits ON the deck rather
+// than inside it.
 export function showSpectralConstructionAt(
   ghost: Entity,
-  platformTopWorld: Vector3
+  platformTopWorld: Vector3,
+  yawDeg: number = 0
 ): void {
   const state = states.get(ghost)
   if (state === undefined) return
   const transform = Transform.getMutable(ghost)
   transform.position = Vector3.create(
     platformTopWorld.x,
-    platformTopWorld.y + DECK_TOP_OFFSET_M,
+    platformTopWorld.y + state.deckOffsetM,
     platformTopWorld.z
   )
+  transform.rotation = Quaternion.fromEulerDegrees(0, yawDeg, 0)
   transform.scale = Vector3.create(
     state.visualSize,
     state.visualSize,

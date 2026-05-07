@@ -31,14 +31,15 @@ const VISUAL_SIZE_M: Record<ConstructionKind, number> = {
 
 // World-meters lift of the construction above the platform's origin so it
 // lands on the VISIBLE raft deck rather than the (sunken) collider top.
-// Exported so the spectral ghost preview reads the exact same value —
-// the hovered preview position must match the placed entity's position
-// or the placement will visibly jump on commit.
-export const CONSTRUCTION_DECK_OFFSET_M = 0.52
-// Local-space Y the factory writes into Transform. The platform parent
-// has scale.y = PLATFORM_SIZE_Y, so a local Y of N renders at N *
-// PLATFORM_SIZE_Y world meters above the platform origin.
-const DECK_TOP_LOCAL_Y = CONSTRUCTION_DECK_OFFSET_M / PLATFORM_SIZE_Y
+// Per-kind because each GLB's mesh origin sits differently relative to
+// its visible base. Exported via getConstructionDeckOffset so the
+// spectral ghost preview reads the exact same value — the hovered
+// preview position must match the placed entity's position or the
+// placement will visibly jump on commit.
+const DECK_OFFSET_M: Record<ConstructionKind, number> = {
+  grill: 0.62,
+  purifier: 0.52
+}
 
 // Hover-prompt text per construction kind. Names the action so the
 // player knows what tapping the construction will do, regardless of
@@ -54,7 +55,8 @@ const HOVER_MAX_DISTANCE = 5
 
 export function createConstruction(
   platform: Entity,
-  kind: ConstructionKind
+  kind: ConstructionKind,
+  yawDeg: number = 0
 ): Entity {
   const visualSize = VISUAL_SIZE_M[kind]
   const child = engine.addEntity()
@@ -62,8 +64,11 @@ export function createConstruction(
   // construction renders proportionally, then up-scale to visualSize.
   Transform.create(child, {
     parent: platform,
-    position: Vector3.create(0, DECK_TOP_LOCAL_Y, 0),
-    rotation: Quaternion.fromEulerDegrees(0, 0, 0),
+    // Local Y: platform parent has scale.y = PLATFORM_SIZE_Y, so local
+    // Y of N renders at N * PLATFORM_SIZE_Y world meters above the
+    // platform origin.
+    position: Vector3.create(0, DECK_OFFSET_M[kind] / PLATFORM_SIZE_Y, 0),
+    rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
     scale: Vector3.create(
       visualSize / PLATFORM_SIZE_X,
       visualSize / PLATFORM_SIZE_Y,
@@ -90,7 +95,12 @@ export function createConstruction(
       }
     ]
   })
-  PlatformConstruction.create(platform, { kind, child })
+  // Grills no longer carry an always-on flame; the flame and food
+  // sprites are spawned by `cookSession.startCook` when the player
+  // confirms a recipe and stored on the platform's `ActiveCook`
+  // component. `aux` stays here as RootEntity (id 0) for the in-flight
+  // cleanup branch in `destroyPlatformEntity`.
+  PlatformConstruction.create(platform, { kind, child, aux: engine.RootEntity, yawDeg })
   return child
 }
 
@@ -100,4 +110,8 @@ export function getConstructionGlb(kind: ConstructionKind): string {
 
 export function getConstructionVisualSize(kind: ConstructionKind): number {
   return VISUAL_SIZE_M[kind]
+}
+
+export function getConstructionDeckOffset(kind: ConstructionKind): number {
+  return DECK_OFFSET_M[kind]
 }

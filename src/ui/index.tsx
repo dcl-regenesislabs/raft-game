@@ -13,13 +13,13 @@ import { DestroyBanner } from './components/DestroyBanner'
 import { InventoryButton } from './components/InventoryButton'
 import { InventoryPanel } from './components/InventoryPanel'
 import { NotificationOverlay } from './components/Notification'
+import { RotateButtons } from './components/RotateButtons'
 import { StatsBars } from './components/StatsBars'
-import { isCooking } from './cookSession'
 import { isCookOpen } from './cookToggle'
 import { isCrafting } from './craftSession'
 import { isCraftOpen } from './craftToggle'
 import { isGameOver } from './gameOver'
-import { pressBackground } from './inventoryDrag'
+import { isSwapModeActive, pressBackground } from './inventoryDrag'
 import { isInventoryOpen } from './inventoryToggle'
 import { isPurifying } from './purifySession'
 
@@ -58,11 +58,11 @@ function ui(): ReactEcs.JSX.Element {
       </UiEntity>
     )
   }
-  // While a craft, cook or purify is running every interactive HUD
-  // element hides — the player can't act, only watch the progress bar
-  // fill. The bar reuses the hook charge meter style for visual
-  // consistency.
-  if (isCrafting() || isPurifying() || isCooking()) {
+  // While a craft or purify is running every interactive HUD element
+  // hides — the player can't act, only watch the progress bar fill.
+  // The bar reuses the hook charge meter style for visual consistency.
+  // Cooking is asynchronous (place-and-wait) and doesn't lock the HUD.
+  if (isCrafting() || isPurifying()) {
     return (
       <SafeArea>
         <UiEntity
@@ -82,11 +82,12 @@ function ui(): ReactEcs.JSX.Element {
     <SafeArea>
       <UiEntity
         uiTransform={{ width: '100%', height: '100%' }}
-        // Any click that doesn't land on a slot (or on the slot's parents
-        // forwarding the press) cancels the current swap selection. Slot
-        // handlers set `interactionThisFrame` so this background handler
-        // skips when a slot was the actual click target this frame.
-        onMouseDown={pressBackground}
+        // Only intercept clicks while a swap selection is pending — outside
+        // of that, a fullscreen mouse handler swallows world clicks and
+        // blocks the browser from acquiring pointer lock on the canvas.
+        // Slot handlers set `interactionThisFrame` so this background
+        // handler skips when a slot was the actual click target.
+        onMouseDown={isSwapModeActive() ? pressBackground : undefined}
       >
         <DestroyBanner />
         {/* Standalone hot-bar hides while a panel is up — the inventory
@@ -100,6 +101,7 @@ function ui(): ReactEcs.JSX.Element {
         <InventoryPanel />
         <CraftDoubleMenu />
         <CookMenu />
+        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && <RotateButtons />}
         <ChargeReticle />
         <NotificationOverlay />
       </UiEntity>

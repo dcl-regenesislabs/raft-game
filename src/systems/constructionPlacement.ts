@@ -33,6 +33,13 @@ import {
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import { showNotification } from '../ui/notification'
+import {
+  getPlacementRotationDeg,
+  resetPlacementRotation,
+  rotatePlacementLeft,
+  rotatePlacementRight
+} from '../ui/placementRotation'
+import { publishLookAtHit } from './lookAtTarget'
 
 // Camera-forward continuous raycast distance. Matches the placement reach
 // used by raftBuilder so "what I can see I can place" stays consistent
@@ -63,6 +70,10 @@ type GhostSet = {
 let mode: Mode = 'idle'
 const ghosts = new Map<ConstructionKind, GhostSet>()
 
+export function getConstructionPlacementMode(): Mode {
+  return mode
+}
+
 let lastPlaceMs = 0
 // Latest hover state from the camera-forward raycast. `targetPlatform`
 // is the platform entity under the cursor (or null); `valid` records
@@ -77,6 +88,18 @@ export function constructionPlacementSystem(dt: number): void {
   if (next !== mode) transitionMode(next)
 
   if (mode === 'idle') return
+
+  // E rotates left, F rotates right. Desktop only — mobile uses the
+  // top-middle Left/Right buttons. Edge-triggered so a held key doesn't
+  // spin the preview.
+  if (!isMobile()) {
+    if (inputSystem.isTriggered(InputAction.IA_PRIMARY, PointerEventType.PET_DOWN)) {
+      rotatePlacementLeft()
+    }
+    if (inputSystem.isTriggered(InputAction.IA_SECONDARY, PointerEventType.PET_DOWN)) {
+      rotatePlacementRight()
+    }
+  }
 
   updatePreview(dt)
 
@@ -119,9 +142,11 @@ function transitionMode(next: Mode): void {
     raycastSystem.removeRaycasterEntity(engine.CameraEntity)
     hoverPlatform = null
     hoverValid = false
+    resetPlacementRotation()
   }
 
   if (mode === 'idle' && next !== 'idle') {
+    resetPlacementRotation()
     ensureGhostsFor(next)
     raycastSystem.registerLocalDirectionRaycast(
       {
@@ -165,6 +190,10 @@ function handleRaycast(result: {
 }): void {
   if (mode === 'idle') return
   const firstId = result.hits[0]?.entityId
+  // Mirror the hit into lookAtTarget so the action button's "what am I
+  // pointing at" classification stays fresh while we own the raycaster
+  // (lookAtTargetSystem itself defers to us during placement).
+  publishLookAtHit(firstId)
   if (firstId === undefined) {
     hoverPlatform = null
     hoverValid = false
@@ -211,7 +240,7 @@ function updatePreview(dt: number): void {
     // Invalid surface — main platform or already-occupied. Pulse red on
     // the platform centre so the player sees exactly which one they
     // can't build on.
-    showSpectralConstructionAt(set.red, anchor)
+    showSpectralConstructionAt(set.red, anchor, getPlacementRotationDeg())
     tickSpectralConstructionBlink(set.red, dt)
     hideSpectralConstruction(set.green)
     hideSpectralConstruction(set.yellow)
@@ -221,7 +250,7 @@ function updatePreview(dt: number): void {
   const hasStock = getCollectedCount(mode) > 0
   const active = hasStock ? set.green : set.yellow
   const inactive = hasStock ? set.yellow : set.green
-  showSpectralConstructionAt(active, anchor)
+  showSpectralConstructionAt(active, anchor, getPlacementRotationDeg())
   tickSpectralConstructionBlink(active, dt)
   hideSpectralConstruction(inactive)
   hideSpectralConstruction(set.red)
@@ -255,7 +284,7 @@ function commitPlacement(): void {
   lastPlaceMs = now
 
   subtractCollected(mode, 1)
-  createConstruction(platform, mode)
+  createConstruction(platform, mode, getPlacementRotationDeg())
   // Hover stays the same target; the platform now carries a
   // PlatformConstruction so the next frame's raycast result will mark
   // hoverValid = false and the green ghost will swap to red.

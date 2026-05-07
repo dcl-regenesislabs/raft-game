@@ -10,7 +10,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
-export type HeldItemKind = 'hook' | 'hammer' | 'spear' | 'food' | 'cup'
+export type HeldItemKind = 'hook' | 'hammer' | 'spear' | 'fishingRod' | 'food' | 'cup'
 
 export interface HeldItemConfig {
   src: string
@@ -43,6 +43,12 @@ export const HELD_ITEMS: Record<HeldItemKind, HeldItemConfig> = {
     offset: Vector3.create(0.35, -0.2, 0.6),
     rotation: Quaternion.fromEulerDegrees(70, 0, 15),
     scale: Vector3.create(0.4, 0.4, 0.4)
+  },
+  fishingRod: {
+    src: 'assets/scene/items/fishing_rod.glb',
+    offset: Vector3.create(0.35, -0.25, 0.6),
+    rotation: Quaternion.fromEulerDegrees(60, 200, 0),
+    scale: Vector3.create(0.35, 0.35, 0.35)
   },
   food: {
     src: '',

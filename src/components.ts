@@ -39,7 +39,18 @@ export const PlatformConstruction = engine.defineComponent(
   'mystic-pond:platform-construction',
   {
     kind: Schemas.String,
-    child: Schemas.Entity
+    child: Schemas.Entity,
+    // Optional auxiliary entity (e.g. the billboarded flame sprite on
+    // grills). Stored so `destroyPlatformEntity` can clean it up — it
+    // is NOT a Transform child of `child`, so SDK7 won't cascade.
+    // Set to 0 (engine.RootEntity ID) when absent.
+    aux: Schemas.Entity,
+    // Yaw (degrees, around +Y) the construction was placed at. The
+    // visual child's rotation already encodes this, but we keep it on
+    // the component too so `cookSession` can spawn flame and food
+    // sprites in grill-aligned positions without decomposing the
+    // child Transform's quaternion.
+    yawDeg: Schemas.Number
   }
 )
 
@@ -110,6 +121,35 @@ export const enum HookPhase {
   Floating = 1
 }
 
+// Tags the single thrown fishing-line entity. Mirrors `Hook` but the
+// floating phase is sticky (waits for player input) and adds a Biting
+// reaction window before the catch resolves. `nextBiteIn` is the random
+// idle duration before the next bite fires; `idleElapsed` accumulates
+// while in `Idle`. `reactElapsed` is the seconds-into-the-bite window
+// (capped at the configured react duration). `velocity` is m/s,
+// only meaningful while flying.
+export const FishingLine = engine.defineComponent('mystic-pond:fishing-line', {
+  phase: Schemas.Int,
+  elapsed: Schemas.Number,
+  velocity: Schemas.Vector3,
+  idleElapsed: Schemas.Number,
+  nextBiteIn: Schemas.Number,
+  reactElapsed: Schemas.Number
+})
+
+// Phase encoding for `FishingLine.phase`. Stored as Int for
+// serialisation; this enum keeps call sites readable.
+export const enum FishingPhase {
+  // Ballistic — velocity integrated with gravity each frame.
+  Flying = 0,
+  // Floating on water; waiting for a bite or a retract press.
+  Idle = 1,
+  // Fish is biting — player has FISH_REACT_WINDOW_S to press to catch.
+  Biting = 2,
+  // Reeling back home (after retract / catch / forced cancel).
+  Reeling = 3
+}
+
 // Floating debris (wood / barrel / plants / plastic / metal) drifting past
 // the rafts along the sea-flow direction. Spawned in groups by
 // `systems/garbageSpawner.ts`, advanced + despawned by `systems/floatingGarbage.ts`.
@@ -141,6 +181,48 @@ export const FloatingGarbage = engine.defineComponent('mystic-pond:floating-garb
   lifetime: Schemas.Number,
   maxLifetime: Schemas.Number
 })
+
+// Per-grill flame-sprite animation state. Drives `systems/grillFire.ts`
+// which advances the UV window on the entity's plane mesh through the
+// 11-frame fire spritesheet (3 cols × 4 rows, last cell empty). Each
+// grill carries its own `frameTimer` (seconds since last advance) and
+// `currentFrame` so neighbouring grills don't tick in lockstep.
+export const GrillFire = engine.defineComponent('mystic-pond:grill-fire', {
+  frameTimer: Schemas.Number,
+  currentFrame: Schemas.Int
+})
+
+// Place-and-wait cook session attached to a grill PLATFORM entity. The
+// player builds a recipe in the cook menu, presses COOK, and this
+// component is created on the targeted grill — the HUD does NOT lock,
+// so the player can roam while the food cooks. Status progresses on a
+// real-time clock:
+//   - Cooking (0–60s): ingredient sprites lie above the flame.
+//   - Ready   (60–120s): ingredient sprites are replaced by the
+//     cooked-plate sprite. Click the grill to grab.
+//   - Burned  (120s+): plate sprite swaps to coal, flame turns off.
+//     Click the grill to grab the coal.
+//
+// `fireSprite` and `foodSprites` are TOP-LEVEL entities (not Transform
+// children of the grill GLB) so non-uniform parent scale doesn't break
+// their orientation. SDK7 won't cascade-remove them when the platform
+// is destroyed, so `destroyPlatformEntity` and `cookGrab` clean them up
+// explicitly. `fireSprite` is set to engine.RootEntity (id 0) once the
+// flame is despawned at the burn transition.
+export const ActiveCook = engine.defineComponent('mystic-pond:active-cook', {
+  recipeId: Schemas.String,
+  elapsedSec: Schemas.Number,
+  status: Schemas.Int,
+  fireSprite: Schemas.Entity,
+  foodSprites: Schemas.Array(Schemas.Entity),
+  bobPhase: Schemas.Number
+})
+
+export const enum CookStatus {
+  Cooking = 0,
+  Ready = 1,
+  Burned = 2
+}
 
 // Drives circular motion around a fixed point on the XZ plane. Used by sharks
 // patrolling the platform. Consumed by `systems/sharkOrbit.ts`.

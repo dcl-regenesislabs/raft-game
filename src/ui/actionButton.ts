@@ -4,6 +4,7 @@
 // cleared at the end of each frame by `actionButtonResetSystem`, registered
 // last in `index.ts` so every reader sees the edge during its own tick.
 
+import { isFishingLineActive } from '../systems/fishingRod'
 import { getLookAtTarget } from '../systems/lookAtTarget'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { getSelectedSlot, getSlotHasAction } from './inventoryState'
@@ -58,6 +59,12 @@ export function actionButtonJustReleased(): boolean {
 // `ActionButton.tsx` for the matching icon swap.
 export function isActionButtonAvailable(): boolean {
   if (getLookAtTarget() === 'grill') return true
+  // Fishing line is out — surface the button as the contextual
+  // retract / catch trigger. The same press fires the catch during
+  // the bite window. This intentionally also unlocks visibility on
+  // desktop (see ActionButton.tsx) since otherwise there'd be no way
+  // to retract on desktop without a separate keybind.
+  if (isFishingLineActive()) return true
   if (!getSlotHasAction(getSelectedSlot())) return false
   if (getHeldItemKind() === 'cup' && getHeldFoodId() === 'cup') {
     return getLookAtTarget() === 'water'

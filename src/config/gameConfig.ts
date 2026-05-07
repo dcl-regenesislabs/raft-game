@@ -109,3 +109,15 @@ export const HOOK_WOBBLE_AMPLITUDE_DEG = 9
 export const HOOK_WOBBLE_FREQ = 22
 // Wobble dampener applied during reeling. <1 reduces tumble vs flight.
 export const HOOK_REEL_WOBBLE_SCALE = 0.45
+
+// --- Fishing rod -----------------------------------------------------------
+// Random idle window between cast (or escaped bite) and the next bite.
+// Sampled per cast and per re-roll after a missed/escaped bite.
+export const FISH_BITE_DELAY_MIN_S = 4
+export const FISH_BITE_DELAY_MAX_S = 10
+// Reaction window for the player to press once a fish is biting. Miss
+// the window and the fish escapes; the line returns to Idle.
+export const FISH_REACT_WINDOW_S = 2
+// Pulse frequency (Hz) of the screaming bite highlight on the action
+// button. Drives both the scale pulse and the texture flash.
+export const FISH_BITE_PULSE_HZ = 4

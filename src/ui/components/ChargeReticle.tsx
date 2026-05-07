@@ -1,5 +1,6 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 
+import { getFishingChargeT } from '../../systems/fishingRod'
 import { getThrowChargeT } from '../../systems/hookThrower'
 import {
   CHARGE_BAR_HEIGHT,
@@ -14,7 +15,10 @@ import {
 // rest; switches to the "full" colour once the bar fills (the throw fires
 // automatically on the same frame).
 export function ChargeReticle(): ReactEcs.JSX.Element | null {
-  const t = getThrowChargeT()
+  // Show whichever charge is active this frame. The hook and fishing
+  // rod can't both be charging simultaneously (only one is equipped),
+  // so picking the larger value collapses the two sources cleanly.
+  const t = Math.max(getThrowChargeT(), getFishingChargeT())
   if (t <= 0.001) return null
   const fillWidth = Math.max(2, Math.round(CHARGE_BAR_WIDTH * t))
   const fillColor = t >= 0.999 ? CHARGE_FILL_FULL_COLOR : CHARGE_FILL_COLOR

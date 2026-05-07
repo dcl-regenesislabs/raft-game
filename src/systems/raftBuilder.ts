@@ -16,6 +16,10 @@ import {
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import {
+  rotatePlacementLeft,
+  rotatePlacementRight
+} from '../ui/placementRotation'
+import {
   commitDestroyFromHover,
   enterDestroying,
   exitDestroying,
@@ -60,6 +64,18 @@ export function raftBuilderSystem(dt: number): void {
 
   if (mode === 'placing') tickPlacing(dt)
   if (mode === 'destroying') tickDestroying()
+
+  // Desktop E/F rotate the previewed raft. Mobile uses the top-middle
+  // Left/Right buttons. Only active during placing — destroying doesn't
+  // care about orientation.
+  if (mode === 'placing' && !isMobile()) {
+    if (inputSystem.isTriggered(InputAction.IA_PRIMARY, PointerEventType.PET_DOWN)) {
+      rotatePlacementLeft()
+    }
+    if (inputSystem.isTriggered(InputAction.IA_SECONDARY, PointerEventType.PET_DOWN)) {
+      rotatePlacementRight()
+    }
+  }
 
   // Commit from the global input each frame, mirroring how spear/hook fire:
   // mobile uses the on-screen action button, desktop reads IA_POINTER PET_DOWN

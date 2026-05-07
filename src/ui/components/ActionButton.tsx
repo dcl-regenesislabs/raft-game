@@ -2,6 +2,11 @@ import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { getHeldFoodId, getHeldItemKind } from '../../factories/heldItem'
+import {
+  getFishingBiteIntensity,
+  isFishingBiting,
+  isFishingLineActive
+} from '../../systems/fishingRod'
 import { getLookAtTarget } from '../../systems/lookAtTarget'
 import {
   getActionButtonScale,
@@ -31,17 +36,37 @@ import {
 // The frame is sized to the peak press scale so the button can grow with
 // its press animation without shifting the parent.
 export function ActionButton(): ReactEcs.JSX.Element | null {
+  // Desktop normally has no action button — fire is bound to mouse
+  // click. The fishing rod is the one exception: while a line is out,
+  // the player needs an explicit retract / catch press, so the button
+  // surfaces on desktop too. On a bite, the button screams (scale +
+  // texture flash) so the player can't miss the 2 s reaction window.
+  const fishingActive = isFishingLineActive()
   if (
-    !isMobile() ||
+    (!isMobile() && !fishingActive) ||
     !isActionButtonAvailable() ||
     isInventoryOpen() ||
     isCraftOpen()
   )
     return null
   const pressed = isActionButtonPressed()
+  const biting = isFishingBiting()
+  const biteIntensity = biting ? getFishingBiteIntensity() : 0
   const iconTexture =
     contextualIconTexture() ?? getSlotItem(getSelectedSlot())?.texture ?? null
-  const scaledSize = Math.round(ACTION_BUTTON_SIZE * getActionButtonScale())
+  // Pulse the button visibly during a bite so the player can't miss
+  // the 2 s reaction window. Combine the base press scale with a
+  // bite-driven multiplier in the [1.0, 1.25] range.
+  const biteScaleBoost = 1 + 0.25 * biteIntensity
+  const scaledSize = Math.round(
+    ACTION_BUTTON_SIZE * getActionButtonScale() * biteScaleBoost
+  )
+  // Flash between the rest and pressed textures during a bite so the
+  // colour pops. Outside the bite window, the existing pressed-on-touch
+  // behaviour drives the texture as before.
+  const screaming = biting && biteIntensity > 0.5
+  const buttonTexture =
+    pressed || screaming ? ACTION_BUTTON_TEXTURE_PRESSED : ACTION_BUTTON_TEXTURE
   return (
     <UiEntity
       uiTransform={{
@@ -63,9 +88,7 @@ export function ActionButton(): ReactEcs.JSX.Element | null {
         }}
         uiBackground={{
           textureMode: 'stretch',
-          texture: {
-            src: pressed ? ACTION_BUTTON_TEXTURE_PRESSED : ACTION_BUTTON_TEXTURE
-          }
+          texture: { src: buttonTexture }
         }}
         onMouseDown={pressActionButton}
         onMouseUp={releaseActionButton}

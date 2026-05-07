@@ -122,6 +122,26 @@ const CRAFTED_STACK = (id: string, texture: string): ItemDef => ({
   ingredient: false
 })
 
+// Stackable AND equippable tool — collapses into one slot like
+// CRAFTED_STACK but the player can also select it from the bar to
+// equip a first-person viewmodel and surface the action button.
+// Used for the fishing rod (multiple instances stack as durability
+// charges, but only one viewmodel is ever held).
+const CRAFTED_TOOL_STACK = (
+  id: string,
+  texture: string,
+  heldKind: HeldItemKind
+): ItemDef => ({
+  id,
+  texture,
+  stackable: true,
+  selectable: true,
+  heldKind,
+  hasAction: true,
+  consumable: false,
+  ingredient: false
+})
+
 // Stackable, equippable item that doesn't swap the first-person viewmodel
 // (heldKind: null) but does surface an action button on mobile so touch
 // players can commit a placement. Used for "place on platform" items
@@ -196,7 +216,12 @@ const MATERIAL_CATALOG: Record<string, ItemDef> = {
   plants: MATERIAL('plants', 'images/hud/items/item-04.png'),
   plastic: MATERIAL('plastic', 'images/hud/items/item-03.png'),
   rope: MATERIAL('rope', 'images/hud/items/item-05.png'),
-  metal: MATERIAL('metal', 'images/hud/items/item-08.png')
+  metal: MATERIAL('metal', 'images/hud/items/item-08.png'),
+  // Coal is the burned-output of the cook flow: a grill left for 120s+
+  // turns its plate into coal. Stackable, not an ingredient (you can't
+  // re-cook it back into food). Reuses the world-sprite texture as its
+  // inventory icon — same PNG.
+  coal: MATERIAL('coal', 'images/cooking/coal.png')
 }
 
 const CRAFTED_CATALOG: Record<string, ItemDef> = {
@@ -208,7 +233,7 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   platform: CRAFTED_STACK('platform', 'images/hud/items/item-20.png'),
   purifier: CRAFTED_PLACEABLE('purifier', 'images/hud/items/item-06.png'),
   grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
-  fishingRod: CRAFTED_STACK('fishingRod', 'images/hud/items/item-15.png'),
+  fishingRod: CRAFTED_TOOL_STACK('fishingRod', 'images/hud/items/item-15.png', 'fishingRod'),
   knife: CRAFTED_STACK('knife', 'images/hud/items/item-16.png'),
   cup: CRAFTED_CONTAINER('cup', 'images/hud/items/item-09.png'),
   // Liquids live in cups: empty cup, salt-water cup, fresh-water cup.
@@ -216,16 +241,72 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   // above for the mental model. Drinking them is handled by the
   // container-action system, not the food-eat counter.
   saltWater: CRAFTED_CONTAINER('saltWater', 'images/hud/items/item-21.png'),
-  freshWater: CRAFTED_CONTAINER('freshWater', 'images/hud/items/item-10.png'),
-  // Food. Effects in `foodEffects.ts`. Raw foods (and pasta) flag as
-  // ingredients so the cook menu accepts them as inputs; cooked dishes
-  // don't, you can't re-cook them.
-  rawFish: FOOD('rawFish', 'images/hud/items/item-12.png', { ingredient: true }),
-  cookedFish: FOOD('cookedFish', 'images/hud/items/item-13.png'),
-  rawPotato: FOOD('rawPotato', 'images/hud/items/item-14.png', { ingredient: true }),
-  cookedPotato: FOOD('cookedPotato', 'images/hud/items/item-17.png'),
-  pasta: FOOD('pasta', 'images/hud/items/item-18.png', { ingredient: true }),
-  cookedFishPasta: FOOD('cookedFishPasta', 'images/hud/items/item-13.png')
+  freshWater: CRAFTED_CONTAINER('freshWater', 'images/hud/items/item-10.png')
+}
+
+// Cooking ingredients gathered from the four world sources documented in
+// COOKING.md (fishing rod / barrel / shark hits / purifier byproduct).
+// Every entry flags `ingredient: true` so the cook menu accepts it as an
+// input cell. Effects when eaten raw live in `foodEffects.ts` — most
+// ingredients give a small hunger nudge, a few (sea_salt) only carry a
+// thirst penalty so the player avoids snacking on them straight from the
+// inventory.
+const INGREDIENT_CATALOG: Record<string, ItemDef> = {
+  sardines:   FOOD('sardines',   'images/cooking/sardines.png',   { ingredient: true }),
+  mussels:    FOOD('mussels',    'images/cooking/mussels.png',    { ingredient: true }),
+  clams:      FOOD('clams',      'images/cooking/clams.png',      { ingredient: true }),
+  squid:      FOOD('squid',      'images/cooking/squid.png',      { ingredient: true }),
+  shark_meat: FOOD('shark_meat', 'images/cooking/shark_meat.png', { ingredient: true }),
+  seaweed:    FOOD('seaweed',    'images/cooking/seaweed.png',    { ingredient: true }),
+  tomatoes:   FOOD('tomatoes',   'images/cooking/tomatoes.png',   { ingredient: true }),
+  garlic:     FOOD('garlic',     'images/cooking/garlic.png',     { ingredient: true }),
+  sea_salt:   FOOD('sea_salt',   'images/cooking/sea_salt.png',   { ingredient: true }),
+  olive_oil:  FOOD('olive_oil',  'images/cooking/olive_oil.png',  { ingredient: true }),
+  potato:     FOOD('potato',     'images/cooking/potato.png',     { ingredient: true }),
+  crab:       FOOD('crab',       'images/cooking/crab.png',       { ingredient: true }),
+  spaghetti:  FOOD('spaghetti',  'images/cooking/spaghetti.png',  { ingredient: true }),
+  fettuccine: FOOD('fettuccine', 'images/cooking/fettuccine.png', { ingredient: true })
+}
+
+// Finished plates from the cook menu. 30 recipes split 5 / 15 / 8 / 2 by
+// ingredient count — see `cookableItems.ts`. Pasta is now a flavor that
+// distributes across tiers rather than its own category. Plates are NOT
+// ingredients — once cooked, you eat them, you don't re-cook them.
+const PLATE_CATALOG: Record<string, ItemDef> = {
+  // 1-ingredient plates (5)
+  grilled_sardines:        FOOD('grilled_sardines',        'images/cooking/grilled_sardines.png'),
+  boiled_mussels:          FOOD('boiled_mussels',          'images/cooking/boiled_mussels.png'),
+  charred_squid:           FOOD('charred_squid',           'images/cooking/charred_squid.png'),
+  roasted_potato:          FOOD('roasted_potato',          'images/cooking/roasted_potato.png'),
+  grilled_shark_meat:      FOOD('grilled_shark_meat',      'images/cooking/grilled_shark_meat.png'),
+  // 2-ingredient plates (15)
+  salted_sardines:         FOOD('salted_sardines',         'images/cooking/salted_sardines.png'),
+  clam_broth:              FOOD('clam_broth',              'images/cooking/clam_broth.png'),
+  garlic_squid:            FOOD('garlic_squid',            'images/cooking/garlic_squid.png'),
+  shark_steak:             FOOD('shark_steak',             'images/cooking/shark_steak.png'),
+  crab_with_sea_salt:      FOOD('crab_with_sea_salt',      'images/cooking/crab_with_sea_salt.png'),
+  sardines_pomodoro:       FOOD('sardines_pomodoro',       'images/cooking/sardines_pomodoro.png'),
+  mussels_pomodoro:        FOOD('mussels_pomodoro',        'images/cooking/mussels_pomodoro.png'),
+  squid_with_seaweed:      FOOD('squid_with_seaweed',      'images/cooking/squid_with_seaweed.png'),
+  crab_with_potato:        FOOD('crab_with_potato',        'images/cooking/crab_with_potato.png'),
+  shark_with_potato:       FOOD('shark_with_potato',       'images/cooking/shark_with_potato.png'),
+  squid_with_tomato:       FOOD('squid_with_tomato',       'images/cooking/squid_with_tomato.png'),
+  shark_with_tomato:       FOOD('shark_with_tomato',       'images/cooking/shark_with_tomato.png'),
+  sardines_in_oil:         FOOD('sardines_in_oil',         'images/cooking/sardines_in_oil.png'),
+  mussels_and_clams:       FOOD('mussels_and_clams',       'images/cooking/mussels_and_clams.png'),
+  spaghetti_pomodoro:      FOOD('spaghetti_pomodoro',      'images/cooking/spaghetti_pomodoro.png'),
+  // 3-ingredient plates (8)
+  spaghetti_with_sardines: FOOD('spaghetti_with_sardines', 'images/cooking/spaghetti_with_sardines.png'),
+  fettuccine_with_shark:   FOOD('fettuccine_with_shark',   'images/cooking/fettuccine_with_shark.png'),
+  spaghetti_mussels:       FOOD('spaghetti_mussels',       'images/cooking/spaghetti_mussels.png'),
+  fettuccine_squid:        FOOD('fettuccine_squid',        'images/cooking/fettuccine_squid.png'),
+  fettuccine_pomodoro:     FOOD('fettuccine_pomodoro',     'images/cooking/fettuccine_pomodoro.png'),
+  spaghetti_squid_seaweed: FOOD('spaghetti_squid_seaweed', 'images/cooking/spaghetti_squid_seaweed.png'),
+  fettuccine_crab_potato:  FOOD('fettuccine_crab_potato',  'images/cooking/fettuccine_crab_potato.png'),
+  seafood_stew:            FOOD('seafood_stew',            'images/cooking/seafood_stew.png'),
+  // 4-ingredient hero plates (2)
+  spaghetti_alle_vongole:  FOOD('spaghetti_alle_vongole',  'images/cooking/spaghetti_alle_vongole.png'),
+  fettuccine_sea_hunter:   FOOD('fettuccine_sea_hunter',   'images/cooking/fettuccine_sea_hunter.png')
 }
 
 const ITEMS_BY_ID: Record<string, ItemDef> = Object.fromEntries(
@@ -270,7 +351,11 @@ function findFirstEmptySlot(): number {
 // its own cell. Returns the slot index, or -1 if the inventory is full
 // or the id isn't in either catalog.
 export function ensureCollectibleSlot(id: string): number {
-  const def = MATERIAL_CATALOG[id] ?? CRAFTED_CATALOG[id]
+  const def =
+    MATERIAL_CATALOG[id] ??
+    CRAFTED_CATALOG[id] ??
+    INGREDIENT_CATALOG[id] ??
+    PLATE_CATALOG[id]
   if (def === undefined) return -1
   if (def.stackable) {
     const existing = findSlotIndexById(id)
@@ -291,7 +376,11 @@ export function ensureCollectibleSlot(id: string): number {
 export function transmuteSlot(slotIndex: number, newId: string): boolean {
   if (slotIndex < 0 || slotIndex >= layout.length) return false
   if (layout[slotIndex] === null) return false
-  const next = MATERIAL_CATALOG[newId] ?? CRAFTED_CATALOG[newId]
+  const next =
+    MATERIAL_CATALOG[newId] ??
+    CRAFTED_CATALOG[newId] ??
+    INGREDIENT_CATALOG[newId] ??
+    PLATE_CATALOG[newId]
   if (next === undefined) return false
   layout[slotIndex] = next
   ITEMS_BY_ID[next.id] = next

@@ -11,6 +11,9 @@
 // source is cleared on close so the next open doesn't carry a stale
 // "drag" between sessions.
 
+import { Entity } from '@dcl/sdk/ecs'
+
+import { clearActiveCookGrill, setActiveCookGrill } from './cookSession'
 import { clearPickedIngredient } from './cookSlots'
 import { setCraftOpen } from './craftToggle'
 import { setInventoryOpen } from './inventoryToggle'
@@ -28,10 +31,17 @@ export function setCookOpen(target: boolean): void {
   if (open === target) return
   const wasOpen = open
   open = target
-  if (wasOpen && !target) clearPickedIngredient()
+  if (wasOpen && !target) {
+    clearPickedIngredient()
+    clearActiveCookGrill()
+  }
 }
 
-export function openCookMenu(): void {
+// Open the cook menu pointed at a specific grill platform. The grill
+// reference is what `cookSession.startCook` reads to know where in the
+// world to spawn the flame and food sprites.
+export function openCookMenu(grill: Entity): void {
+  setActiveCookGrill(grill)
   if (open) return
   open = true
   setInventoryOpen(false)

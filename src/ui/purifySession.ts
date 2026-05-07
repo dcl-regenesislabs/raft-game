@@ -7,7 +7,7 @@
 // same slot transmutes to a fresh-water cup so the player keeps the
 // container and just gets the new contents.
 
-import { transmuteContainerSlot } from './inventoryState'
+import { addCollected, transmuteContainerSlot } from './inventoryState'
 
 const PURIFY_DURATION_S = 4
 
@@ -43,6 +43,9 @@ export function purifySessionTickSystem(dt: number): void {
   if (!active) return
   elapsedSec += dt
   if (elapsedSec >= PURIFY_DURATION_S) {
+    // Salt evaporates out of the cup as a byproduct — the player keeps
+    // the cup (now fresh water) AND gains sea salt for cooking.
+    addCollected('sea_salt', 1)
     transmuteContainerSlot(activeSlot, 'freshWater')
     active = false
     elapsedSec = 0

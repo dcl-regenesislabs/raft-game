@@ -6,7 +6,7 @@ import {
   Transform,
   engine
 } from '@dcl/sdk/ecs'
-import { Color4, Vector3 } from '@dcl/sdk/math'
+import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { PLATFORM_SIZE_Y } from './platform'
 
@@ -69,7 +69,11 @@ export function createSpectralPlatform(palette: SpectralPalette = {}): Entity {
   return ghost
 }
 
-export function showSpectralAt(ghost: Entity, world: Vector3): void {
+export function showSpectralAt(
+  ghost: Entity,
+  world: Vector3,
+  yawDeg: number = 0
+): void {
   const state = states.get(ghost)
   if (state === undefined) return
   const transform = Transform.getMutable(ghost)
@@ -78,6 +82,7 @@ export function showSpectralAt(ghost: Entity, world: Vector3): void {
     world.y + PLATFORM_SIZE_Y / 2 + RAFT_VISUAL_Y_OFFSET,
     world.z
   )
+  transform.rotation = Quaternion.fromEulerDegrees(0, yawDeg, 0)
   transform.scale = Vector3.create(RAFT_VISUAL_SIZE, RAFT_VISUAL_SIZE, RAFT_VISUAL_SIZE)
   if (!state.isVisible) {
     state.isVisible = true

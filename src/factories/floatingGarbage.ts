@@ -3,9 +3,14 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { FloatingGarbage } from '../components'
 
-// The five debris kinds the player can collect. Add a kind here AND drop
-// the matching GLB into `assets/scene/items/<kind>.glb` to extend the pool.
-export const GARBAGE_KINDS = ['wood', 'barrel', 'plants', 'plastic', 'metal'] as const
+// Debris kinds the player can collect. Add a kind here AND drop the
+// matching GLB into `assets/scene/items/<kind>.glb` to extend the pool —
+// or set `glbName` in KIND_CONFIG to reuse an existing GLB.
+//
+// `fish` is the fishing-rod food source: when banked, it rolls one of
+// {sardines, squid, crab} (see hookThrower.bankGrabbedItem). It currently
+// reuses the plants GLB until a dedicated fish model lands.
+export const GARBAGE_KINDS = ['wood', 'barrel', 'plants', 'plastic', 'metal', 'fish'] as const
 export type GarbageKind = (typeof GARBAGE_KINDS)[number]
 
 type KindConfig = {
@@ -22,6 +27,9 @@ type KindConfig = {
   yOffset: number
   // Half-range of yaw drift in rad/s; per-kind random ∈ [-r, r].
   spinSpeedRange: number
+  // Override GLB filename. Defaults to `<kind>.glb` when omitted. Used by
+  // the `fish` kind to reuse plants.glb until a fish model exists.
+  glbName?: string
 }
 
 const KIND_CONFIG: Record<GarbageKind, KindConfig> = {
@@ -34,7 +42,9 @@ const KIND_CONFIG: Record<GarbageKind, KindConfig> = {
   // Tiny plastic bottle.
   plastic: { scale: 0.6, bobAmplitude: 0.10, rollAmplitude: 5, yOffset: -0.05, spinSpeedRange: 0.5 },
   // Heavy scrap metal — large but settled.
-  metal: { scale: 1.5, bobAmplitude: 0.08, rollAmplitude: 3, yOffset: -0.05, spinSpeedRange: 0.3 }
+  metal: { scale: 1.5, bobAmplitude: 0.08, rollAmplitude: 3, yOffset: -0.05, spinSpeedRange: 0.3 },
+  // Lively surface critter — temporarily reuses the plants GLB.
+  fish: { scale: 0.7, bobAmplitude: 0.12, rollAmplitude: 6, yOffset: -0.02, spinSpeedRange: 0.7, glbName: 'plants' }
 }
 
 export interface FloatingGarbageParams {
@@ -67,7 +77,7 @@ export function createFloatingGarbage(params: FloatingGarbageParams): Entity {
   // No collider: items pass freely past the raft. Pickup will be a future
   // pointer-event hookup (out of scope for this system).
   GltfContainer.create(entity, {
-    src: `assets/scene/items/${kind}.glb`
+    src: `assets/scene/items/${config.glbName ?? kind}.glb`
   })
 
   FloatingGarbage.create(entity, {

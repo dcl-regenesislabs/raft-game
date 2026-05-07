@@ -27,7 +27,13 @@ import { restoreStat } from './statsBars'
 // player gets a clear "don't eat this" cue *before* committing to the bite.
 const FOOD_WARNINGS: Record<string, string> = {
   saltWater: 'Salt water will dehydrate you — do not drink!',
-  rawFish: 'Raw fish will dehydrate you — cook it first!'
+  sea_salt: 'Eating salt straight will dehydrate you — cook with it!',
+  sardines: 'Raw fish will dehydrate you — cook it first!',
+  squid: 'Raw squid will dehydrate you — cook it first!',
+  mussels: 'Raw mussels will dehydrate you — cook them first!',
+  clams: 'Raw clams will dehydrate you — cook them first!',
+  crab: 'Raw crab will dehydrate you — cook it first!',
+  shark_meat: 'Raw shark meat will dehydrate you — cook it first!'
 }
 
 // The bottom bar shows the first BOTTOM_BAR_SLOT_COUNT entries of the

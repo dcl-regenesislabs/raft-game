@@ -13,6 +13,7 @@ import {
 } from '../../factories/platform'
 import { isInventoryActionLocked } from '../../ui/inventoryToggle'
 import { triggerHammerSwing } from '../hammerSwing'
+import { publishLookAtHit } from '../lookAtTarget'
 import {
   DESTROY_OPTS,
   DESTROY_RAY_MAX_DISTANCE,
@@ -96,6 +97,8 @@ function attachDestroyClick(entity: Entity): void {
 const handleDestroyRaycast: RaycastHandler = (result) => {
   let next: Entity | null = null
   const firstId = result.hits[0]?.entityId
+  // Keep lookAtTarget classification fresh while we own the raycaster.
+  publishLookAtHit(firstId)
   if (firstId !== undefined) {
     const candidate = firstId as Entity
     if (

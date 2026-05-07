@@ -307,16 +307,38 @@ function rollRopeDrop(): number {
   return 0
 }
 
+// Pantry pool dropped by barrels — the COOKING.md "BARREL" sourced
+// ingredients minus shark/fish (those come from sharks and the rod).
+// Each barrel rolls a small bundle from this list so kitchens fill up
+// without making any single barrel a guaranteed full pantry.
+const BARREL_POOL = [
+  'mussels', 'clams', 'seaweed', 'tomatoes', 'garlic',
+  'olive_oil', 'potato', 'spaghetti', 'fettuccine', 'crab'
+] as const
+
+// Fishing-rod catch — banked when a `fish` floater is reeled in. Strict
+// per COOKING.md: sardines, squid, crab.
+const FISH_POOL = ['sardines', 'squid', 'crab'] as const
+
 // Translate a hooked debris kind into inventory deposits. Most kinds map
-// 1:1 to a material, but barrels are a "loot box" that breaks open into a
-// random mix of crafting materials so they feel distinct from a plain log.
+// 1:1 to a material, but barrels and fish unpack into a random pick from
+// their respective loot pools.
 function bankGrabbedItem(kind: string): void {
   if (kind === 'barrel') {
-    addCollected('wood', randInt(0, 1))
-    addCollected('plants', randInt(0, 2))
-    addCollected('plastic', randInt(0, 1))
+    // Always: a bit of wood for fuel continuity + a rope roll.
+    addCollected('wood', randInt(1, 2))
     addCollected('rope', rollRopeDrop())
-    addCollected('rawPotato', randInt(0, 2))
+    // 2–3 random pantry/sea ingredients per barrel.
+    const drops = randInt(2, 3)
+    for (let i = 0; i < drops; i++) {
+      const pick = BARREL_POOL[Math.floor(Math.random() * BARREL_POOL.length)]
+      addCollected(pick, 1)
+    }
+    return
+  }
+  if (kind === 'fish') {
+    const pick = FISH_POOL[Math.floor(Math.random() * FISH_POOL.length)]
+    addCollected(pick, 1)
     return
   }
   addCollected(kind, 1)

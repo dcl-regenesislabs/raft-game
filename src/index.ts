@@ -24,9 +24,12 @@ import { constructionPlacementSystem } from './systems/constructionPlacement'
 import { cupFillSystem } from './systems/cupFill'
 import { createFallRescueSystem } from './systems/fallRescue'
 import { firstPersonItemSwaySystem } from './systems/firstPersonItemSway'
+import { fishingRodSystem } from './systems/fishingRod'
 import { floatingGarbageSystem } from './systems/floatingGarbage'
 import { foodEatSystem } from './systems/foodEat'
 import { garbageSpawnerSystem } from './systems/garbageSpawner'
+import { grillCookSystem } from './systems/grillCook'
+import { grillFireSystem } from './systems/grillFire'
 import { hammerSwingSystem } from './systems/hammerSwing'
 import { hookThrowAnimSystem } from './systems/hookThrowAnim'
 import { hookThrowerSystem } from './systems/hookThrower'
@@ -42,7 +45,6 @@ import { survivalDrainSystem } from './systems/survivalDrain'
 import { waterScrollSystem } from './systems/waterScroll'
 import { setupUi } from './ui'
 import { actionButtonResetSystem } from './ui/actionButton'
-import { cookSessionTickSystem } from './ui/cookSession'
 import { craftSessionTickSystem } from './ui/craftSession'
 import { craftToggleResetSystem } from './ui/craftToggle'
 import { gameOverInputLockSystem } from './ui/gameOver'
@@ -96,14 +98,16 @@ export async function main(): Promise<void> {
   engine.addSystem(sharkPointerEventsSystem)
   engine.addSystem(garbageSpawnerSystem)
   engine.addSystem(floatingGarbageSystem)
+  engine.addSystem(grillFireSystem)
+  engine.addSystem(grillCookSystem)
   engine.addSystem(createFallRescueSystem(GRID_ORIGIN))
   engine.addSystem(survivalDrainSystem)
   engine.addSystem(raftBuilderSystem)
   engine.addSystem(constructionPlacementSystem)
   engine.addSystem(hookThrowerSystem)
+  engine.addSystem(fishingRodSystem)
   engine.addSystem(inventoryInputSystem)
   engine.addSystem(craftSessionTickSystem)
-  engine.addSystem(cookSessionTickSystem)
   engine.addSystem(purifySessionTickSystem)
   engine.addSystem(inventoryToggleResetSystem)
   engine.addSystem(craftToggleResetSystem)
@@ -150,13 +154,22 @@ function seedDebugInventory(): void {
   addCollected('cup', 1)
   addCollected('saltWater', 1)
   addCollected('freshWater', 1)
-  // Food.
-  addCollected('rawFish', 10)
-  addCollected('cookedFish', 10)
-  addCollected('rawPotato', 10)
-  addCollected('cookedPotato', 10)
-  addCollected('pasta', 10)
-  addCollected('cookedFishPasta', 10)
+  // Cooking ingredients — the 14 sources documented in COOKING.md so the
+  // cook-menu flow can be exercised without grinding fishing/barrels.
+  addCollected('sardines', 10)
+  addCollected('mussels', 10)
+  addCollected('clams', 10)
+  addCollected('squid', 10)
+  addCollected('shark_meat', 10)
+  addCollected('seaweed', 10)
+  addCollected('tomatoes', 10)
+  addCollected('garlic', 10)
+  addCollected('sea_salt', 10)
+  addCollected('olive_oil', 10)
+  addCollected('potato', 10)
+  addCollected('crab', 10)
+  addCollected('spaghetti', 10)
+  addCollected('fettuccine', 10)
 }
 
 // Spawns the 8 platforms surrounding the main raft (the king-move ring

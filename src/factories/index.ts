@@ -49,6 +49,17 @@ export {
   createReferenceHook
 } from './hook'
 export { createRopeEntity, hideRope, updateRopeBetween } from './rope'
+export {
+  createFishingWarningSprite,
+  destroyFishingWarningSprite,
+  setFishingWarningVisible,
+  updateFishingWarningSprite
+} from './fishingWarning'
+export {
+  createFishingCatchSprite,
+  destroyFishingCatchSprite,
+  updateFishingCatchSprite
+} from './fishingCatchSprite'
 export { createShark, spawnRingShark, SHARK_Y } from './shark'
 export type { SharkParams } from './shark'
 export { createFloatingGarbage, GARBAGE_KINDS } from './floatingGarbage'

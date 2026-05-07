@@ -23,7 +23,12 @@ import {
 } from '../../ui/inventoryState'
 import { isInventoryActionLocked } from '../../ui/inventoryToggle'
 import { showNotification } from '../../ui/notification'
+import {
+  getPlacementRotationDeg,
+  resetPlacementRotation
+} from '../../ui/placementRotation'
 import { triggerHammerSwing } from '../hammerSwing'
+import { publishLookAtHit } from '../lookAtTarget'
 import {
   GRID_HALF_EXTENT,
   NEIGHBOUR_DELTAS,
@@ -77,6 +82,7 @@ let lastPlaceMs = 0
 let lastPlacingOccupancy = ''
 
 export function enterPlacing(): void {
+  resetPlacementRotation()
   if (validGhost === null) {
     validGhost = createSpectralPlatform()
   }
@@ -111,6 +117,7 @@ export function exitPlacing(): void {
   placeHoverCell = null
   placeCursorWorld = null
   lastPlacingOccupancy = ''
+  resetPlacementRotation()
 }
 
 // Each frame while in placing mode: sync the marker set against current
@@ -138,11 +145,12 @@ export function commitPlaceFromHover(): boolean {
 
 function updatePlacementPreview(dt: number): void {
   if (validGhost === null || noStockGhost === null || cursorGhost === null) return
+  const yawDeg = getPlacementRotationDeg()
   if (placeHoverCell !== null) {
     const hasStock = getCollectedCount(PLATFORM_ITEM_ID) > 0
     const active = hasStock ? validGhost : noStockGhost
     const inactive = hasStock ? noStockGhost : validGhost
-    showSpectralAt(active, gridCellToWorld(placeHoverCell.gx, placeHoverCell.gz))
+    showSpectralAt(active, gridCellToWorld(placeHoverCell.gx, placeHoverCell.gz), yawDeg)
     tickSpectralBlink(active, dt)
     hideSpectral(inactive)
     hideSpectral(cursorGhost)
@@ -151,7 +159,7 @@ function updatePlacementPreview(dt: number): void {
   hideSpectral(validGhost)
   hideSpectral(noStockGhost)
   if (placeCursorWorld !== null) {
-    showSpectralAt(cursorGhost, placeCursorWorld)
+    showSpectralAt(cursorGhost, placeCursorWorld, yawDeg)
   } else {
     hideSpectral(cursorGhost)
   }
@@ -159,6 +167,10 @@ function updatePlacementPreview(dt: number): void {
 
 const handlePlaceRaycast: RaycastHandler = (result) => {
   const firstHit = result.hits[0]
+  // Keep lookAtTarget's classification fresh while we own the camera
+  // raycaster, so the action button still recognises a grill/purifier
+  // the player aims at while the hammer is in placing mode.
+  publishLookAtHit(firstHit?.entityId)
   if (firstHit !== undefined && firstHit.entityId !== undefined) {
     const entity = firstHit.entityId as Entity
     const marker = PlacementMarker.getOrNull(entity)
@@ -239,7 +251,11 @@ function placeRaft(gridX: number, gridZ: number): void {
     return
   }
   subtractCollected(PLATFORM_ITEM_ID, 1)
-  createPlatform(gridCellToWorld(gridX, gridZ), { gridX, gridZ })
+  createPlatform(gridCellToWorld(gridX, gridZ), {
+    gridX,
+    gridZ,
+    yawDeg: getPlacementRotationDeg()
+  })
   triggerHammerSwing()
   removeAllMarkers()
   if (validGhost !== null) hideSpectral(validGhost)

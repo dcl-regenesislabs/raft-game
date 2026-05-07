@@ -31,40 +31,300 @@ export interface CookableItem {
   cookSec?: number
 }
 
+const WOOD: CookIngredient = { itemId: 'wood', amount: 1 }
+
+// Cook-time tiers — ladders complexity with ingredient count without
+// ever exceeding 8 seconds. With pasta no longer a separate axis,
+// pasta plates fall into whichever ingredient-count tier they belong
+// to (e.g. spaghetti_pomodoro at 2-ing → SEC_2).
+const SEC_1 = 4
+const SEC_2 = 5
+const SEC_3 = 6
+const SEC_4 = 8
+
+// All recipes use unique ingredients (no duplicates inside a single
+// recipe) so `amount: 1` everywhere — the matcher uses set equality and
+// quantity is enforced separately at COOK time against the player's
+// inventory totals.
+const ING = (id: string): CookIngredient => ({ itemId: id, amount: 1 })
+
 export const COOKABLE_ITEMS: readonly CookableItem[] = [
+  // ─── 1-ingredient plates (5) ────────────────────────────────────────
   {
-    id: 'cookedFish',
-    name: 'GRILLED FISH',
-    description:
-      'A simple grilled fish. Light, healthy, and better than raw.',
-    texture: 'images/hud/items/item-13.png',
-    ingredients: [{ itemId: 'rawFish', amount: 1 }],
-    fuel: { itemId: 'wood', amount: 1 }
+    id: 'grilled_sardines',
+    name: 'GRILLED SARDINES',
+    description: 'A simple grilled sardine. Light and clean.',
+    texture: 'images/cooking/grilled_sardines.png',
+    ingredients: [ING('sardines')],
+    fuel: WOOD,
+    cookSec: SEC_1
   },
   {
-    id: 'cookedPotato',
-    name: 'BAKED POTATO',
-    description:
-      'A baked potato. Filling, warm, and far easier on the gut than raw.',
-    texture: 'images/hud/items/item-17.png',
-    ingredients: [{ itemId: 'rawPotato', amount: 1 }],
-    fuel: { itemId: 'wood', amount: 1 }
+    id: 'boiled_mussels',
+    name: 'BOILED MUSSELS',
+    description: 'Mussels boiled open. Quick and warming.',
+    texture: 'images/cooking/boiled_mussels.png',
+    ingredients: [ING('mussels')],
+    fuel: WOOD,
+    cookSec: SEC_1
   },
   {
-    id: 'cookedFishPasta',
-    name: 'FISH PASTA',
-    description:
-      'Pasta tossed with grilled fish. Hearty enough to keep you going for hours.',
-    texture: 'images/hud/items/item-13.png',
-    // 2 fish + 1 pasta — the larger fish demand exercises the
-    // "you've placed it but don't have enough quantity" red badge.
-    ingredients: [
-      { itemId: 'rawFish', amount: 2 },
-      { itemId: 'pasta', amount: 1 }
-    ],
-    // Single wood for the burner; the longer simmer is expressed via cookSec.
-    fuel: { itemId: 'wood', amount: 1 },
-    cookSec: 6
+    id: 'charred_squid',
+    name: 'CHARRED SQUID',
+    description: 'Squid charred straight on the grill.',
+    texture: 'images/cooking/charred_squid.png',
+    ingredients: [ING('squid')],
+    fuel: WOOD,
+    cookSec: SEC_1
+  },
+  {
+    id: 'roasted_potato',
+    name: 'ROASTED POTATO',
+    description: 'A potato roasted in its skin. Filling fuel.',
+    texture: 'images/cooking/roasted_potato.png',
+    ingredients: [ING('potato')],
+    fuel: WOOD,
+    cookSec: SEC_1
+  },
+  {
+    id: 'grilled_shark_meat',
+    name: 'GRILLED SHARK MEAT',
+    description: 'Dense shark meat seared over open flame.',
+    texture: 'images/cooking/grilled_shark_meat.png',
+    ingredients: [ING('shark_meat')],
+    fuel: WOOD,
+    cookSec: SEC_1
+  },
+
+  // ─── 2-ingredient plates (15) ───────────────────────────────────────
+  {
+    id: 'salted_sardines',
+    name: 'SALTED SARDINES',
+    description: 'Sardines cured with sea salt. Sharper bite.',
+    texture: 'images/cooking/salted_sardines.png',
+    ingredients: [ING('sardines'), ING('sea_salt')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'clam_broth',
+    name: 'CLAM BROTH',
+    description: 'A clear, briny broth from steamed clams.',
+    texture: 'images/cooking/clam_broth.png',
+    ingredients: [ING('clams'), ING('sea_salt')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'garlic_squid',
+    name: 'GARLIC SQUID',
+    description: 'Squid sautéed in pungent garlic.',
+    texture: 'images/cooking/garlic_squid.png',
+    ingredients: [ING('squid'), ING('garlic')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'shark_steak',
+    name: 'SHARK STEAK',
+    description: 'A thick shark steak, salted and seared.',
+    texture: 'images/cooking/shark_steak.png',
+    ingredients: [ING('shark_meat'), ING('sea_salt')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'crab_with_sea_salt',
+    name: 'CRAB WITH SEA SALT',
+    description: 'Crab cracked and dressed with sea salt.',
+    texture: 'images/cooking/crab_with_sea_salt.png',
+    ingredients: [ING('crab'), ING('sea_salt')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'sardines_pomodoro',
+    name: 'SARDINES POMODORO',
+    description: 'Sardines simmered in tomato sauce.',
+    texture: 'images/cooking/sardines_pomodoro.png',
+    ingredients: [ING('sardines'), ING('tomatoes')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'mussels_pomodoro',
+    name: 'MUSSELS POMODORO',
+    description: 'Mussels in a quick tomato sauce.',
+    texture: 'images/cooking/mussels_pomodoro.png',
+    ingredients: [ING('mussels'), ING('tomatoes')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'squid_with_seaweed',
+    name: 'SQUID WITH SEAWEED',
+    description: 'Squid wrapped in tender seaweed.',
+    texture: 'images/cooking/squid_with_seaweed.png',
+    ingredients: [ING('squid'), ING('seaweed')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'crab_with_potato',
+    name: 'CRAB WITH POTATO',
+    description: 'Crab and potato — sea meets land.',
+    texture: 'images/cooking/crab_with_potato.png',
+    ingredients: [ING('crab'), ING('potato')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'shark_with_potato',
+    name: 'SHARK WITH POTATO',
+    description: 'Shark roasted alongside hearty potato.',
+    texture: 'images/cooking/shark_with_potato.png',
+    ingredients: [ING('shark_meat'), ING('potato')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'squid_with_tomato',
+    name: 'SQUID WITH TOMATO',
+    description: 'Squid braised in fresh tomato.',
+    texture: 'images/cooking/squid_with_tomato.png',
+    ingredients: [ING('squid'), ING('tomatoes')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'shark_with_tomato',
+    name: 'SHARK WITH TOMATO',
+    description: 'Shark steak in a tomato glaze.',
+    texture: 'images/cooking/shark_with_tomato.png',
+    ingredients: [ING('shark_meat'), ING('tomatoes')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'sardines_in_oil',
+    name: 'SARDINES IN OIL',
+    description: 'Sardines confit in olive oil.',
+    texture: 'images/cooking/sardines_in_oil.png',
+    ingredients: [ING('sardines'), ING('olive_oil')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'mussels_and_clams',
+    name: 'MUSSELS AND CLAMS',
+    description: 'A simple shellfish duo, steamed open.',
+    texture: 'images/cooking/mussels_and_clams.png',
+    ingredients: [ING('mussels'), ING('clams')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+  {
+    id: 'spaghetti_pomodoro',
+    name: 'SPAGHETTI POMODORO',
+    description: 'Spaghetti in a fresh tomato sauce. Classic.',
+    texture: 'images/cooking/spaghetti_pomodoro.png',
+    ingredients: [ING('spaghetti'), ING('tomatoes')],
+    fuel: WOOD,
+    cookSec: SEC_2
+  },
+
+  // ─── 3-ingredient plates (8) ────────────────────────────────────────
+  {
+    id: 'spaghetti_with_sardines',
+    name: 'SPAGHETTI WITH SARDINES',
+    description: 'Spaghetti tossed with sardines and a pinch of salt.',
+    texture: 'images/cooking/spaghetti_with_sardines.png',
+    ingredients: [ING('spaghetti'), ING('sardines'), ING('sea_salt')],
+    fuel: WOOD,
+    cookSec: SEC_3
+  },
+  {
+    id: 'fettuccine_with_shark',
+    name: 'FETTUCCINE WITH SHARK',
+    description: 'Fettuccine topped with a salted shark steak.',
+    texture: 'images/cooking/fettuccine_with_shark.png',
+    ingredients: [ING('fettuccine'), ING('shark_meat'), ING('sea_salt')],
+    fuel: WOOD,
+    cookSec: SEC_3
+  },
+  {
+    id: 'spaghetti_mussels',
+    name: 'SPAGHETTI MUSSELS',
+    description: 'Spaghetti with mussels in tomato sauce.',
+    texture: 'images/cooking/spaghetti_mussels.png',
+    ingredients: [ING('spaghetti'), ING('mussels'), ING('tomatoes')],
+    fuel: WOOD,
+    cookSec: SEC_3
+  },
+  {
+    id: 'fettuccine_squid',
+    name: 'FETTUCCINE SQUID',
+    description: 'Fettuccine with squid, finished with garlic.',
+    texture: 'images/cooking/fettuccine_squid.png',
+    ingredients: [ING('fettuccine'), ING('squid'), ING('garlic')],
+    fuel: WOOD,
+    cookSec: SEC_3
+  },
+  {
+    id: 'fettuccine_pomodoro',
+    name: 'FETTUCCINE POMODORO',
+    description: 'Fettuccine with sardines in tomato sauce.',
+    texture: 'images/cooking/fettuccine_pomodoro.png',
+    ingredients: [ING('fettuccine'), ING('sardines'), ING('tomatoes')],
+    fuel: WOOD,
+    cookSec: SEC_3
+  },
+  {
+    id: 'spaghetti_squid_seaweed',
+    name: 'SPAGHETTI SQUID SEAWEED',
+    description: 'Spaghetti with squid and a salty seaweed sauce.',
+    texture: 'images/cooking/spaghetti_squid_seaweed.png',
+    ingredients: [ING('spaghetti'), ING('squid'), ING('seaweed')],
+    fuel: WOOD,
+    cookSec: SEC_3
+  },
+  {
+    id: 'fettuccine_crab_potato',
+    name: 'FETTUCCINE CRAB POTATO',
+    description: 'Fettuccine with crab and potato in a salted broth.',
+    texture: 'images/cooking/fettuccine_crab_potato.png',
+    ingredients: [ING('fettuccine'), ING('crab'), ING('potato')],
+    fuel: WOOD,
+    cookSec: SEC_3
+  },
+  {
+    id: 'seafood_stew',
+    name: 'SEAFOOD STEW',
+    description: 'A briny stew of squid, clams, and seaweed.',
+    texture: 'images/cooking/seafood_stew.png',
+    ingredients: [ING('squid'), ING('clams'), ING('seaweed')],
+    fuel: WOOD,
+    cookSec: SEC_3
+  },
+
+  // ─── 4-ingredient hero plates (2) ───────────────────────────────────
+  {
+    id: 'spaghetti_alle_vongole',
+    name: 'SPAGHETTI ALLE VONGOLE',
+    description: 'Spaghetti with clams, garlic, and olive oil.',
+    texture: 'images/cooking/spaghetti_alle_vongole.png',
+    ingredients: [ING('spaghetti'), ING('clams'), ING('garlic'), ING('olive_oil')],
+    fuel: WOOD,
+    cookSec: SEC_4
+  },
+  {
+    id: 'fettuccine_sea_hunter',
+    name: 'FETTUCCINE SEA HUNTER',
+    description: 'A hunter\'s feast: fettuccine with shark, squid, and crab.',
+    texture: 'images/cooking/fettuccine_sea_hunter.png',
+    ingredients: [ING('fettuccine'), ING('shark_meat'), ING('squid'), ING('crab')],
+    fuel: WOOD,
+    cookSec: SEC_4
   }
 ]
 

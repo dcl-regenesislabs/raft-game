@@ -6,9 +6,10 @@ import {
 } from '@dcl/sdk/ecs'
 import { isMobile } from '@dcl/sdk/platform'
 
-import { PlatformConstruction } from '../components'
+import { ActiveCook, CookStatus, PlatformConstruction } from '../components'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
+import { grabCookOutput } from '../ui/cookGrab'
 import { openCookMenu } from '../ui/cookToggle'
 import { isPointerLocked } from '../ui/cursorLock'
 import {
@@ -50,7 +51,7 @@ export function constructionInteractSystem(_dt: number): void {
   const actionButton = isMobile() && actionButtonJustPressed()
   const lookTarget = getLookAtTarget()
 
-  for (const [, pc] of engine.getEntitiesWith(PlatformConstruction)) {
+  for (const [platform, pc] of engine.getEntitiesWith(PlatformConstruction)) {
     const child = pc.child
     const tapped = inputSystem.isTriggered(
       InputAction.IA_POINTER,
@@ -64,7 +65,25 @@ export function constructionInteractSystem(_dt: number): void {
     if (!tapped && !buttonHits) continue
 
     if (pc.kind === 'grill') {
-      openCookMenu()
+      // Route by cook state: empty grill opens the menu, ready /
+      // burned grill grabs the output, cooking grill is a no-op
+      // (the ingredient sprites already communicate "in progress").
+      const cook = ActiveCook.getOrNull(platform)
+      if (cook === null) {
+        openCookMenu(platform)
+        consumeWorldClick()
+        return
+      }
+      if (cook.status === CookStatus.Ready) {
+        grabCookOutput(platform, cook.recipeId)
+        consumeWorldClick()
+        return
+      }
+      if (cook.status === CookStatus.Burned) {
+        grabCookOutput(platform, 'coal')
+        consumeWorldClick()
+        return
+      }
       consumeWorldClick()
       return
     }

@@ -1,6 +1,5 @@
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 
-import { getCookProgress, isCooking } from '../cookSession'
 import { getCraftProgress, isCrafting } from '../craftSession'
 import { getPurifyProgress } from '../purifySession'
 import {
@@ -10,16 +9,13 @@ import {
   CHARGE_TRACK_COLOR
 } from '../theme'
 
-// Fullscreen-centered progress bar shown while a timed task (craft,
-// cook, or water purification) is running. Reuses the hook charge meter
-// style for visual consistency. The three sessions are mutually
-// exclusive, so reading whichever is active picks the right progress.
+// Fullscreen-centered progress bar shown while a timed task (craft or
+// water purification) is running. Reuses the hook charge meter style
+// for visual consistency. The two sessions are mutually exclusive, so
+// reading whichever is active picks the right progress. Cooking is
+// asynchronous and does NOT surface in this bar — see `grillCook`.
 export function CraftProgressBar(): ReactEcs.JSX.Element {
-  const t = isCrafting()
-    ? getCraftProgress()
-    : isCooking()
-      ? getCookProgress()
-      : getPurifyProgress()
+  const t = isCrafting() ? getCraftProgress() : getPurifyProgress()
   const fillWidth = Math.max(2, Math.round(CHARGE_BAR_WIDTH * t))
   return (
     <UiEntity

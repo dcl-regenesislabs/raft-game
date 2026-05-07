@@ -35,6 +35,7 @@ import {
 } from '../factories/platform'
 import { WATER_LEVEL } from '../factories/sceneLevels'
 import { spawnRingShark } from '../factories/shark'
+import { addCollected } from '../ui/inventoryState'
 import {
   RAD_TO_DEG,
   TAU,
@@ -424,6 +425,12 @@ export function repelAttacker(entity: Entity): void {
   }
 
   stopBite(entity)
+
+  // Successful repel — the player's hit drove the shark off mid-bite, so
+  // the player gets shark meat for cooking. One per repel keeps the loot
+  // proportional to the effort: each shark requires multiple hits to
+  // reach this branch (see resetSharkHits in this file).
+  addCollected('shark_meat', 1)
 
   const tr = Transform.get(entity)
   attackCache.set(entity, {

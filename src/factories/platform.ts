@@ -7,9 +7,14 @@ import {
   Transform,
   engine
 } from '@dcl/sdk/ecs'
-import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
-import { MainPlatform, Platform, PlatformConstruction } from '../components'
+import {
+  ActiveCook,
+  MainPlatform,
+  Platform,
+  PlatformConstruction
+} from '../components'
 import { DEMO_PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from './sceneLevels'
 
 export const PLATFORM_SIZE_X = 3
@@ -41,6 +46,10 @@ export type CreatePlatformOptions = {
   gridX?: number
   gridZ?: number
   isMain?: boolean
+  // Visual yaw (deg) applied to the raft GLB child only. The collider
+  // parent stays grid-aligned so placement neighbour math and any
+  // construction child placed later don't have to reason about rotation.
+  yawDeg?: number
 }
 
 export function gridCellToWorld(gridX: number, gridZ: number): Vector3 {
@@ -55,7 +64,7 @@ export function createPlatform(
   center: Vector3,
   options: CreatePlatformOptions = {}
 ): Entity {
-  const { gridX = 0, gridZ = 0, isMain = false } = options
+  const { gridX = 0, gridZ = 0, isMain = false, yawDeg = 0 } = options
 
   const platform = engine.addEntity()
   Transform.create(platform, {
@@ -79,6 +88,7 @@ export function createPlatform(
   Transform.create(visual, {
     parent: platform,
     position: Vector3.create(0, visualYOffsetMeters / PLATFORM_SIZE_Y, 0),
+    rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
     scale: Vector3.create(
       visualSize / PLATFORM_SIZE_X,
       visualSize / PLATFORM_SIZE_Y,
@@ -102,6 +112,23 @@ export function destroyPlatformEntity(entity: Entity): void {
   const construction = PlatformConstruction.getOrNull(entity)
   if (construction !== null) {
     engine.removeEntity(construction.child)
+    // `aux` is a legacy slot — newer grills don't populate it, but
+    // older save data / in-flight scenes may. Cheap to keep guarded.
+    if (construction.aux !== engine.RootEntity) {
+      engine.removeEntity(construction.aux)
+    }
+  }
+  // Clean up any in-flight cook session — the flame and food sprites
+  // are top-level entities so SDK7 won't auto-cascade them with the
+  // platform's removal.
+  const cook = ActiveCook.getOrNull(entity)
+  if (cook !== null) {
+    if (cook.fireSprite !== engine.RootEntity) {
+      engine.removeEntity(cook.fireSprite)
+    }
+    for (const sprite of cook.foodSprites) {
+      engine.removeEntity(sprite)
+    }
   }
   engine.removeEntity(entity)
 }
