@@ -33,6 +33,7 @@ import {
   COOK_LAYOUT_WIDTH,
   COOK_LIST_GAP,
   COOK_LIST_HEIGHT,
+  COOK_LIST_PADDING_X,
   COOK_LIST_WIDTH,
   COOK_OUTPUT_CENTER_PCT,
   COOK_OUTPUT_ICON_SIZE_PCT,
@@ -448,13 +449,13 @@ function CookRecipeList(): ReactEcs.JSX.Element {
         padding: {
           top: CRAFT_PANEL_PADDING_TOP,
           bottom: CRAFT_PANEL_PADDING_BOTTOM,
-          left: CRAFT_PANEL_PADDING_X,
-          right: CRAFT_PANEL_PADDING_X
+          left: COOK_LIST_PADDING_X,
+          right: COOK_LIST_PADDING_X
         }
       }}
     >
       <Label
-        value="RECIPES"
+        value="KNOWN RECIPES"
         fontSize={20}
         color={CRAFT_TEXT_COLOR}
         textAlign="middle-left"
@@ -468,27 +469,41 @@ function CookRecipeList(): ReactEcs.JSX.Element {
         }}
         uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
       />
-      {learnedIds.length === 0 ? (
-        <Label
-          value="Cook ingredients to discover recipes."
-          fontSize={12}
-          color={CRAFT_TEXT_DIM_COLOR}
-          textAlign="top-left"
-          uiTransform={{ width: '100%', height: 60 }}
-        />
-      ) : (
-        learnedIds.map((id) => {
-          const recipe = getCookableById(id)
-          if (recipe === null) return null
-          return (
-            <CookRecipeRow
-              key={id}
-              recipe={recipe}
-              selected={matchedId === id}
-            />
-          )
-        })
-      )}
+      {/* Scroll container — once the player has discovered enough
+          recipes the list overflows the panel height, so the inner
+          column scrolls (drag / mouse wheel) while the wood frame
+          stays put. flexGrow: 1 makes it eat the remaining vertical
+          space below the title + divider. */}
+      <UiEntity
+        uiTransform={{
+          width: '100%',
+          flexGrow: 1,
+          flexDirection: 'column',
+          overflow: 'scroll'
+        }}
+      >
+        {learnedIds.length === 0 ? (
+          <Label
+            value="Cook ingredients to discover recipes."
+            fontSize={12}
+            color={CRAFT_TEXT_DIM_COLOR}
+            textAlign="top-left"
+            uiTransform={{ width: '100%', height: 60 }}
+          />
+        ) : (
+          learnedIds.map((id) => {
+            const recipe = getCookableById(id)
+            if (recipe === null) return null
+            return (
+              <CookRecipeRow
+                key={id}
+                recipe={recipe}
+                selected={matchedId === id}
+              />
+            )
+          })
+        )}
+      </UiEntity>
     </Panel>
   )
 }

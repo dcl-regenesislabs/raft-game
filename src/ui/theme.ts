@@ -262,10 +262,16 @@ export const COOK_FUEL_ICON_SIZE_PCT = 13
 // the two surfaces align like a book spread.
 export const COOK_LIST_WIDTH = 240
 export const COOK_LIST_HEIGHT = COOK_DETAILS_HEIGHT
-// Gap between cook panel and recipes list. Same negative-overlap trick
-// the cook panel uses with the inventory — pulls the painted wood
-// frames into a continuous surface instead of leaving a seam.
-export const COOK_LIST_GAP = -20
+// Margin between cook panel and recipes list. Positive = visible seam,
+// nudges the recipes panel rightward (the whole row is centered, so an
+// extra few pixels of margin push the right panel toward the screen
+// edge without colliding with the cook panel's wood frame).
+export const COOK_LIST_GAP = 8
+// Horizontal padding inside the recipes list. Tighter than the craft
+// list's 40 because the rows are narrow (240 wide) — pulling the
+// frame in lets recipe names sit on a single line and leaves room for
+// the count badge on the right.
+export const COOK_LIST_PADDING_X = 14
 // Per-row height inside the recipes list. Tighter than the craft rows
 // (50) — recipe rows are icon + label only and we want as many learned
 // recipes visible at once as possible without scrolling.
