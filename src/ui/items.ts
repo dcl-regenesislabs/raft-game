@@ -187,14 +187,12 @@ export const INVENTORY_GRID_SLOT_COUNT =
 
 const layout: (ItemDef | null)[] = [
   // ----- Bottom bar (0–4) -----
-  // Fixed default loadout. Stackable placeables (grill, purifier) sit in
-  // the bar with zero count until the player crafts one — the slot acts
-  // as a permanent reservation so the bar layout never reshuffles.
-  TOOL('hook', 'images/hud/items/item-00.png', 'hook'),
-  TOOL('hammer', 'images/hud/items/item-01.png', 'hammer'),
-  TOOL('spear', 'images/hud/items/item-19.png', 'spear'),
-  CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
-  CRAFTED_PLACEABLE('purifier', 'images/hud/items/item-06.png')
+  // The hook is the player's only starter tool — every other slot is
+  // empty until the player crafts/collects something. `ensureCollectibleSlot`
+  // allocates fresh slots on first pickup, so crafted hammers/spears and
+  // collected grills/purifiers find a home dynamically (leftmost empty
+  // slot, which means the bar fills up first).
+  TOOL('hook', 'images/hud/items/item-00.png', 'hook')
 ]
 
 while (layout.length < INVENTORY_TOTAL_SLOTS) layout.push(null)
@@ -422,11 +420,7 @@ export function transmuteSlot(slotIndex: number, newId: string): boolean {
 export function resetInventoryLayout(): void {
   for (let i = 0; i < layout.length; i++) layout[i] = null
   const starters: ItemDef[] = [
-    TOOL('hook', 'images/hud/items/item-00.png', 'hook'),
-    TOOL('hammer', 'images/hud/items/item-01.png', 'hammer'),
-    TOOL('spear', 'images/hud/items/item-19.png', 'spear'),
-    CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
-    CRAFTED_PLACEABLE('purifier', 'images/hud/items/item-06.png')
+    TOOL('hook', 'images/hud/items/item-00.png', 'hook')
   ]
   // Drop everything from the by-id lookup so stale defs from previously
   // collected materials don't survive the reset; re-seed with the starter

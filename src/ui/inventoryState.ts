@@ -257,10 +257,9 @@ export function getCollectedCount(kind: string): number {
 // was actually subtracted so callers can detect insufficient materials.
 // When the stack hits zero, the matching inventory grid slot is dropped
 // so the icon doesn't linger as a ghost with no count badge — the next
-// pickup re-allocates a fresh slot. Bottom-bar slots (0..4) keep their
-// reservation: those are the starter placeable slots (grill / purifier)
-// the layout depends on, plus any slot the player intentionally arranged
-// onto the hot-bar.
+// pickup re-allocates a fresh slot. Slot 0 (the hook starter) is the
+// only permanently-reserved slot; everything else, including the rest
+// of the bottom bar, is allocated on demand by `ensureCollectibleSlot`.
 export function subtractCollected(kind: string, count: number = 1): number {
   if (count <= 0) return 0
   const cur = collectedCounts.get(kind) ?? 0
