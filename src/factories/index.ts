@@ -12,9 +12,13 @@ export {
 } from './platform'
 export {
   CONSTRUCTION_KINDS,
+  GRILL_HOVER_BURNED,
+  GRILL_HOVER_PICKUP,
   createConstruction,
+  getConstructionDefaultHoverText,
   getConstructionGlb,
-  getConstructionVisualSize
+  getConstructionVisualSize,
+  setConstructionPointerPrompt
 } from './construction'
 export type { ConstructionKind } from './construction'
 export {

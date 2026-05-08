@@ -52,6 +52,7 @@ import { dragResetSystem } from './ui/inventoryDrag'
 import { addCollected } from './ui/inventoryState'
 import { inventoryToggleResetSystem } from './ui/inventoryToggle'
 import { tickNotification } from './ui/notification'
+import { storageToggleResetSystem } from './ui/storageToggle'
 import { pressPulseTickSystem } from './ui/pressPulse'
 import { purifySessionTickSystem } from './ui/purifySession'
 import { worldClickGateResetSystem } from './ui/worldClickGate'
@@ -111,6 +112,7 @@ export async function main(): Promise<void> {
   engine.addSystem(purifySessionTickSystem)
   engine.addSystem(inventoryToggleResetSystem)
   engine.addSystem(craftToggleResetSystem)
+  engine.addSystem(storageToggleResetSystem)
   engine.addSystem(gameOverInputLockSystem)
   engine.addSystem(pressPulseTickSystem)
   engine.addSystem(tickNotification)
@@ -148,6 +150,7 @@ function seedDebugInventory(): void {
   addCollected('platform', 10)
   addCollected('purifier', 10)
   addCollected('grill', 10)
+  addCollected('storage', 10)
   // Containers are non-stackable — each instance gets its own slot, so
   // the seed only adds one of each variant. The cup goes in too so the
   // player can test the empty-cup → fill flow without crafting first.
@@ -189,6 +192,7 @@ function seedDebugWorld(): void {
     })
     if (gx === 1 && gz === 0) createConstruction(platform, 'grill')
     else if (gx === -1 && gz === 0) createConstruction(platform, 'purifier')
+    else if (gx === 0 && gz === 1) createConstruction(platform, 'storage')
   }
 }
 

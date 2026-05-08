@@ -12,6 +12,11 @@ import { isCrafting } from './craftSession'
 import { isGameOver } from './gameOver'
 import { cancelSelection } from './inventoryDrag'
 import { isPurifying } from './purifySession'
+import {
+  closeStorageMenu,
+  isStorageActionLocked,
+  isStorageOpen
+} from './storageToggle'
 
 const PRESS_DURATION_S = 0.32
 const PRESS_PEAK_BONUS = 0.18
@@ -43,6 +48,7 @@ export function isInventoryActionLocked(): boolean {
     postCloseLockoutSec > 0 ||
     isCraftOpen() ||
     isCookOpen() ||
+    isStorageActionLocked() ||
     isCrafting() ||
     isPurifying() ||
     isGameOver()
@@ -69,10 +75,11 @@ export function toggleInventory(): void {
   // Press feedback fires here because it represents the user clicking
   // the inventory button — not the state change itself.
   pressElapsedSec = 0
-  // Mutually exclusive with craft and cook: opening the inventory closes
-  // either of those so only one panel is up at a time.
+  // Mutually exclusive with craft, cook and storage: opening the
+  // inventory closes any of those so only one panel is up at a time.
   if (next && isCraftOpen()) setCraftOpen(false)
   if (next && isCookOpen()) setCookOpen(false)
+  if (next && isStorageOpen()) closeStorageMenu()
 }
 
 // Runs every frame: advances the press-pulse clock, and on any change to
@@ -88,6 +95,7 @@ export function inventoryToggleResetSystem(dt: number): void {
     open ||
     isCraftOpen() ||
     isCookOpen() ||
+    isStorageOpen() ||
     isCrafting() ||
     isPurifying()
   if (lock === lastModifierApplied) return

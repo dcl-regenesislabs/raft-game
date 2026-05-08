@@ -1,4 +1,4 @@
-import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
+import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 
 import { isCookOpen } from '../cookToggle'
@@ -10,10 +10,15 @@ import {
   pressSlot
 } from '../inventoryDrag'
 import { isInventoryOpen, setInventoryOpen } from '../inventoryToggle'
+import { getActiveStorage, isStorageOpen } from '../storageToggle'
+import { getStoragePicked, pressStorageSlot } from '../storageSession'
 import {
   BOTTOM_BAR_SLOT_COUNT,
   INVENTORY_LAYOUT,
-  getInventorySlot
+  INVENTORY_TOTAL_SLOTS,
+  type ItemDef,
+  getInventorySlot,
+  getItemDisplayName
 } from '../items'
 import {
   BAR_BOTTOM,
@@ -52,6 +57,9 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
   // added header bar — the inventory grid itself has no title space to
   // share, unlike the craft and cook panels. Tune the offsets via
   // CLOSE_BUTTON_INVENTORY_TOP / CLOSE_BUTTON_INVENTORY_RIGHT in theme.ts.
+  const selectedDrag = getSelectedDragSlot()
+  const selectedItem =
+    selectedDrag !== null ? getInventorySlot(selectedDrag) : null
   return (
     <UiEntity
       uiTransform={{
@@ -60,6 +68,9 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
         margin: { left: -Math.round(INVENTORY_PANEL_SIZE / 2) }
       }}
     >
+      {selectedItem !== null && (
+        <SelectedItemLabel value={getItemDisplayName(selectedItem)} />
+      )}
       <InventoryWithBar />
       <UiEntity
         uiTransform={{
@@ -76,10 +87,53 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
   )
 }
 
+// Persistent label that surfaces the name of the slot currently picked
+// up for swapping. Anchored just below the inventory grid (so the label
+// sits between the grid and the hot-bar slot row, floating over the
+// bar's painted top wood frame rather than near the screen edge).
+function SelectedItemLabel(props: { value: string }): ReactEcs.JSX.Element {
+  return (
+    <UiEntity
+      uiTransform={{
+        positionType: 'absolute',
+        position: { top: INVENTORY_PANEL_SIZE, left: 0 },
+        width: INVENTORY_PANEL_SIZE,
+        height: 24,
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <UiEntity
+        uiTransform={{
+          height: 24,
+          padding: { left: 14, right: 14 },
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+        uiBackground={{ color: Color4.create(0, 0, 0, 0.6) }}
+      >
+        <Label value={props.value} fontSize={14} color={Color4.White()} />
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
 // 5×5 grid panel. Used both as the standalone inventory and as the smaller
-// reference grid pinned next to the craft menu.
-export function InventoryGrid(props: { size?: number }): ReactEcs.JSX.Element {
+// reference grid pinned next to the craft / cook menus.
+//
+// `filter`, when set, switches the grid into "smart inventory" mode: the
+// 30-slot linear inventory is scanned and only matching items are
+// rendered, packed top-left into the grid in slot order. Non-matching
+// items aren't rendered at all — the player sees just what's relevant
+// for the current task. Without a filter the grid keeps its classic
+// behaviour: the 25 grid slots (`BOTTOM_BAR_SLOT_COUNT`..) map 1:1 to
+// UI cells and hot-bar slots are surfaced separately by `BottomBarSurface`.
+export function InventoryGrid(props: {
+  size?: number
+  filter?: (item: ItemDef) => boolean
+}): ReactEcs.JSX.Element {
   const size = props.size ?? INVENTORY_PANEL_SIZE
+  const cells = buildGridCells(props.filter)
   return (
     <UiEntity
       uiTransform={{ width: size, height: size }}
@@ -88,19 +142,55 @@ export function InventoryGrid(props: { size?: number }): ReactEcs.JSX.Element {
         texture: { src: INVENTORY_PANEL_TEXTURE }
       }}
     >
-      {Array.from({ length: INVENTORY_GRID_TOTAL_CELLS }, (_, i) => (
-        <InventoryCell key={i} index={i} />
+      {cells.map((cell) => (
+        <InventoryCell
+          key={cell.uiIndex}
+          uiIndex={cell.uiIndex}
+          globalIndex={cell.globalIndex}
+        />
       ))}
     </UiEntity>
   )
 }
 
+interface GridCell {
+  uiIndex: number
+  globalIndex: number
+}
+
+// Decide which (UI position, global slot) pairs to render this frame.
+// Without a filter the mapping is the historical one: UI cell `i` shows
+// global slot `BOTTOM_BAR_SLOT_COUNT + i`. With a filter we scan every
+// slot (including the hot-bar 0..4) and pack matching ones into UI
+// cells starting at the top-left.
+function buildGridCells(filter?: (item: ItemDef) => boolean): GridCell[] {
+  if (filter === undefined) {
+    return Array.from({ length: INVENTORY_GRID_TOTAL_CELLS }, (_, i) => ({
+      uiIndex: i,
+      globalIndex: BOTTOM_BAR_SLOT_COUNT + i
+    }))
+  }
+  const cells: GridCell[] = []
+  for (
+    let globalIndex = 0;
+    globalIndex < INVENTORY_TOTAL_SLOTS && cells.length < INVENTORY_GRID_TOTAL_CELLS;
+    globalIndex++
+  ) {
+    const item = getInventorySlot(globalIndex)
+    if (item !== null && filter(item)) {
+      cells.push({ uiIndex: cells.length, globalIndex })
+    }
+  }
+  return cells
+}
+
 function InventoryCell(props: {
-  index: number
+  uiIndex: number
+  globalIndex: number
   key?: number | string
 }): ReactEcs.JSX.Element {
-  const col = props.index % INVENTORY_GRID_CELLS
-  const row = Math.floor(props.index / INVENTORY_GRID_CELLS)
+  const col = props.uiIndex % INVENTORY_GRID_CELLS
+  const row = Math.floor(props.uiIndex / INVENTORY_GRID_CELLS)
   // Position cells in percentages of the panel size, not absolute pixels.
   // The panel itself can be flex-shrunk on tall-vs-narrow viewports
   // (mobile especially), and a percentage-based layout tracks whatever
@@ -110,23 +200,33 @@ function InventoryCell(props: {
   const leftPct = INVENTORY_CELL_CENTERS_PCT[col] - halfCell
   const topPct = INVENTORY_CELL_CENTERS_PCT[row] - halfCell
 
-  // Grid cells are addressed in [0..24]; the global layout index sits
-  // beyond the bottom bar so the swap system maps every UI cell back to
-  // the single linear inventory.
-  const globalIndex = BOTTOM_BAR_SLOT_COUNT + props.index
+  const globalIndex = props.globalIndex
   const display = getInventorySlot(globalIndex)
 
   const cookOpen = isCookOpen()
-  const swapActive = !cookOpen && isSwapModeActive()
-  const isSwapSelected = !cookOpen && getSelectedDragSlot() === globalIndex
+  const storageOpen = isStorageOpen()
+  const storagePicked = storageOpen ? getStoragePicked() : null
+  const isStoragePickedHere =
+    storagePicked !== null &&
+    storagePicked.side === 'player' &&
+    storagePicked.index === globalIndex
+  const swapActive = !cookOpen && !storageOpen && isSwapModeActive()
+  const isSwapSelected =
+    !cookOpen && !storageOpen && getSelectedDragSlot() === globalIndex
   const isCookPicked =
     cookOpen && display !== null && getPickedIngredient() === display.id
   const shouldShake =
-    (swapActive && !isSwapSelected && display !== null) || isCookPicked
+    (swapActive && !isSwapSelected && display !== null) ||
+    isCookPicked ||
+    (storageOpen &&
+      storagePicked !== null &&
+      !isStoragePickedHere &&
+      display !== null)
 
-  const inset = isSwapSelected
-    ? INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED
-    : INVENTORY_ITEM_INSET_PCT
+  const inset =
+    isSwapSelected || isStoragePickedHere
+      ? INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED
+      : INVENTORY_ITEM_INSET_PCT
 
   const shake = shouldShake
     ? shakeOffset(Date.now() / 1000)
@@ -150,6 +250,15 @@ function InventoryCell(props: {
         // Non-ingredient items are silently ignored by `pickIngredient`.
         if (isCookOpen()) {
           if (display !== null) pickIngredient(display.id)
+          return
+        }
+        // While the storage menu is open, route clicks through the
+        // dual-pane pick/place state machine instead of the regular
+        // swap. The active storage entity is the transfer target.
+        if (isStorageOpen()) {
+          const active = getActiveStorage()
+          if (active === null) return
+          pressStorageSlot('player', globalIndex, active)
           return
         }
         pressSlot(globalIndex)

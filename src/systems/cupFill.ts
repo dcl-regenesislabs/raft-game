@@ -11,7 +11,6 @@ import { isMobile } from '@dcl/sdk/platform'
 import { WaterScroll } from '../components'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
-import { isPointerLocked } from '../ui/cursorLock'
 import {
   getSelectedSlot,
   isSelectionPointerLockoutActive,
@@ -60,7 +59,11 @@ export function cupFillSystem(_dt: number): void {
   if (!emptyCupHeld) return
   if (isInventoryActionLocked()) return
   if (isSelectionPointerLockoutActive()) return
-  if (!isPointerLocked()) return
+  // No `isPointerLocked()` gate here on purpose — see the matching
+  // note in `constructionInteractSystem`. The entity-targeted
+  // IA_POINTER trigger below is sufficient: it only fires when the
+  // SDK actually delivered a click on the water entity, so the gate
+  // would only swallow legitimate re-lock clicks after a UI interaction.
 
   // Two fire paths:
   //   - Entity-targeted IA_POINTER PET_DOWN on water — the player

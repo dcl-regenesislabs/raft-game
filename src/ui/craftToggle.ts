@@ -5,6 +5,7 @@
 
 import { setCookOpen } from './cookToggle'
 import { setInventoryOpen } from './inventoryToggle'
+import { closeStorageMenu, isStorageOpen } from './storageToggle'
 import { CRAFTABLE_ITEMS } from './craftableItems'
 
 const PRESS_DURATION_S = 0.32
@@ -33,11 +34,12 @@ export function toggleCraft(): void {
   // Press feedback fires here because it represents the user clicking
   // the craft button — not the state change itself.
   pressElapsedSec = 0
-  // Mutually exclusive with the inventory and cook menu: opening craft
-  // closes either of those so only one panel is up at a time.
+  // Mutually exclusive with the inventory, cook and storage menus:
+  // opening craft closes any of those so only one panel is up at a time.
   if (next) {
     setInventoryOpen(false)
     setCookOpen(false)
+    if (isStorageOpen()) closeStorageMenu()
   }
 }
 

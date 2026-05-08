@@ -6,7 +6,8 @@ import {
   CRAFTABLE_ITEMS,
   type CraftableItem,
   type MaterialCost,
-  getCraftableById
+  getCraftableById,
+  isCraftMaterial
 } from '../craftableItems'
 import {
   canStartCraft,
@@ -55,7 +56,7 @@ import {
   CRAFT_TEXT_LIGHT_COLOR
 } from '../theme'
 import { CloseButton } from './CloseButton'
-import { InventoryWithBar } from './InventoryWithBar'
+import { InventoryGrid } from './InventoryPanel'
 
 // Module-level pulse so the same animation clock survives across the
 // React-ECS render rebuilds. Ticked by `pressPulseTickSystem` registered
@@ -85,7 +86,10 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
           alignItems: 'flex-start'
         }}
       >
-        <InventoryWithBar size={CRAFT_INVENTORY_SIZE} />
+        <InventoryGrid
+          size={CRAFT_INVENTORY_SIZE}
+          filter={(item) => isCraftMaterial(item.id)}
+        />
         <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
         <CraftItemList />
         <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
@@ -111,7 +115,10 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
           }
         }}
       >
-        <InventoryWithBar size={CRAFT_INVENTORY_SIZE} />
+        <InventoryGrid
+          size={CRAFT_INVENTORY_SIZE}
+          filter={(item) => isCraftMaterial(item.id)}
+        />
       </UiEntity>
       <UiEntity
         uiTransform={{

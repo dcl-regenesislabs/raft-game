@@ -6,6 +6,11 @@ import {
   PlatformConstruction
 } from '../components'
 import {
+  GRILL_HOVER_BURNED,
+  GRILL_HOVER_PICKUP,
+  setConstructionPointerPrompt
+} from '../factories/construction'
+import {
   FOOD_BOB_AMP,
   FOOD_BOB_HZ,
   createPlateSprite,
@@ -58,7 +63,7 @@ export function grillCookSystem(dt: number): void {
       continue
     }
     if (state.status === CookStatus.Ready && state.elapsedSec >= COOK_BURN_SEC) {
-      transitionToBurned(state)
+      transitionToBurned(platform, state)
       continue
     }
   }
@@ -85,11 +90,15 @@ function transitionToReady(
   )
   state.foodSprites = [plate]
   state.status = CookStatus.Ready
+  // Re-enable taps with a "PICK UP" prompt — the cook session was
+  // muted while ingredients were on the fire (see `cookSession.startCook`).
+  setConstructionPointerPrompt(construction.child, GRILL_HOVER_PICKUP)
 }
 
 // Ready → Burned. Swaps the plate texture to coal and turns the flame
 // off — the cook session is done.
 function transitionToBurned(
+  platform: ReturnType<typeof engine.addEntity>,
   state: ReturnType<typeof ActiveCook.getMutable>
 ): void {
   const plate = state.foodSprites[0]
@@ -99,4 +108,10 @@ function transitionToBurned(
     state.fireSprite = engine.RootEntity
   }
   state.status = CookStatus.Burned
+  // Swap the hover prompt to "GRAB COAL" so the player knows the cook
+  // tipped over into ruined.
+  const construction = PlatformConstruction.getOrNull(platform)
+  if (construction !== null) {
+    setConstructionPointerPrompt(construction.child, GRILL_HOVER_BURNED)
+  }
 }

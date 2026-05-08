@@ -54,6 +54,28 @@ export const PlatformConstruction = engine.defineComponent(
   }
 )
 
+// Number of slots in a placed storage's grid. Fixed at 25 (5x5) — matches
+// the player's panel grid layout so the storage menu renders both surfaces
+// at the same dimensions.
+export const STORAGE_SLOT_COUNT = 25
+
+// Per-storage contents attached to the platform entity carrying a
+// PlatformConstruction with kind === 'storage'. Indexed by slot (0 is
+// top-left, row-major). Empty slots use id === '' and count 0; stackable
+// occupants store their id + count, non-stackables (knife, cup variants,
+// tools) store id + count: 1.
+export const StorageContents = engine.defineComponent(
+  'mystic-pond:storage-contents',
+  {
+    slots: Schemas.Array(
+      Schemas.Map({
+        id: Schemas.String,
+        count: Schemas.Int
+      })
+    )
+  }
+)
+
 // Tags small green disc click-targets shown around existing rafts in PLACING
 // mode. The system removes every entity carrying this tag when leaving the
 // mode.

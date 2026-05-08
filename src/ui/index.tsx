@@ -1,5 +1,6 @@
+import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { isMobile } from '@dcl/sdk/platform'
-import ReactEcs, { ReactEcsRenderer, SafeAreaContainer, UiEntity } from '@dcl/sdk/react-ecs'
+import ReactEcs, { ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
 
 import { ActionButton } from './components/ActionButton'
 import { BottomBar } from './components/BottomBar'
@@ -15,13 +16,14 @@ import { InventoryPanel } from './components/InventoryPanel'
 import { NotificationOverlay } from './components/Notification'
 import { RotateButtons } from './components/RotateButtons'
 import { StatsBars } from './components/StatsBars'
+import { StorageMenu } from './components/StorageMenu'
 import { isCookOpen } from './cookToggle'
 import { isCrafting } from './craftSession'
 import { isCraftOpen } from './craftToggle'
 import { isGameOver } from './gameOver'
-import { isSwapModeActive, pressBackground } from './inventoryDrag'
 import { isInventoryOpen } from './inventoryToggle'
 import { isPurifying } from './purifySession'
+import { isStorageOpen } from './storageToggle'
 
 // Both platforms use the same 1366×768 virtual canvas (entry-level
 // laptop reference) so a single set of pixel constants in `theme.ts`
@@ -33,15 +35,34 @@ export function setupUi(): void {
 }
 
 // Mobile is the only platform with hardware insets (notch / home indicator)
-// that overlap the canvas, so it's the only platform where SafeAreaContainer
-// adds value. On desktop the chat/minimap chrome is outside the UI canvas,
-// and the extra wrapper would shrink the HUD for no reason.
+// that overlap the canvas, so it's the only platform where the safe-area
+// inset is applied. On desktop the chat/minimap chrome is outside the UI
+// canvas, and shrinking the HUD would just waste pixels.
+//
+// `UiCanvasInformation.interactableArea` is the renderer-reported BorderRect
+// (in virtual pixels) of the region not covered by platform/hardware UI.
+// We render an absolute UiEntity with matching top/left/right/bottom so a
+// child sized 100%×100% fills exactly the safe area.
 function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs.JSX.Element {
-  if (isMobile()) {
-    return <SafeAreaContainer>{children}</SafeAreaContainer>
+  if (!isMobile()) {
+    return (
+      <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
+        {children}
+      </UiEntity>
+    )
   }
+  const insets = UiCanvasInformation.getOrNull(engine.RootEntity)?.interactableArea
+  const top = insets?.top ?? 0
+  const left = insets?.left ?? 0
+  const right = insets?.right ?? 0
+  const bottom = insets?.bottom ?? 0
   return (
-    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
+    <UiEntity
+      uiTransform={{
+        positionType: 'absolute',
+        position: { top, left, right, bottom }
+      }}
+    >
       {children}
     </UiEntity>
   )
@@ -80,28 +101,35 @@ function ui(): ReactEcs.JSX.Element {
 
   return (
     <SafeArea>
-      <UiEntity
-        uiTransform={{ width: '100%', height: '100%' }}
-        // Only intercept clicks while a swap selection is pending — outside
-        // of that, a fullscreen mouse handler swallows world clicks and
-        // blocks the browser from acquiring pointer lock on the canvas.
-        // Slot handlers set `interactionThisFrame` so this background
-        // handler skips when a slot was the actual click target.
-        onMouseDown={isSwapModeActive() ? pressBackground : undefined}
-      >
+      <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
+        {/* No conditional fullscreen onMouseDown here. We used to attach
+            `pressBackground` while a swap was pending so a click outside
+            slots would cancel the swap, but the SDK latches the
+            "UI captures pointer input" state when that handler goes
+            active and doesn't fully release it when the prop swings back
+            to `undefined` next frame. The result: after starting a swap
+            (clicking the first slot), the canvas could no longer
+            re-acquire pointer lock on desktop, so PointerEvents on
+            placed grills / purifiers stopped firing entirely (no hover
+            prompt, no click). Cancel paths that still work: click the
+            same slot to deselect, click another slot to swap, or close
+            the inventory (which runs cancelSelection internally). */}
         <DestroyBanner />
         {/* Standalone hot-bar hides while a panel is up — the inventory
             panel and the craft menu both render their own bar attached
-            under the inventory grid via <InventoryWithBar/>. */}
+            under the inventory grid via <InventoryWithBar/>. The
+            standalone bar stays visible while the storage menu is open
+            so the player can drag bottom-bar items into the chest. */}
         {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && <BottomBar />}
-        {!isCookOpen() && <StatsBars />}
-        {!isCookOpen() && <ActionButton />}
-        {!isCookOpen() && <InventoryButton />}
-        {!isCookOpen() && <CraftButton />}
+        {!isCookOpen() && !isStorageOpen() && <StatsBars />}
+        {!isCookOpen() && !isStorageOpen() && <ActionButton />}
+        {!isCookOpen() && !isStorageOpen() && <InventoryButton />}
+        {!isCookOpen() && !isStorageOpen() && <CraftButton />}
         <InventoryPanel />
         <CraftDoubleMenu />
         <CookMenu />
-        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && <RotateButtons />}
+        <StorageMenu />
+        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && <RotateButtons />}
         <ChargeReticle />
         <NotificationOverlay />
       </UiEntity>

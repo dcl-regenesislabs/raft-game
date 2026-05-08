@@ -50,7 +50,7 @@ import {
   CRAFT_TEXT_COLOR
 } from '../theme'
 import { CloseButton } from './CloseButton'
-import { InventoryWithBar } from './InventoryWithBar'
+import { InventoryGrid } from './InventoryPanel'
 
 // Module-level pulse so the same animation clock survives across the
 // React-ECS render rebuilds.
@@ -89,7 +89,10 @@ export function CookMenu(): ReactEcs.JSX.Element | null {
         flexDirection: 'row'
       }}
     >
-      <InventoryWithBar size={CRAFT_INVENTORY_SIZE} />
+      <InventoryGrid
+        size={CRAFT_INVENTORY_SIZE}
+        filter={(item) => item.ingredient}
+      />
       {/* COOK_PANEL_GAP is applied as a left margin on the cook panel
           wrapper. Negative values pull the cook panel left so its
           painted wood frame overlaps the inventory's right edge — the

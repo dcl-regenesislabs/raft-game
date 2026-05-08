@@ -116,9 +116,34 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
       { materialId: 'wood', amount: 2 },
       { materialId: 'plastic', amount: 2 }
     ]
+  },
+  {
+    id: 'storage',
+    name: 'STORAGE',
+    description:
+      'A scrap-and-iron chest. Stash supplies on board so your inventory stays clear for tools and food.',
+    texture: 'images/hud/items/storage.png',
+    cost: [
+      { materialId: 'wood', amount: 8 },
+      { materialId: 'metal', amount: 4 },
+      { materialId: 'rope', amount: 4 }
+    ]
   }
 ]
 
 export function getCraftableById(id: string): CraftableItem | null {
   return CRAFTABLE_ITEMS.find((c) => c.id === id) ?? null
+}
+
+// Set of every material id that appears as an input in any recipe. Used by
+// the craft menu's filtered inventory view to show only items the player
+// can actually spend on a craft (wood, rope, plastic, plants, metal at
+// time of writing — coal is excluded because it's a cook byproduct, never
+// a craft input).
+const CRAFT_MATERIAL_IDS: ReadonlySet<string> = new Set(
+  CRAFTABLE_ITEMS.flatMap((item) => item.cost.map((c) => c.materialId))
+)
+
+export function isCraftMaterial(itemId: string): boolean {
+  return CRAFT_MATERIAL_IDS.has(itemId)
 }

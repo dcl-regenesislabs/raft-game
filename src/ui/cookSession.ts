@@ -12,6 +12,7 @@
 import { Entity } from '@dcl/sdk/ecs'
 
 import { ActiveCook, CookStatus, PlatformConstruction } from '../components'
+import { setConstructionPointerPrompt } from '../factories/construction'
 import {
   createFlameSprite,
   createIngredientSprites
@@ -86,6 +87,9 @@ export function startCook(): boolean {
   // Spawn the world-side sprites and tag the grill with cook state.
   const flame = createFlameSprite(grill, construction.yawDeg)
   const ingredientSprites = createIngredientSprites(grill, construction.yawDeg, recipe)
+  // Cooking is in progress — strip the grill's PointerEvents so taps
+  // (and the hover prompt) go inert until the food is ready or burned.
+  setConstructionPointerPrompt(construction.child, null)
   ActiveCook.create(grill, {
     recipeId: recipe.id,
     elapsedSec: 0,

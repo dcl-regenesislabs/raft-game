@@ -17,6 +17,7 @@ import { clearActiveCookGrill, setActiveCookGrill } from './cookSession'
 import { clearPickedIngredient } from './cookSlots'
 import { setCraftOpen } from './craftToggle'
 import { setInventoryOpen } from './inventoryToggle'
+import { closeStorageMenu, isStorageOpen } from './storageToggle'
 
 let open = false
 
@@ -46,6 +47,7 @@ export function openCookMenu(grill: Entity): void {
   open = true
   setInventoryOpen(false)
   setCraftOpen(false)
+  if (isStorageOpen()) closeStorageMenu()
 }
 
 export function closeCookMenu(): void {

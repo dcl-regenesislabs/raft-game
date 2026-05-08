@@ -233,6 +233,7 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   platform: CRAFTED_STACK('platform', 'images/hud/items/item-20.png'),
   purifier: CRAFTED_PLACEABLE('purifier', 'images/hud/items/item-06.png'),
   grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
+  storage: CRAFTED_PLACEABLE('storage', 'images/hud/items/storage.png'),
   fishingRod: CRAFTED_TOOL_STACK('fishingRod', 'images/hud/items/item-15.png', 'fishingRod'),
   knife: CRAFTED_STACK('knife', 'images/hud/items/item-16.png'),
   cup: CRAFTED_CONTAINER('cup', 'images/hud/items/item-09.png'),
@@ -317,10 +318,38 @@ export function getItem(id: string): ItemDef | undefined {
   return ITEMS_BY_ID[id]
 }
 
+// Player-facing label derived from the item's id. Splits camelCase
+// ('fishingRod' → 'Fishing Rod') and snake_case ('shark_meat' → 'Shark Meat')
+// and title-cases each word so HUD overlays don't have to special-case
+// each item.
+export function getItemDisplayName(def: ItemDef): string {
+  return def.id
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .split(/[_\s]+/)
+    .map((w) => (w.length === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(' ')
+}
+
 // Material lookup independent of whether the player has collected one yet.
 // The craft panel needs material icons before the player owns any.
 export function getMaterialDef(id: string): ItemDef | null {
   return MATERIAL_CATALOG[id] ?? null
+}
+
+// Catalog-wide lookup independent of whether the player currently owns
+// the item. Storage slots can hold ids the player isn't currently
+// carrying (e.g. wood the player deposited and then no longer has any
+// of), so the storage UI needs to resolve metadata from the catalogs
+// directly. Order matches `ensureCollectibleSlot` so id collisions
+// resolve identically.
+export function getCatalogItem(id: string): ItemDef | null {
+  return (
+    MATERIAL_CATALOG[id] ??
+    CRAFTED_CATALOG[id] ??
+    INGREDIENT_CATALOG[id] ??
+    PLATE_CATALOG[id] ??
+    null
+  )
 }
 
 export function getInventorySlot(index: number): ItemDef | null {
@@ -419,4 +448,14 @@ export function swapInventorySlots(a: number, b: number): void {
   const tmp = layout[a]
   layout[a] = layout[b]
   layout[b] = tmp
+}
+
+// Empty a single inventory slot. Used by the storage flow when a
+// non-stackable item (knife, cup, tools) is moved out of the player's
+// inventory into a storage slot — the slot ceases to exist on the
+// player's side. Stackable transfers do NOT call this: stackables keep
+// their reserved slot even at zero count.
+export function clearInventorySlot(slotIndex: number): void {
+  if (slotIndex < 0 || slotIndex >= layout.length) return
+  layout[slotIndex] = null
 }

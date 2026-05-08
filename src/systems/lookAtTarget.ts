@@ -21,7 +21,7 @@ import { registerCameraForwardRaycast } from './raft/shared'
 // — relinquishes its claim to the raycaster — whenever either of those
 // is non-idle, and re-registers the moment they go back to idle.
 
-export type LookAtTarget = 'water' | 'purifier' | 'grill' | null
+export type LookAtTarget = 'water' | 'purifier' | 'grill' | 'storage' | null
 
 // Same reach as the cup hover prompt: the player has to lean over the
 // edge of the raft to interact, not click from across the deck.
@@ -30,9 +30,18 @@ const LOOK_MAX_DISTANCE = 8
 let waterEntityCached: Entity | null = null
 let raycasterActive = false
 let currentTarget: LookAtTarget = null
+// Grill platform entity behind the current 'grill' classification, if
+// any. Lets readers (e.g. the action button icon swap) inspect that
+// grill's `ActiveCook` to pick the right contextual icon — empty grill
+// shows the cook icon, ready/burned shows the dish/coal.
+let currentGrillPlatform: Entity | null = null
 
 export function getLookAtTarget(): LookAtTarget {
   return currentTarget
+}
+
+export function getLookAtGrillPlatform(): Entity | null {
+  return currentTarget === 'grill' ? currentGrillPlatform : null
 }
 
 // Called by whichever system owns the camera-forward raycaster while we
@@ -47,9 +56,10 @@ export function publishLookAtHit(hitId: number | undefined): void {
   const water = findWaterEntity()
   if (water === null) {
     currentTarget = null
+    currentGrillPlatform = null
     return
   }
-  currentTarget = classifyHit(water, hitId)
+  applyClassification(classifyHit(water, hitId))
 }
 
 export function lookAtTargetSystem(_dt: number): void {
@@ -62,7 +72,7 @@ export function lookAtTargetSystem(_dt: number): void {
   if (raycasterActive === shouldOwn) return
   if (shouldOwn) {
     registerCameraForwardRaycast(LOOK_MAX_DISTANCE, (result) => {
-      currentTarget = classifyHit(water, result.hits[0]?.entityId)
+      applyClassification(classifyHit(water, result.hits[0]?.entityId))
     })
     raycasterActive = true
   } else {
@@ -75,6 +85,7 @@ export function lookAtTargetSystem(_dt: number): void {
     // its hits via publishLookAtHit so currentTarget stays fresh.
     raycasterActive = false
     currentTarget = null
+    currentGrillPlatform = null
   }
 }
 
@@ -87,16 +98,29 @@ function findWaterEntity(): Entity | null {
   return null
 }
 
-function classifyHit(water: Entity, hitId: number | undefined): LookAtTarget {
-  if (hitId === undefined) return null
+// Classification result. The grill case carries the platform entity so
+// the look-at module can publish it for readers like the action button
+// without re-iterating PlatformConstruction.
+type Classification =
+  | { target: 'water' | 'purifier' | 'storage' | null }
+  | { target: 'grill'; platform: Entity }
+
+function applyClassification(c: Classification): void {
+  currentTarget = c.target
+  currentGrillPlatform = c.target === 'grill' ? c.platform : null
+}
+
+function classifyHit(water: Entity, hitId: number | undefined): Classification {
+  if (hitId === undefined) return { target: null }
   const hit = hitId as Entity
-  if (hit === water) return 'water'
-  for (const [, pc] of engine.getEntitiesWith(PlatformConstruction)) {
+  if (hit === water) return { target: 'water' }
+  for (const [platform, pc] of engine.getEntitiesWith(PlatformConstruction)) {
     if (pc.child === hit) {
-      if (pc.kind === 'purifier') return 'purifier'
-      if (pc.kind === 'grill') return 'grill'
-      return null
+      if (pc.kind === 'purifier') return { target: 'purifier' }
+      if (pc.kind === 'grill') return { target: 'grill', platform }
+      if (pc.kind === 'storage') return { target: 'storage' }
+      return { target: null }
     }
   }
-  return null
+  return { target: null }
 }

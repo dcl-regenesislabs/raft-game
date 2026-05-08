@@ -12,6 +12,8 @@ import {
   destroyPlatformEntity
 } from '../../factories/platform'
 import { isInventoryActionLocked } from '../../ui/inventoryToggle'
+import { showNotification } from '../../ui/notification'
+import { isStorageNonEmpty } from '../../ui/storageSession'
 import { triggerHammerSwing } from '../hammerSwing'
 import { publishLookAtHit } from '../lookAtTarget'
 import {
@@ -70,6 +72,13 @@ export function commitDestroyFromHover(): boolean {
   if (destroyHoverEntity === null) return false
   if (MainPlatform.getOrNull(destroyHoverEntity) !== null) return false
   if (PlatformUnderAttack.getOrNull(destroyHoverEntity) !== null) return false
+  // Block dismantling a storage chest with items still inside so the
+  // player can't accidentally vaporise their hoard. Sharks and gameOver
+  // bypass this guard because they don't go through this entry point.
+  if (isStorageNonEmpty(destroyHoverEntity)) {
+    showNotification('Empty the storage before dismantling.')
+    return false
+  }
   const target = destroyHoverEntity
   destroyHoverEntity = null
   destroyPlatformEntity(target)
@@ -87,6 +96,12 @@ function attachDestroyClick(entity: Entity): void {
       if (MainPlatform.getOrNull(entity) !== null) return
       // Locked while a shark is committed to this platform.
       if (PlatformUnderAttack.getOrNull(entity) !== null) return
+      // Same dismantle guard as `commitDestroyFromHover`: a non-empty
+      // storage refuses player-initiated destruction.
+      if (isStorageNonEmpty(entity)) {
+        showNotification('Empty the storage before dismantling.')
+        return
+      }
       if (destroyHoverEntity === entity) destroyHoverEntity = null
       destroyPlatformEntity(entity)
       triggerHammerSwing()

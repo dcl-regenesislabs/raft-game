@@ -17,6 +17,7 @@ import {
   type ItemDef,
   ensureCollectibleSlot,
   getInventorySlot,
+  getItemDisplayName,
   transmuteSlot
 } from './items'
 import { showNotification } from './notification'
@@ -49,6 +50,12 @@ function slotDef(i: number): ItemDef | null {
 let selected = 0
 const pressElapsed: number[] = new Array(SLOT_COUNT).fill(PRESS_DURATION + 1)
 const pressCount: number[] = new Array(SLOT_COUNT).fill(0)
+// Wall-clock ms timestamp of the most recent selectSlot() call, or -1 if
+// nothing has been explicitly selected yet. Drives the transient hot-bar
+// label that surfaces the equipped item's name for ~1.5s after a swap.
+let selectedAtMs = -1
+// How long the transient label stays visible after a slot change, seconds.
+export const BOTTOM_BAR_LABEL_DURATION = 1.5
 
 // True from the moment a slot is selected via UI click until the player
 // releases the pointer. Prevents the same click that equipped the item from
@@ -95,6 +102,7 @@ export function selectSlot(i: number): void {
   selected = i
   pressElapsed[i] = 0
   pressCount[i]++
+  selectedAtMs = Date.now()
   pointerLockoutFromSelection = true
   if (def === null) return
   const warning = FOOD_WARNINGS[def.id]
@@ -184,6 +192,18 @@ export function getSlotPressCount(i: number): number {
   return pressCount[i] ?? 0
 }
 
+// Display name of the most-recently-selected hot-bar item, for the brief
+// window after a slot change. Returns null once the window has elapsed,
+// before the player has selected anything, or if the slot is empty.
+export function getBottomBarSelectedLabel(): string | null {
+  if (selectedAtMs < 0) return null
+  const elapsedSec = (Date.now() - selectedAtMs) / 1000
+  if (elapsedSec > BOTTOM_BAR_LABEL_DURATION) return null
+  const def = slotDef(selected)
+  if (def === null) return null
+  return getItemDisplayName(def)
+}
+
 // 0 = idle, 1 = just pressed; linear decay over PRESS_DURATION.
 export function getPressProgress(i: number): number {
   const e = pressElapsed[i]
@@ -256,6 +276,7 @@ export function resetInventoryState(): void {
     pressElapsed[i] = PRESS_DURATION + 1
     pressCount[i] = 0
   }
+  selectedAtMs = -1
   pointerLockoutFromSelection = false
 }
 

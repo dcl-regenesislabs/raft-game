@@ -4,8 +4,9 @@
 // cleared at the end of each frame by `actionButtonResetSystem`, registered
 // last in `index.ts` so every reader sees the edge during its own tick.
 
+import { ActiveCook, CookStatus } from '../components'
 import { isFishingLineActive } from '../systems/fishingRod'
-import { getLookAtTarget } from '../systems/lookAtTarget'
+import { getLookAtGrillPlatform, getLookAtTarget } from '../systems/lookAtTarget'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { getSelectedSlot, getSlotHasAction } from './inventoryState'
 
@@ -55,10 +56,23 @@ export function actionButtonJustReleased(): boolean {
 //
 // Looking at a placed grill ALWAYS surfaces the button regardless of the
 // held slot's own action, because the grill override (open the cook
-// menu) is the dominant action whenever the camera is on a grill — see
-// `ActionButton.tsx` for the matching icon swap.
+// menu / pick up the cooked plate / grab the coal) is the dominant
+// action whenever the camera is on a grill — see `ActionButton.tsx`
+// for the matching icon swap. The one exception is a cook-in-progress:
+// the player can't act on the grill until the food is ready or burned,
+// so the button hides during that window (the ingredient sprites on
+// the fire already communicate "in progress").
 export function isActionButtonAvailable(): boolean {
-  if (getLookAtTarget() === 'grill') return true
+  if (getLookAtTarget() === 'grill') {
+    const platform = getLookAtGrillPlatform()
+    if (platform === null) return true
+    const cook = ActiveCook.getOrNull(platform)
+    if (cook === null) return true
+    return cook.status !== CookStatus.Cooking
+  }
+  // Aimed at a placed storage — surface the button regardless of the
+  // selected slot's own action so mobile players can open the chest.
+  if (getLookAtTarget() === 'storage') return true
   // Fishing line is out — surface the button as the contextual
   // retract / catch trigger. The same press fires the catch during
   // the bite window. This intentionally also unlocks visibility on
