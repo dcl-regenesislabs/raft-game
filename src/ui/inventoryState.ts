@@ -14,7 +14,9 @@ import { getFoodEffect } from './foodEffects'
 import { isInventoryOpen } from './inventoryToggle'
 import {
   BOTTOM_BAR_SLOT_COUNT,
+  INVENTORY_TOTAL_SLOTS,
   type ItemDef,
+  clearInventorySlot,
   ensureCollectibleSlot,
   getInventorySlot,
   getItemDisplayName,
@@ -253,12 +255,30 @@ export function getCollectedCount(kind: string): number {
 
 // Decrement the player's tally, clamped at zero. Returns the count that
 // was actually subtracted so callers can detect insufficient materials.
+// When the stack hits zero, the matching inventory grid slot is dropped
+// so the icon doesn't linger as a ghost with no count badge — the next
+// pickup re-allocates a fresh slot. Bottom-bar slots (0..4) keep their
+// reservation: those are the starter placeable slots (grill / purifier)
+// the layout depends on, plus any slot the player intentionally arranged
+// onto the hot-bar.
 export function subtractCollected(kind: string, count: number = 1): number {
   if (count <= 0) return 0
   const cur = collectedCounts.get(kind) ?? 0
   const taken = Math.min(cur, count)
-  collectedCounts.set(kind, cur - taken)
+  const next = cur - taken
+  collectedCounts.set(kind, next)
+  if (next === 0) clearEmptyStackableSlot(kind)
   return taken
+}
+
+function clearEmptyStackableSlot(id: string): void {
+  for (let i = BOTTOM_BAR_SLOT_COUNT; i < INVENTORY_TOTAL_SLOTS; i++) {
+    const def = getInventorySlot(i)
+    if (def !== null && def.id === id) {
+      clearInventorySlot(i)
+      return
+    }
+  }
 }
 
 export function getAllCollected(): ReadonlyMap<string, number> {

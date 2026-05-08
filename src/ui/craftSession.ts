@@ -5,11 +5,9 @@
 // mid-craft) and the result is granted on completion.
 
 import { type CraftableItem, getCraftableById } from './craftableItems'
-import {
-  addCollected,
-  getCollectedCount,
-  subtractCollected
-} from './inventoryState'
+import { addCollected } from './inventoryState'
+import { notifyItemReceived } from './itemReceivedNotification'
+import { getCombinedCount, subtractFromAll } from './storageSession'
 
 // Default craft duration. Individual recipes can override via
 // `CraftableItem.craftSec` — e.g. platforms snap together in a second
@@ -37,7 +35,7 @@ export function canStartCraft(id: string): boolean {
   const item = getCraftableById(id)
   if (item === null) return false
   for (const cost of item.cost) {
-    if (getCollectedCount(cost.materialId) < cost.amount) return false
+    if (getCombinedCount(cost.materialId) < cost.amount) return false
   }
   return true
 }
@@ -47,8 +45,11 @@ export function startCraft(id: string): boolean {
   const item = getCraftableById(id)
   if (item === null) return false
   if (!canStartCraft(id)) return false
+  // Pulls from the player's pocket first, then any placed storage —
+  // see `subtractFromAll`. Recipes are debited up-front so the player
+  // can't move materials out of a chest mid-craft.
   for (const cost of item.cost) {
-    subtractCollected(cost.materialId, cost.amount)
+    subtractFromAll(cost.materialId, cost.amount)
   }
   activeId = id
   activeDurationSec = item.craftSec ?? CRAFT_DEFAULT_SEC
@@ -61,6 +62,7 @@ export function craftSessionTickSystem(dt: number): void {
   elapsedSec += dt
   if (elapsedSec >= activeDurationSec) {
     addCollected(activeId, 1)
+    notifyItemReceived(activeId, 1)
     activeId = null
     elapsedSec = 0
   }

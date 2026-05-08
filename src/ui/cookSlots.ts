@@ -21,8 +21,8 @@
 // not a multiset.
 
 import { matchCookRecipe, type CookableItem } from './cookableItems'
-import { getCollectedCount } from './inventoryState'
-import { getItem, getMaterialDef } from './items'
+import { getCatalogItem } from './items'
+import { getCombinedCount } from './storageSession'
 
 // 4 input cells — index 0 is top-left, 1 top-right, 2 bottom-left,
 // 3 bottom-right. Layout matches `COOK_INPUT_CENTERS_PCT` in `theme.ts`.
@@ -61,14 +61,19 @@ export function getMatchingRecipe(): CookableItem | null {
 // items flagged `ingredient: true` are allowed; clicking any other slot
 // while the cook menu is open is a no-op (the drop targets ignore them).
 // Re-picking the same id toggles selection off so the player can
-// cancel by clicking the same inventory slot twice. Requires the
-// player has at least one of the item — there's nothing to symbolise
-// otherwise.
+// cancel by clicking the same inventory slot twice. Requires at least
+// one of the item across the player's pocket OR any placed storage —
+// the cook session debits from the same combined pool, so an item the
+// player only stores in a chest is still a valid pick.
 export function pickIngredient(itemId: string): boolean {
-  const def = getItem(itemId) ?? getMaterialDef(itemId)
-  if (def === null || def === undefined) return false
+  // Catalog-wide lookup (not `getItem`) so ingredients the player has
+  // never personally carried — only sitting in a chest — still resolve.
+  // `getItem` is keyed on the player's inventory layout and would miss
+  // them, gating storage-only picks before the count check fires.
+  const def = getCatalogItem(itemId)
+  if (def === null) return false
   if (!def.ingredient) return false
-  if (getCollectedCount(itemId) <= 0) return false
+  if (getCombinedCount(itemId) <= 0) return false
   if (pickedSourceId === itemId) {
     pickedSourceId = null
     return true

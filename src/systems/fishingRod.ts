@@ -54,6 +54,7 @@ import {
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
+import { notifyItemReceived } from '../ui/itemReceivedNotification'
 import { RAD_TO_DEG } from '../utils/math'
 import { computeWobble } from '../utils/wobble'
 
@@ -405,6 +406,7 @@ function catchFish(): void {
   for (let i = 0; i < count; i++) {
     const pick = FISH_POOL[Math.floor(Math.random() * FISH_POOL.length)]
     addCollected(pick, 1)
+    notifyItemReceived(pick, 1)
     const texture = getItem(pick)?.texture
     if (texture !== undefined) {
       catchSprites.push(createFishingCatchSprite(texture))

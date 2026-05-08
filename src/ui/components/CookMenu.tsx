@@ -15,10 +15,10 @@ import {
 } from '../cookSlots'
 import { type CookableItem } from '../cookableItems'
 import { closeCookMenu, isCookOpen } from '../cookToggle'
-import { getCollectedCount } from '../inventoryState'
-import { getItem, getMaterialDef } from '../items'
+import { getCatalogItem } from '../items'
 import { Panel } from '../panel'
 import { createPressPulse } from '../pressPulse'
+import { getCombinedCount } from '../storageSession'
 import {
   COOK_DETAILS_HEIGHT,
   COOK_DETAILS_WIDTH,
@@ -49,8 +49,8 @@ import {
   CRAFT_PANEL_PADDING_X,
   CRAFT_TEXT_COLOR
 } from '../theme'
+import { AggregatedInventoryGrid } from './AggregatedInventoryGrid'
 import { CloseButton } from './CloseButton'
-import { InventoryGrid } from './InventoryPanel'
 
 // Module-level pulse so the same animation clock survives across the
 // React-ECS render rebuilds.
@@ -89,7 +89,7 @@ export function CookMenu(): ReactEcs.JSX.Element | null {
         flexDirection: 'row'
       }}
     >
-      <InventoryGrid
+      <AggregatedInventoryGrid
         size={CRAFT_INVENTORY_SIZE}
         filter={(item) => item.ingredient}
       />
@@ -210,7 +210,11 @@ function shortageBadge(
   const required =
     ing?.amount ?? (recipe.fuel.itemId === itemId ? recipe.fuel.amount : 0)
   if (required <= 0) return null
-  const have = getCollectedCount(itemId)
+  // Aggregated across player + every storage so the shortage indicator
+  // matches what the inventory overview shows. The COOK button still
+  // gates on player-pocket counts (see `canStartCook`), so it can stay
+  // dim even with this badge hidden.
+  const have = getCombinedCount(itemId)
   if (have >= required) return null
   return { text: `${have}/${required}` }
 }
@@ -404,6 +408,7 @@ function CookActionButton(): ReactEcs.JSX.Element {
 
 function idToTexture(id: string | null): string | null {
   if (id === null) return null
-  const def = getItem(id) ?? getMaterialDef(id)
-  return def?.texture ?? null
+  // Catalog-wide so placed cells render even when the ingredient isn't
+  // in the player's inventory layout (e.g. storage-only picks).
+  return getCatalogItem(id)?.texture ?? null
 }

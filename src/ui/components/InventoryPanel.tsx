@@ -68,10 +68,10 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
         margin: { left: -Math.round(INVENTORY_PANEL_SIZE / 2) }
       }}
     >
+      <InventoryWithBar />
       {selectedItem !== null && (
         <SelectedItemLabel value={getItemDisplayName(selectedItem)} />
       )}
-      <InventoryWithBar />
       <UiEntity
         uiTransform={{
           positionType: 'absolute',
@@ -88,15 +88,16 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
 }
 
 // Persistent label that surfaces the name of the slot currently picked
-// up for swapping. Anchored just below the inventory grid (so the label
-// sits between the grid and the hot-bar slot row, floating over the
-// bar's painted top wood frame rather than near the screen edge).
+// up for swapping. Anchored on the visual seam between the inventory
+// grid and the hot-bar so it reads as a caption tying the two halves
+// together. Rendered AFTER `InventoryWithBar` in the parent so it draws
+// on top of the bar's painted top frame instead of being occluded.
 function SelectedItemLabel(props: { value: string }): ReactEcs.JSX.Element {
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: INVENTORY_PANEL_SIZE, left: 0 },
+        position: { top: INVENTORY_PANEL_SIZE - 42, left: 0 },
         width: INVENTORY_PANEL_SIZE,
         height: 24,
         alignItems: 'center',

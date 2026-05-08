@@ -8,6 +8,7 @@
 // container and just gets the new contents.
 
 import { addCollected, transmuteContainerSlot } from './inventoryState'
+import { notifyItemReceived } from './itemReceivedNotification'
 
 const PURIFY_DURATION_S = 4
 
@@ -46,6 +47,7 @@ export function purifySessionTickSystem(dt: number): void {
     // Salt evaporates out of the cup as a byproduct — the player keeps
     // the cup (now fresh water) AND gains sea salt for cooking.
     addCollected('sea_salt', 1)
+    notifyItemReceived('sea_salt', 1)
     transmuteContainerSlot(activeSlot, 'freshWater')
     active = false
     elapsedSec = 0

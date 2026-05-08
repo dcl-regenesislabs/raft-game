@@ -291,6 +291,19 @@ export const NOTIFICATION_PADDING_X = 48
 export const NOTIFICATION_TEXT_COLOR = Color4.create(0.3, 0.18, 0.1, 1)
 export const NOTIFICATION_FONT_SIZE = 22
 
+// --- Item received banner --------------------------------------------------
+// Sibling banner to the warning text notification but renders item icons
+// for acquisitions (hook / fishing / shark / cook / craft / purify).
+// Width adapts to the number of icons; height is fixed.
+export const ITEM_NOTIF_HEIGHT = 92
+export const ITEM_NOTIF_PADDING_X = 28
+export const ITEM_NOTIF_ICON_SIZE = 56
+export const ITEM_NOTIF_ICON_GAP = 14
+// Sits below the text-notification slot so a warning can stack above an
+// item drop without overlap on the rare occasions both fire close together.
+export const ITEM_NOTIF_TOP_INSET = NOTIFICATION_TOP_INSET + NOTIFICATION_HEIGHT + 12
+export const ITEM_NOTIF_BADGE_FONT_SIZE = 16
+
 // --- Stats bars (top-left anchor) ------------------------------------------
 // Source art `bar.png` is 600×124. The cream icon cell sits on the left,
 // followed by a wood-framed dark track that we fill left-to-right.

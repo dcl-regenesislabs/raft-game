@@ -13,6 +13,7 @@ import { DeathScreen } from './components/DeathScreen'
 import { DestroyBanner } from './components/DestroyBanner'
 import { InventoryButton } from './components/InventoryButton'
 import { InventoryPanel } from './components/InventoryPanel'
+import { ItemReceivedOverlay } from './components/ItemReceivedNotification'
 import { NotificationOverlay } from './components/Notification'
 import { RotateButtons } from './components/RotateButtons'
 import { StatsBars } from './components/StatsBars'
@@ -94,6 +95,7 @@ function ui(): ReactEcs.JSX.Element {
         >
           <CraftProgressBar />
           <NotificationOverlay />
+          <ItemReceivedOverlay />
         </UiEntity>
       </SafeArea>
     )
@@ -117,10 +119,8 @@ function ui(): ReactEcs.JSX.Element {
         <DestroyBanner />
         {/* Standalone hot-bar hides while a panel is up — the inventory
             panel and the craft menu both render their own bar attached
-            under the inventory grid via <InventoryWithBar/>. The
-            standalone bar stays visible while the storage menu is open
-            so the player can drag bottom-bar items into the chest. */}
-        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && <BottomBar />}
+            under the inventory grid via <InventoryWithBar/>. */}
+        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && <BottomBar />}
         {!isCookOpen() && !isStorageOpen() && <StatsBars />}
         {!isCookOpen() && !isStorageOpen() && <ActionButton />}
         {!isCookOpen() && !isStorageOpen() && <InventoryButton />}
@@ -132,6 +132,7 @@ function ui(): ReactEcs.JSX.Element {
         {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && <RotateButtons />}
         <ChargeReticle />
         <NotificationOverlay />
+        <ItemReceivedOverlay />
       </UiEntity>
     </SafeArea>
   )

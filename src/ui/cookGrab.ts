@@ -11,11 +11,13 @@ import {
   setConstructionPointerPrompt
 } from '../factories/construction'
 import { addCollected } from './inventoryState'
+import { notifyItemReceived } from './itemReceivedNotification'
 
 export function grabCookOutput(platform: Entity, itemId: string): boolean {
   const cook = ActiveCook.getOrNull(platform)
   if (cook === null) return false
   addCollected(itemId, 1)
+  notifyItemReceived(itemId, 1)
   for (const sprite of cook.foodSprites) {
     engine.removeEntity(sprite)
   }

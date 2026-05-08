@@ -13,7 +13,7 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { GrillFire } from '../components'
 import { getCookableById, type CookableItem } from '../ui/cookableItems'
-import { getItem, getMaterialDef } from '../ui/items'
+import { getCatalogItem } from '../ui/items'
 
 // Sprites for the place-and-wait cook flow on a grill. Spawned by
 // `cookSession.startCook` when the player confirms a recipe; cleaned up
@@ -128,11 +128,11 @@ export function createIngredientSprites(
   const sprites: Entity[] = []
   for (let i = 0; i < recipe.ingredients.length; i++) {
     const ing = recipe.ingredients[i]
-    // Ingredients land in the inventory as collectibles, so they're
-    // looked up via getItem; the `wood` fuel comes from the material
-    // catalog instead. Either branch returns the texture path.
-    const def = getItem(ing.itemId) ?? getMaterialDef(ing.itemId)
-    if (def === undefined || def === null) continue
+    // Resolve via the all-catalogs lookup so ingredients that live only
+    // in storage (never picked up into the player's pocket, so absent
+    // from ITEMS_BY_ID) still produce a sprite.
+    const def = getCatalogItem(ing.itemId)
+    if (def === null) continue
     const [lx, lz] = layout[i] ?? [0, 0]
     // 2D yaw rotation around Y (CCW when looking down). Matches the
     // forward/right basis used elsewhere in the scene.

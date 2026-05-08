@@ -17,7 +17,7 @@
 // out (count drops to 0; `addCollected` re-uses the same slot on the
 // way back). Non-stackables clear the player slot entirely on transfer.
 
-import { Entity } from '@dcl/sdk/ecs'
+import { Entity, engine } from '@dcl/sdk/ecs'
 
 import { STORAGE_SLOT_COUNT, StorageContents } from '../components'
 import {
@@ -26,6 +26,7 @@ import {
   subtractCollected
 } from './inventoryState'
 import {
+  BOTTOM_BAR_SLOT_COUNT,
   clearInventorySlot,
   ensureCollectibleSlot,
   getCatalogItem,
@@ -66,6 +67,83 @@ export function readStorageSlot(
   if (c === null || index < 0 || index >= c.slots.length) return EMPTY_VIEW
   const s = c.slots[index]
   return { id: s.id, count: s.count }
+}
+
+// Sum of `id` across every placed storage entity in the scene. Cheap
+// linear walk — there are typically a handful of storages and 25 slots
+// each. Called per-frame by the cook/craft inventory overview, so kept
+// allocation-free.
+export function getStorageCount(id: string): number {
+  if (id === '') return 0
+  let total = 0
+  for (const [, contents] of engine.getEntitiesWith(StorageContents)) {
+    for (const slot of contents.slots) {
+      if (slot.id === id) total += slot.count
+    }
+  }
+  return total
+}
+
+// Player inventory + every placed storage. Stackable items only —
+// non-stackable instances each occupy their own slot, so summing across
+// containers wouldn't be meaningful.
+export function getCombinedCount(id: string): number {
+  return getCollectedCount(id) + getStorageCount(id)
+}
+
+// Subtract `count` of `id` from the combined player + storage pool.
+// Drains the player's pocket first, then each placed storage in
+// iteration order until the request is satisfied or the pool is empty.
+// Returns the count actually subtracted (clamped to what was available).
+//
+// Why drain the player first: pocket items are already "in hand" — using
+// them keeps the storage stock intact when the player only needs a
+// little. The storage walk only triggers when pocket alone can't cover
+// the cost, mirroring the way a player would naturally consume their
+// own materials before raiding a chest.
+export function subtractFromAll(id: string, count: number): number {
+  if (count <= 0 || id === '') return 0
+  let remaining = count
+  remaining -= subtractCollected(id, remaining)
+  if (remaining <= 0) return count
+  for (const [entity, contents] of engine.getEntitiesWith(StorageContents)) {
+    if (remaining <= 0) break
+    let storageHas = 0
+    for (const s of contents.slots) {
+      if (s.id === id && s.count > 0) {
+        storageHas = 1
+        break
+      }
+    }
+    if (storageHas === 0) continue
+    const mut = StorageContents.getMutable(entity)
+    for (let i = 0; i < mut.slots.length && remaining > 0; i++) {
+      const slot = mut.slots[i]
+      if (slot.id !== id || slot.count <= 0) continue
+      const take = Math.min(slot.count, remaining)
+      const next = slot.count - take
+      mut.slots[i] = next > 0 ? { id, count: next } : { id: '', count: 0 }
+      remaining -= take
+    }
+  }
+  return count - remaining
+}
+
+// Every distinct id with count > 0 across all storages, in storage
+// iteration order. Used by the aggregated cook/craft grid to surface
+// items the player has in chests but no longer carries personally.
+export function collectStorageItemIds(): string[] {
+  const ids: string[] = []
+  const seen = new Set<string>()
+  for (const [, contents] of engine.getEntitiesWith(StorageContents)) {
+    for (const slot of contents.slots) {
+      if (slot.id === '' || slot.count <= 0) continue
+      if (seen.has(slot.id)) continue
+      seen.add(slot.id)
+      ids.push(slot.id)
+    }
+  }
+  return ids
 }
 
 export function isStorageNonEmpty(entity: Entity): boolean {
@@ -166,6 +244,19 @@ function transferPlayerToStorage(
       count: target.count + have
     }
     subtractCollected(def.id, have)
+    // Stackables are normally a "permanent reservation" (the slot
+    // stays even at count 0 so the layout doesn't reshuffle), but
+    // when the player moves the entire stack into storage that
+    // reservation is just a ghost icon. Drop it from the grid so a
+    // future pickup re-allocates a fresh slot. Bottom-bar slots
+    // (0..4) keep their reservation — those are the starter
+    // placeable slots (grill/purifier/storage) the layout depends on.
+    if (
+      playerIdx >= BOTTOM_BAR_SLOT_COUNT &&
+      getCollectedCount(def.id) === 0
+    ) {
+      clearInventorySlot(playerIdx)
+    }
     return
   }
 

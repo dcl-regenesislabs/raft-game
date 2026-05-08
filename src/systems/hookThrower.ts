@@ -41,6 +41,7 @@ import {
   getSelectedSlot,
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
+import { notifyItemReceived } from '../ui/itemReceivedNotification'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import { RAD_TO_DEG, randInt } from '../utils/math'
 import { computeWobble } from '../utils/wobble'
@@ -326,22 +327,29 @@ const FISH_POOL = ['sardines', 'squid', 'crab'] as const
 function bankGrabbedItem(kind: string): void {
   if (kind === 'barrel') {
     // Always: a bit of wood for fuel continuity + a rope roll.
-    addCollected('wood', randInt(1, 2))
-    addCollected('rope', rollRopeDrop())
+    const woodCount = randInt(1, 2)
+    addCollected('wood', woodCount)
+    notifyItemReceived('wood', woodCount)
+    const ropeCount = rollRopeDrop()
+    addCollected('rope', ropeCount)
+    notifyItemReceived('rope', ropeCount)
     // 2–3 random pantry/sea ingredients per barrel.
     const drops = randInt(2, 3)
     for (let i = 0; i < drops; i++) {
       const pick = BARREL_POOL[Math.floor(Math.random() * BARREL_POOL.length)]
       addCollected(pick, 1)
+      notifyItemReceived(pick, 1)
     }
     return
   }
   if (kind === 'fish') {
     const pick = FISH_POOL[Math.floor(Math.random() * FISH_POOL.length)]
     addCollected(pick, 1)
+    notifyItemReceived(pick, 1)
     return
   }
   addCollected(kind, 1)
+  notifyItemReceived(kind, 1)
 }
 
 function despawnHook(): void {

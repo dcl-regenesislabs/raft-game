@@ -19,10 +19,10 @@ import {
   selectCraftable,
   setCraftOpen
 } from '../craftToggle'
-import { getCollectedCount } from '../inventoryState'
 import { getMaterialDef } from '../items'
 import { Panel } from '../panel'
 import { createPressPulse } from '../pressPulse'
+import { getCombinedCount } from '../storageSession'
 import {
   CRAFT_BUTTON_FG,
   CRAFT_BUTTON_FRAME_H,
@@ -55,8 +55,8 @@ import {
   CRAFT_TEXT_DIM_COLOR,
   CRAFT_TEXT_LIGHT_COLOR
 } from '../theme'
+import { AggregatedInventoryGrid } from './AggregatedInventoryGrid'
 import { CloseButton } from './CloseButton'
-import { InventoryGrid } from './InventoryPanel'
 
 // Module-level pulse so the same animation clock survives across the
 // React-ECS render rebuilds. Ticked by `pressPulseTickSystem` registered
@@ -86,7 +86,7 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
           alignItems: 'flex-start'
         }}
       >
-        <InventoryGrid
+        <AggregatedInventoryGrid
           size={CRAFT_INVENTORY_SIZE}
           filter={(item) => isCraftMaterial(item.id)}
         />
@@ -115,7 +115,7 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
           }
         }}
       >
-        <InventoryGrid
+        <AggregatedInventoryGrid
           size={CRAFT_INVENTORY_SIZE}
           filter={(item) => isCraftMaterial(item.id)}
         />
@@ -127,7 +127,7 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
           width: '100%',
           height: '100%',
           flexDirection: 'row',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'center'
         }}
       >
@@ -379,7 +379,10 @@ function CraftCostRow(props: {
   key?: number | string
 }): ReactEcs.JSX.Element {
   const def = getMaterialDef(props.cost.materialId)
-  const have = getCollectedCount(props.cost.materialId)
+  // Aggregated across player + every storage so the row reflects the
+  // same total as the inventory overview. The CRAFT button still gates
+  // on player-pocket counts (see `canStartCraft`).
+  const have = getCombinedCount(props.cost.materialId)
   const enough = have >= props.cost.amount
   const label = def?.id.toUpperCase() ?? props.cost.materialId.toUpperCase()
   const texture = def?.texture

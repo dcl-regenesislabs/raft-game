@@ -1,4 +1,6 @@
-import { SkyboxTime, engine } from '@dcl/sdk/ecs'
+import { Entity, SkyboxTime, engine } from '@dcl/sdk/ecs'
+
+import { StorageContents } from './components'
 
 import {
   DEBUG_MODE,
@@ -51,6 +53,7 @@ import { gameOverInputLockSystem } from './ui/gameOver'
 import { dragResetSystem } from './ui/inventoryDrag'
 import { addCollected } from './ui/inventoryState'
 import { inventoryToggleResetSystem } from './ui/inventoryToggle'
+import { tickItemReceivedNotification } from './ui/itemReceivedNotification'
 import { tickNotification } from './ui/notification'
 import { storageToggleResetSystem } from './ui/storageToggle'
 import { pressPulseTickSystem } from './ui/pressPulse'
@@ -116,6 +119,7 @@ export async function main(): Promise<void> {
   engine.addSystem(gameOverInputLockSystem)
   engine.addSystem(pressPulseTickSystem)
   engine.addSystem(tickNotification)
+  engine.addSystem(tickItemReceivedNotification)
   engine.addSystem(dragResetSystem)
   // These two end-of-frame resets must be the last systems registered
   // so every consumer above sees the action-button edge flag and the
@@ -132,47 +136,65 @@ export async function main(): Promise<void> {
   }
 }
 
-// Pre-seeds the inventory with crafting materials so recipes can be exercised
-// without grinding garbage pickups. Gated by `DEBUG_MODE` in
-// `config/gameConfig.ts` — flip that off before shipping.
+// Pre-seeds the inventory with TOOLS only. Materials, placeables, and
+// cooking ingredients live in the debug storage chest spawned by
+// `seedDebugWorld` (ring tile 0,1) — pulling them out is the easiest
+// way to exercise the storage flow without grinding pickups. Gated by
+// `DEBUG_MODE` in `config/gameConfig.ts` — flip that off before shipping.
 function seedDebugInventory(): void {
-  // Materials
-  addCollected('wood', 1000)
-  addCollected('plants', 1000)
-  addCollected('plastic', 1000)
-  addCollected('rope', 1000)
-  addCollected('metal', 1000)
-  // Crafted stackables / placeables. hammer/spear are non-stackable and
-  // already reserved in the default bottom-bar layout, so seeding them
-  // here would just allocate duplicate slots.
-  addCollected('fishingRod', 10)
-  addCollected('knife', 10)
-  addCollected('platform', 10)
-  addCollected('purifier', 10)
-  addCollected('grill', 10)
-  addCollected('storage', 10)
+  // Crafted tools the player keeps on-hand. Unique items — one of
+  // each, not a durability stack. hammer/spear are non-stackable and
+  // already reserved in the default bottom-bar layout, so seeding
+  // them here would just allocate duplicate slots.
+  addCollected('fishingRod', 1)
+  addCollected('knife', 1)
   // Containers are non-stackable — each instance gets its own slot, so
   // the seed only adds one of each variant. The cup goes in too so the
   // player can test the empty-cup → fill flow without crafting first.
   addCollected('cup', 1)
   addCollected('saltWater', 1)
   addCollected('freshWater', 1)
-  // Cooking ingredients — the 14 sources documented in COOKING.md so the
-  // cook-menu flow can be exercised without grinding fishing/barrels.
-  addCollected('sardines', 10)
-  addCollected('mussels', 10)
-  addCollected('clams', 10)
-  addCollected('squid', 10)
-  addCollected('shark_meat', 10)
-  addCollected('seaweed', 10)
-  addCollected('tomatoes', 10)
-  addCollected('garlic', 10)
-  addCollected('sea_salt', 10)
-  addCollected('olive_oil', 10)
-  addCollected('potato', 10)
-  addCollected('crab', 10)
-  addCollected('spaghetti', 10)
-  addCollected('fettuccine', 10)
+}
+
+// Stuffs the pre-placed storage chest with everything the player would
+// otherwise have to grind for: full material/placeable stacks plus one
+// of each cooking ingredient. Indexed top-left, row-major across the
+// 5x5 grid; the StorageContents component was created with 25 empty
+// slots in `createConstruction`, so we just overwrite the entries we
+// care about.
+function seedDebugStorage(entity: Entity): void {
+  const items: ReadonlyArray<{ id: string; count: number }> = [
+    // Materials
+    { id: 'wood', count: 1000 },
+    { id: 'plants', count: 1000 },
+    { id: 'plastic', count: 1000 },
+    { id: 'rope', count: 1000 },
+    { id: 'metal', count: 1000 },
+    // Crafted placeables / building pieces
+    { id: 'platform', count: 10 },
+    { id: 'grill', count: 10 },
+    { id: 'purifier', count: 10 },
+    { id: 'storage', count: 10 },
+    // Cooking ingredients (the 14 sources documented in COOKING.md)
+    { id: 'sardines', count: 10 },
+    { id: 'mussels', count: 10 },
+    { id: 'clams', count: 10 },
+    { id: 'squid', count: 10 },
+    { id: 'shark_meat', count: 10 },
+    { id: 'seaweed', count: 10 },
+    { id: 'tomatoes', count: 10 },
+    { id: 'garlic', count: 10 },
+    { id: 'sea_salt', count: 10 },
+    { id: 'olive_oil', count: 10 },
+    { id: 'potato', count: 10 },
+    { id: 'crab', count: 10 },
+    { id: 'spaghetti', count: 10 },
+    { id: 'fettuccine', count: 10 }
+  ]
+  const c = StorageContents.getMutable(entity)
+  for (let i = 0; i < items.length && i < c.slots.length; i++) {
+    c.slots[i] = { id: items[i].id, count: items[i].count }
+  }
 }
 
 // Spawns the 8 platforms surrounding the main raft (the king-move ring
@@ -192,7 +214,10 @@ function seedDebugWorld(): void {
     })
     if (gx === 1 && gz === 0) createConstruction(platform, 'grill')
     else if (gx === -1 && gz === 0) createConstruction(platform, 'purifier')
-    else if (gx === 0 && gz === 1) createConstruction(platform, 'storage')
+    else if (gx === 0 && gz === 1) {
+      createConstruction(platform, 'storage')
+      seedDebugStorage(platform)
+    }
   }
 }
 

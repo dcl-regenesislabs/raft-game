@@ -36,6 +36,7 @@ import {
 import { WATER_LEVEL } from '../factories/sceneLevels'
 import { spawnRingShark } from '../factories/shark'
 import { addCollected } from '../ui/inventoryState'
+import { notifyItemReceived } from '../ui/itemReceivedNotification'
 import {
   RAD_TO_DEG,
   TAU,
@@ -431,6 +432,7 @@ export function repelAttacker(entity: Entity): void {
   // proportional to the effort: each shark requires multiple hits to
   // reach this branch (see resetSharkHits in this file).
   addCollected('shark_meat', 1)
+  notifyItemReceived('shark_meat', 1)
 
   const tr = Transform.get(entity)
   attackCache.set(entity, {

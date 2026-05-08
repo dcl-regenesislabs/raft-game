@@ -15,14 +15,7 @@ import {
 import { getCatalogItem } from '../items'
 import { Panel } from '../panel'
 import {
-  CRAFT_INVENTORY_SIZE,
-  CRAFT_PANEL_PADDING_BOTTOM,
-  CRAFT_PANEL_PADDING_TOP,
-  CRAFT_PANEL_PADDING_X,
   CRAFT_TEXT_COLOR,
-  CRAFT_DIVIDER_COLOR,
-  CLOSE_BUTTON_COOK_MARGIN_RIGHT,
-  CLOSE_BUTTON_COOK_MARGIN_TOP,
   COUNT_BADGE_BG,
   COUNT_BADGE_FG,
   GLOW_ALPHA_PEAK_BONUS,
@@ -34,9 +27,21 @@ import {
   INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED,
   INVENTORY_PANEL_TEXTURE
 } from '../theme'
+
+// Storage menu uses tighter padding than the craft menu — there's no
+// long materials list to breathe around, just two grids side by side, so
+// large frame insets just look like wasted border.
+const STORAGE_GRID_SIZE = 400
+const STORAGE_PANEL_PADDING_X = 16
+const STORAGE_PANEL_PADDING_TOP = 8
+const STORAGE_PANEL_PADDING_BOTTOM = 12
+// Each grid's wood-frame texture eats ~11% of its width as decorative
+// border. With 400px grids that's ~44px of dead space on each inner edge,
+// so we slide the right pane left to overlap the two frames into one.
+const STORAGE_PANE_OVERLAP = -40
 import { shakeOffset } from '../utils/shake'
 import { CloseButton } from './CloseButton'
-import { InventoryGrid } from './InventoryPanel'
+import { InventoryWithBar } from './InventoryWithBar'
 
 // Dual-pane storage panel. Renders nothing while the menu is closed.
 //
@@ -74,22 +79,13 @@ export function StorageMenu(): ReactEcs.JSX.Element | null {
           flexDirection: 'column',
           alignItems: 'center',
           padding: {
-            top: CRAFT_PANEL_PADDING_TOP,
-            bottom: CRAFT_PANEL_PADDING_BOTTOM,
-            left: CRAFT_PANEL_PADDING_X,
-            right: CRAFT_PANEL_PADDING_X
+            top: STORAGE_PANEL_PADDING_TOP,
+            bottom: STORAGE_PANEL_PADDING_BOTTOM,
+            left: STORAGE_PANEL_PADDING_X,
+            right: STORAGE_PANEL_PADDING_X
           }
         }}
       >
-        <StorageHeader />
-        <UiEntity
-          uiTransform={{
-            width: '100%',
-            height: 1,
-            margin: { top: 6, bottom: 12 }
-          }}
-          uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
-        />
         <UiEntity
           uiTransform={{
             flexDirection: 'row',
@@ -97,46 +93,28 @@ export function StorageMenu(): ReactEcs.JSX.Element | null {
             justifyContent: 'center'
           }}
         >
-          <PaneLabel value="INVENTORY" width={CRAFT_INVENTORY_SIZE}>
-            <InventoryGrid size={CRAFT_INVENTORY_SIZE} />
+          <PaneLabel value="INVENTORY" width={STORAGE_GRID_SIZE}>
+            <InventoryWithBar size={STORAGE_GRID_SIZE} />
           </PaneLabel>
-          <UiEntity uiTransform={{ width: 24 }} />
-          <PaneLabel value="STORAGE" width={CRAFT_INVENTORY_SIZE}>
-            <StorageGrid size={CRAFT_INVENTORY_SIZE} />
-          </PaneLabel>
+          <UiEntity
+            uiTransform={{
+              margin: { left: STORAGE_PANE_OVERLAP }
+            }}
+          >
+            <PaneLabel value="STORAGE" width={STORAGE_GRID_SIZE}>
+              <StorageGrid size={STORAGE_GRID_SIZE} />
+            </PaneLabel>
+          </UiEntity>
+        </UiEntity>
+        <UiEntity
+          uiTransform={{
+            positionType: 'absolute',
+            position: { top: -18, right: -18 }
+          }}
+        >
+          <CloseButton onPress={() => closeStorageMenu()} />
         </UiEntity>
       </Panel>
-    </UiEntity>
-  )
-}
-
-function StorageHeader(): ReactEcs.JSX.Element {
-  return (
-    <UiEntity
-      uiTransform={{
-        width: '100%',
-        height: 44,
-        flexDirection: 'row',
-        alignItems: 'center'
-      }}
-    >
-      <Label
-        value="STORAGE"
-        fontSize={22}
-        color={CRAFT_TEXT_COLOR}
-        textAlign="middle-left"
-        uiTransform={{ flexGrow: 1, height: '100%' }}
-      />
-      <UiEntity
-        uiTransform={{
-          margin: {
-            top: CLOSE_BUTTON_COOK_MARGIN_TOP,
-            right: CLOSE_BUTTON_COOK_MARGIN_RIGHT
-          }
-        }}
-      >
-        <CloseButton onPress={() => closeStorageMenu()} />
-      </UiEntity>
     </UiEntity>
   )
 }
@@ -156,13 +134,13 @@ function PaneLabel(props: {
       <UiEntity
         uiTransform={{
           width: props.width,
-          height: 24,
+          height: 18,
           alignItems: 'center',
           justifyContent: 'center',
-          margin: { bottom: 6 }
+          margin: { top: 14, bottom: -16 }
         }}
       >
-        <Label value={props.value} fontSize={16} color={CRAFT_TEXT_COLOR} />
+        <Label value={props.value} fontSize={14} color={CRAFT_TEXT_COLOR} />
       </UiEntity>
       {props.children}
     </UiEntity>

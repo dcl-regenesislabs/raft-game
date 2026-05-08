@@ -23,10 +23,7 @@ import {
   getMatchingRecipe
 } from './cookSlots'
 import { closeCookMenu } from './cookToggle'
-import {
-  getCollectedCount,
-  subtractCollected
-} from './inventoryState'
+import { getCombinedCount, subtractFromAll } from './storageSession'
 
 // The grill platform entity the open cook menu targets. Set by
 // `openCookMenu(grill)` in `cookToggle.ts`; consumed by `startCook`
@@ -60,9 +57,9 @@ export function canStartCook(): boolean {
   if (recipe === null) return false
   if (getCookFuel() !== recipe.fuel.itemId) return false
   for (const ing of recipe.ingredients) {
-    if (getCollectedCount(ing.itemId) < ing.amount) return false
+    if (getCombinedCount(ing.itemId) < ing.amount) return false
   }
-  if (getCollectedCount(recipe.fuel.itemId) < recipe.fuel.amount) return false
+  if (getCombinedCount(recipe.fuel.itemId) < recipe.fuel.amount) return false
   if (activeCookGrill === null) return false
   if (PlatformConstruction.getOrNull(activeCookGrill) === null) return false
   if (ActiveCook.getOrNull(activeCookGrill) !== null) return false
@@ -78,11 +75,13 @@ export function startCook(): boolean {
   const construction = PlatformConstruction.getOrNull(grill)
   if (construction === null) return false
   // Debit recipe quantities — placement was symbolic so the inventory
-  // hasn't been touched yet.
+  // hasn't been touched yet. Pulls from the player's pocket first,
+  // then any placed storage (see `subtractFromAll`), so chests act as
+  // an extension of the player's pantry.
   for (const ing of recipe.ingredients) {
-    subtractCollected(ing.itemId, ing.amount)
+    subtractFromAll(ing.itemId, ing.amount)
   }
-  subtractCollected(recipe.fuel.itemId, recipe.fuel.amount)
+  subtractFromAll(recipe.fuel.itemId, recipe.fuel.amount)
   consumePlacedCells()
   // Spawn the world-side sprites and tag the grill with cook state.
   const flame = createFlameSprite(grill, construction.yawDeg)
