@@ -254,6 +254,24 @@ export const COOK_INPUT_ICON_SIZE_PCT = 14
 export const COOK_OUTPUT_ICON_SIZE_PCT = 22
 export const COOK_FUEL_ICON_SIZE_PCT = 13
 
+// --- Cook recipes list -----------------------------------------------------
+// Vertical list of LEARNED cooking recipes rendered to the right of the
+// cook panel. Width is narrower than the craft list — only icon + name,
+// no quantity column — so the surface fits next to the inventory + cook
+// panel without spilling off-canvas. Height matches the cook panel so
+// the two surfaces align like a book spread.
+export const COOK_LIST_WIDTH = 240
+export const COOK_LIST_HEIGHT = COOK_DETAILS_HEIGHT
+// Gap between cook panel and recipes list. Same negative-overlap trick
+// the cook panel uses with the inventory — pulls the painted wood
+// frames into a continuous surface instead of leaving a seam.
+export const COOK_LIST_GAP = -20
+// Per-row height inside the recipes list. Tighter than the craft rows
+// (50) — recipe rows are icon + label only and we want as many learned
+// recipes visible at once as possible without scrolling.
+export const COOK_RECIPE_ROW_HEIGHT = 44
+export const COOK_RECIPE_ICON_SIZE = 36
+
 // --- Close button (shared across panels) -----------------------------------
 // Round wood-framed red X button used in the top-right corner of the
 // craft, inventory, and cook panels. One image, one size — the visual

@@ -23,6 +23,8 @@ import {
   getMatchingRecipe
 } from './cookSlots'
 import { closeCookMenu } from './cookToggle'
+import { markRecipeLearned } from './learnedRecipes'
+import { showNotification } from './notification'
 import { getCombinedCount, subtractFromAll } from './storageSession'
 
 // The grill platform entity the open cook menu targets. Set by
@@ -97,6 +99,11 @@ export function startCook(): boolean {
     foodSprites: ingredientSprites,
     bobPhase: Math.random() * Math.PI * 2
   })
+  // First-time discovery: surface the new recipe so the player gets a
+  // beat of feedback and knows the recipes list just grew.
+  if (markRecipeLearned(recipe.id)) {
+    showNotification(`NEW RECIPE: ${recipe.name}`)
+  }
   closeCookMenu()
   return true
 }

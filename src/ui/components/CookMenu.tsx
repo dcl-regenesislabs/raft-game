@@ -4,6 +4,7 @@ import { Color4 } from '@dcl/sdk/math'
 
 import { canStartCook, startCook } from '../cookSession'
 import {
+  applyRecipeToCells,
   getCookFuel,
   getCookInput,
   getMatchingRecipe,
@@ -13,9 +14,10 @@ import {
   removeFromFuelCell,
   removeFromInputCell
 } from '../cookSlots'
-import { type CookableItem } from '../cookableItems'
+import { type CookableItem, getCookableById } from '../cookableItems'
 import { closeCookMenu, isCookOpen } from '../cookToggle'
 import { getCatalogItem } from '../items'
+import { getLearnedRecipeIds } from '../learnedRecipes'
 import { Panel } from '../panel'
 import { createPressPulse } from '../pressPulse'
 import { getCombinedCount } from '../storageSession'
@@ -29,9 +31,14 @@ import {
   COOK_LAYOUT_HEIGHT,
   COOK_LAYOUT_TEXTURE,
   COOK_LAYOUT_WIDTH,
+  COOK_LIST_GAP,
+  COOK_LIST_HEIGHT,
+  COOK_LIST_WIDTH,
   COOK_OUTPUT_CENTER_PCT,
   COOK_OUTPUT_ICON_SIZE_PCT,
   COOK_PANEL_GAP,
+  COOK_RECIPE_ICON_SIZE,
+  COOK_RECIPE_ROW_HEIGHT,
   COOK_SHORTAGE_BG,
   COOK_SHORTAGE_FG,
   CLOSE_BUTTON_COOK_MARGIN_RIGHT,
@@ -43,11 +50,16 @@ import {
   CRAFT_BUTTON_TEXTURE,
   CRAFT_BUTTON_W,
   CRAFT_DIVIDER_COLOR,
+  CRAFT_HAVE_LOW_COLOR,
+  CRAFT_HAVE_OK_COLOR,
   CRAFT_INVENTORY_SIZE,
   CRAFT_PANEL_PADDING_BOTTOM,
   CRAFT_PANEL_PADDING_TOP,
   CRAFT_PANEL_PADDING_X,
-  CRAFT_TEXT_COLOR
+  CRAFT_ROW_SELECTED_BG,
+  CRAFT_TEXT_COLOR,
+  CRAFT_TEXT_DIM_COLOR,
+  CRAFT_TEXT_LIGHT_COLOR
 } from '../theme'
 import { AggregatedInventoryGrid } from './AggregatedInventoryGrid'
 import { CloseButton } from './CloseButton'
@@ -65,13 +77,13 @@ const cookActionPulse = createPressPulse()
 //      recipe's fuel), the output cell shows a preview and the COOK
 //      button enables.
 //
-// There is no recipe list anymore — placement IS the selection. Closing
-// the menu via the X returns every placed item to the inventory so the
-// player can never accidentally lose materials by walking away.
-//
-// Mobile and desktop both anchor the same pair (mini inventory + cook
-// panel) at the canvas center; mobile uses the top-left/right anchors
-// shared with the craft menu so the two surfaces feel consistent.
+// The recipes list on the right shows every recipe the player has
+// LEARNED. It starts seeded with all 1-ingredient plates; new entries
+// only unlock when the player free-form-discovers a recipe by guessing
+// the right ingredient set (see `learnedRecipes.ts`). Clicking a row
+// auto-fills the cook cells with that recipe's ingredients — handy
+// shortcut once a recipe is known, but the menu still lets the player
+// place ingredients manually for try-and-error discovery.
 export function CookMenu(): ReactEcs.JSX.Element | null {
   if (!isCookOpen()) return null
   // Inventory + cook panel ride together as one row, centered on the
@@ -101,6 +113,12 @@ export function CookMenu(): ReactEcs.JSX.Element | null {
           margin is the only knob that works here.) */}
       <UiEntity uiTransform={{ margin: { left: COOK_PANEL_GAP } }}>
         <CookPanel />
+      </UiEntity>
+      {/* Recipes list — same overlap trick as the cook panel so the
+          three surfaces (inventory, cook, recipes) read as one wide
+          book spread. */}
+      <UiEntity uiTransform={{ margin: { left: COOK_LIST_GAP } }}>
+        <CookRecipeList />
       </UiEntity>
     </UiEntity>
   )
@@ -411,4 +429,124 @@ function idToTexture(id: string | null): string | null {
   // Catalog-wide so placed cells render even when the ingredient isn't
   // in the player's inventory layout (e.g. storage-only picks).
   return getCatalogItem(id)?.texture ?? null
+}
+
+// Right-hand panel: the "recipe book". Lists every recipe the player has
+// LEARNED — initially just the 1-ingredient plates, growing every time
+// the player guesses a new combo via free-form placement and cooks it.
+// Clicking a row symbolically fills the cook cells with that recipe's
+// ingredients; missing ingredients show their `0/X` shortage badge.
+function CookRecipeList(): ReactEcs.JSX.Element {
+  const learnedIds = getLearnedRecipeIds()
+  const matchedId = getMatchingRecipe()?.id ?? null
+  return (
+    <Panel
+      uiTransform={{
+        width: COOK_LIST_WIDTH,
+        height: COOK_LIST_HEIGHT,
+        flexDirection: 'column',
+        padding: {
+          top: CRAFT_PANEL_PADDING_TOP,
+          bottom: CRAFT_PANEL_PADDING_BOTTOM,
+          left: CRAFT_PANEL_PADDING_X,
+          right: CRAFT_PANEL_PADDING_X
+        }
+      }}
+    >
+      <Label
+        value="RECIPES"
+        fontSize={20}
+        color={CRAFT_TEXT_COLOR}
+        textAlign="middle-left"
+        uiTransform={{ width: '100%', height: 32 }}
+      />
+      <UiEntity
+        uiTransform={{
+          width: '100%',
+          height: 1,
+          margin: { top: 6, bottom: 8 }
+        }}
+        uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
+      />
+      {learnedIds.length === 0 ? (
+        <Label
+          value="Cook ingredients to discover recipes."
+          fontSize={12}
+          color={CRAFT_TEXT_DIM_COLOR}
+          textAlign="top-left"
+          uiTransform={{ width: '100%', height: 60 }}
+        />
+      ) : (
+        learnedIds.map((id) => {
+          const recipe = getCookableById(id)
+          if (recipe === null) return null
+          return (
+            <CookRecipeRow
+              key={id}
+              recipe={recipe}
+              selected={matchedId === id}
+            />
+          )
+        })
+      )}
+    </Panel>
+  )
+}
+
+// One learned-recipe row. Displays icon + name + a have/need count of
+// distinct ingredients the player can currently supply. Clicking the
+// row clears any in-progress placement and drops the recipe's
+// ingredients (and fuel) into their cells, so the player can cook it
+// straight away when they have everything, or see exactly which
+// ingredients are missing via the existing shortage badges.
+function CookRecipeRow(props: {
+  recipe: CookableItem
+  selected: boolean
+  key?: string
+}): ReactEcs.JSX.Element {
+  const recipe = props.recipe
+  let owned = 0
+  for (const ing of recipe.ingredients) {
+    if (getCombinedCount(ing.itemId) >= ing.amount) owned++
+  }
+  const total = recipe.ingredients.length
+  const enough = owned >= total
+  return (
+    <UiEntity
+      uiTransform={{
+        width: '100%',
+        height: COOK_RECIPE_ROW_HEIGHT,
+        flexDirection: 'row',
+        alignItems: 'center',
+        margin: { bottom: 4 },
+        padding: { left: 6, right: 6 }
+      }}
+      uiBackground={
+        props.selected ? { color: CRAFT_ROW_SELECTED_BG } : undefined
+      }
+      onMouseDown={() => applyRecipeToCells(recipe)}
+    >
+      <UiEntity
+        uiTransform={{ width: COOK_RECIPE_ICON_SIZE, height: COOK_RECIPE_ICON_SIZE }}
+        uiBackground={{
+          textureMode: 'stretch',
+          texture: { src: recipe.texture }
+        }}
+      />
+      <Label
+        value={recipe.name}
+        fontSize={12}
+        color={props.selected ? CRAFT_TEXT_LIGHT_COLOR : CRAFT_TEXT_COLOR}
+        textAlign="middle-left"
+        uiTransform={{ flexGrow: 1, height: '100%', margin: { left: 8 } }}
+      />
+      <Label
+        value={`${owned}/${total}`}
+        fontSize={12}
+        color={enough ? CRAFT_HAVE_OK_COLOR : CRAFT_HAVE_LOW_COLOR}
+        textAlign="middle-right"
+        uiTransform={{ height: '100%' }}
+      />
+    </UiEntity>
+  )
 }

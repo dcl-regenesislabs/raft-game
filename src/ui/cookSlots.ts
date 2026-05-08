@@ -153,3 +153,20 @@ export function clearCookSlots(): void {
 export function consumePlacedCells(): void {
   clearCookSlots()
 }
+
+// One-shot fill from a recipe — the recipes list in the cook menu calls
+// this when the player clicks a learned recipe row. Each ingredient
+// lands in its own input cell (i.e. the same SET layout the matcher
+// expects), and the fuel is dropped into the burner cell. Symbolic
+// placement, same as manual drops: no inventory debit, no consumption.
+//
+// Cells where the player is short still show a `0/X` badge via the
+// existing shortage path, so the UI tells them which ingredient is
+// missing without forcing them to scrub the inventory.
+export function applyRecipeToCells(recipe: CookableItem): void {
+  clearCookSlots()
+  for (let i = 0; i < INPUT_CELL_COUNT && i < recipe.ingredients.length; i++) {
+    inputs[i] = recipe.ingredients[i].itemId
+  }
+  fuel = recipe.fuel.itemId
+}

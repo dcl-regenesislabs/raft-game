@@ -17,6 +17,7 @@ import { setCraftOpen } from './craftToggle'
 import { resetInventoryState } from './inventoryState'
 import { setInventoryOpen } from './inventoryToggle'
 import { resetInventoryLayout } from './items'
+import { resetLearnedRecipes } from './learnedRecipes'
 import { setStat } from './statsBars'
 
 // Fade-in durations for the death overlay. The black backdrop ramps up
@@ -64,6 +65,7 @@ export function playAgain(): void {
   destroyNonMainPlatforms()
   resetInventoryLayout()
   resetInventoryState()
+  resetLearnedRecipes()
   setStat('life', 1)
   setStat('hunger', 1)
   setStat('thirst', 1)
