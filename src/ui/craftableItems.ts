@@ -25,6 +25,17 @@ export interface CraftableItem {
 
 export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   {
+    id: 'rope',
+    name: 'ROPE',
+    description:
+      'Two handfuls of seaweed twisted into a length of rope. The backbone of every tool you\'ll build.',
+    texture: 'images/hud/items/item-05.png',
+    cost: [
+      { materialId: 'plants', amount: 2 }
+    ],
+    craftSec: 1
+  },
+  {
     id: 'hammer',
     name: 'HAMMER',
     description:
@@ -63,11 +74,11 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     id: 'purifier',
     name: 'WATER PURIFIER',
     description:
-      'Boils sea water through layers of leaves and salvaged plastic to make it drinkable.',
+      'Boils sea water through layers of rope-woven mesh and salvaged plastic to make it drinkable.',
     texture: 'images/hud/items/item-06.png',
     cost: [
       { materialId: 'wood', amount: 6 },
-      { materialId: 'plants', amount: 5 },
+      { materialId: 'rope', amount: 5 },
       { materialId: 'plastic', amount: 4 },
       { materialId: 'metal', amount: 2 }
     ]

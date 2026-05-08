@@ -3,7 +3,8 @@ import { Vector3 } from '@dcl/sdk/math'
 import {
   GARBAGE_KINDS,
   GarbageKind,
-  createFloatingGarbage
+  createFloatingGarbage,
+  pickWeightedKind
 } from '../factories/floatingGarbage'
 import { GRID_ORIGIN } from '../factories/platform'
 import { aabbHalfExtentAlong, getPlatformExtent } from '../factories/platformExtent'
@@ -15,9 +16,9 @@ import {
 
 // --- tunables ---
 // Seconds between groups.
-const SPAWN_INTERVAL_S = 30
+const SPAWN_INTERVAL_S = 12
 // Items per group.
-const GROUP_SIZE = 5
+const GROUP_SIZE = 3
 // Desired upstream spawn distance from the platform's flow-axis footprint.
 // The system clamps this down per-spawn if the scene bounds don't allow it
 // (5x5 demo has tight upstream/downstream room on the corners).
@@ -135,7 +136,7 @@ function spawnGroup(): void {
     const pool: readonly GarbageKind[] = barrelSpawned
       ? GARBAGE_KINDS.filter((k) => k !== 'barrel')
       : GARBAGE_KINDS
-    const kind: GarbageKind = pool[Math.floor(Math.random() * pool.length)]
+    const kind: GarbageKind = pickWeightedKind(pool)
     if (kind === 'barrel') barrelSpawned = true
 
     createFloatingGarbage({

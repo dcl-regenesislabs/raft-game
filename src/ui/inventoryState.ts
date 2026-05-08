@@ -18,6 +18,7 @@ import {
   type ItemDef,
   clearInventorySlot,
   ensureCollectibleSlot,
+  getCatalogItem,
   getInventorySlot,
   getItemDisplayName,
   transmuteSlot
@@ -239,14 +240,26 @@ export function tickInventoryAnim(dt: number): void {
 
 const collectedCounts = new Map<string, number>()
 
-export function addCollected(kind: string, count: number = 1): void {
-  if (count <= 0) return
+// Add `count` of `kind` to the player's pocket, capped at the item's
+// `maxStackSize` (see `items.ts`). Returns the count actually accepted —
+// when the stack is at cap, accepted is 0 and the caller is expected to
+// either drop the overflow (debris collection) or refund it (storage
+// withdrawals leave the remainder in the chest). Items without a
+// `maxStackSize` (legacy / non-stackable) accept the full count.
+export function addCollected(kind: string, count: number = 1): number {
+  if (count <= 0) return 0
   // Make sure the item has a visible slot before bumping the count.
   // Looks up materials and craftables; for ids already in the starter
   // layout (e.g. hammer, spear) the slot exists so this is a no-op and
   // the count just tracks internally without duplicating the slot.
   ensureCollectibleSlot(kind)
-  collectedCounts.set(kind, (collectedCounts.get(kind) ?? 0) + count)
+  const cur = collectedCounts.get(kind) ?? 0
+  const cap = getCatalogItem(kind)?.maxStackSize
+  const accepted =
+    cap === undefined ? count : Math.max(0, Math.min(count, cap - cur))
+  if (accepted <= 0) return 0
+  collectedCounts.set(kind, cur + accepted)
+  return accepted
 }
 
 export function getCollectedCount(kind: string): number {

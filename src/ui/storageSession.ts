@@ -19,7 +19,11 @@
 
 import { Entity, engine } from '@dcl/sdk/ecs'
 
-import { STORAGE_SLOT_COUNT, StorageContents } from '../components'
+import {
+  STORAGE_MAX_STACK,
+  STORAGE_SLOT_COUNT,
+  StorageContents
+} from '../components'
 import {
   addCollected,
   getCollectedCount,
@@ -238,12 +242,21 @@ function transferPlayerToStorage(
       showNotification('That slot is already in use.')
       return
     }
+    // Storage slots cap at STORAGE_MAX_STACK; a partial transfer is
+    // fine — the leftover stays in the player's pocket and the player
+    // can drop the rest into another slot.
+    const room = STORAGE_MAX_STACK - target.count
+    if (room <= 0) {
+      showNotification('That storage slot is full.')
+      return
+    }
+    const moving = Math.min(have, room)
     const c = StorageContents.getMutable(entity)
     c.slots[storageIdx] = {
       id: def.id,
-      count: target.count + have
+      count: target.count + moving
     }
-    subtractCollected(def.id, have)
+    subtractCollected(def.id, moving)
     // Stackables are normally a "permanent reservation" (the slot
     // stays even at count 0 so the layout doesn't reshuffle), but
     // when the player moves the entire stack into storage that
@@ -292,9 +305,17 @@ function transferStorageToPlayer(
       showNotification('That slot is already in use.')
       return
     }
-    addCollected(src.id, src.count)
+    // Player pocket caps at PLAYER_STACK_CAP — pull what fits and
+    // leave the rest behind. addCollected returns the accepted count.
+    const accepted = addCollected(src.id, src.count)
+    if (accepted <= 0) {
+      showNotification('Inventory is full.')
+      return
+    }
+    const remaining = src.count - accepted
     const c = StorageContents.getMutable(entity)
-    c.slots[storageIdx] = { id: '', count: 0 }
+    c.slots[storageIdx] =
+      remaining > 0 ? { id: src.id, count: remaining } : { id: '', count: 0 }
     return
   }
 

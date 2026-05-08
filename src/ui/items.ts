@@ -34,7 +34,18 @@ export interface ItemDef {
   // has `ingredient: true` picks it up so the next click on a cook cell
   // places one unit there. Non-ingredient slots ignore cook-menu clicks.
   ingredient: boolean
+  // Per-slot stack cap on the player's inventory. Only meaningful for
+  // stackable items (non-stackables always occupy a single fresh slot).
+  // Undefined ⇒ unlimited (legacy behaviour). The cap is enforced in
+  // `addCollected`; storage chests use their own larger cap so they
+  // remain a strict capacity upgrade over the pocket.
+  maxStackSize?: number
 }
+
+// Default per-slot cap for everything stackable in the player's pocket.
+// Storage chests have their own larger cap (see `STORAGE_MAX_STACK` in
+// `components.ts`) so they remain a meaningful upgrade.
+export const PLAYER_STACK_CAP = 20
 
 const TOOL = (
   id: string,
@@ -81,7 +92,8 @@ const MATERIAL = (
   heldKind: null,
   hasAction: false,
   consumable: false,
-  ingredient: opts.ingredient ?? false
+  ingredient: opts.ingredient ?? false,
+  maxStackSize: PLAYER_STACK_CAP
 })
 
 // Food / drink. Stackable, selectable from the bottom bar. Selecting equips
@@ -103,7 +115,8 @@ const FOOD = (
   heldKind: 'food',
   hasAction: true,
   consumable: true,
-  ingredient: opts.ingredient ?? false
+  ingredient: opts.ingredient ?? false,
+  maxStackSize: PLAYER_STACK_CAP
 })
 
 // Items the player gets from crafting. Stackable entries collapse into
@@ -119,7 +132,8 @@ const CRAFTED_STACK = (id: string, texture: string): ItemDef => ({
   heldKind: null,
   hasAction: false,
   consumable: false,
-  ingredient: false
+  ingredient: false,
+  maxStackSize: PLAYER_STACK_CAP
 })
 
 // Stackable AND equippable tool — collapses into one slot like
@@ -139,7 +153,8 @@ const CRAFTED_TOOL_STACK = (
   heldKind,
   hasAction: true,
   consumable: false,
-  ingredient: false
+  ingredient: false,
+  maxStackSize: PLAYER_STACK_CAP
 })
 
 // Stackable, equippable item that doesn't swap the first-person viewmodel
@@ -155,7 +170,8 @@ const CRAFTED_PLACEABLE = (id: string, texture: string): ItemDef => ({
   heldKind: null,
   hasAction: true,
   consumable: false,
-  ingredient: false
+  ingredient: false,
+  maxStackSize: PLAYER_STACK_CAP
 })
 
 // Container the player equips and uses on the world. Each container

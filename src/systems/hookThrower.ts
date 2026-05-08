@@ -317,13 +317,10 @@ const BARREL_POOL = [
   'olive_oil', 'potato', 'spaghetti', 'fettuccine', 'crab'
 ] as const
 
-// Fishing-rod catch — banked when a `fish` floater is reeled in. Strict
-// per COOKING.md: sardines, squid, crab.
-const FISH_POOL = ['sardines', 'squid', 'crab'] as const
-
 // Translate a hooked debris kind into inventory deposits. Most kinds map
-// 1:1 to a material, but barrels and fish unpack into a random pick from
-// their respective loot pools.
+// 1:1 to a material; barrel unpacks into a small loot bundle (wood, rope
+// roll, plus 2–3 random pantry items). Raw fish are NOT in the surface
+// pool — those are caught with the fishing rod (`systems/fishingRod.ts`).
 function bankGrabbedItem(kind: string): void {
   if (kind === 'barrel') {
     // Always: a bit of wood for fuel continuity + a rope roll.
@@ -340,12 +337,6 @@ function bankGrabbedItem(kind: string): void {
       addCollected(pick, 1)
       notifyItemReceived(pick, 1)
     }
-    return
-  }
-  if (kind === 'fish') {
-    const pick = FISH_POOL[Math.floor(Math.random() * FISH_POOL.length)]
-    addCollected(pick, 1)
-    notifyItemReceived(pick, 1)
     return
   }
   addCollected(kind, 1)

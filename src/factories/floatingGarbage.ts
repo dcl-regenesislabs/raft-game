@@ -7,11 +7,38 @@ import { FloatingGarbage } from '../components'
 // matching GLB into `assets/scene/items/<kind>.glb` to extend the pool —
 // or set `glbName` in KIND_CONFIG to reuse an existing GLB.
 //
-// `fish` is the fishing-rod food source: when banked, it rolls one of
-// {sardines, squid, crab} (see hookThrower.bankGrabbedItem). It currently
-// reuses the plants GLB until a dedicated fish model lands.
-export const GARBAGE_KINDS = ['wood', 'barrel', 'plants', 'plastic', 'metal', 'fish'] as const
+// Raw fish are no longer surface debris — the fishing rod is the only
+// source so the rod craft is a real progression milestone. See
+// `systems/fishingRod.ts` for the catch pool.
+export const GARBAGE_KINDS = ['wood', 'barrel', 'plants', 'plastic', 'metal'] as const
 export type GarbageKind = (typeof GARBAGE_KINDS)[number]
+
+// Sampling weights for `pickWeightedKind`. Wood/plants/plastic dominate
+// (most-used materials); metal is the rarer mid-tier; barrel is the
+// jackpot — already capped at one per spawn group in the spawner so a
+// low weight keeps it occasional even within a single wave.
+const KIND_WEIGHTS: Record<GarbageKind, number> = {
+  wood: 30,
+  plants: 22,
+  plastic: 20,
+  metal: 10,
+  barrel: 3
+}
+
+// Weighted random pick over a subset of kinds. The spawner passes a
+// filtered pool (e.g. without `barrel` once the per-group cap is spent)
+// so weights renormalise against whatever remains.
+export function pickWeightedKind(pool: readonly GarbageKind[]): GarbageKind {
+  let total = 0
+  for (const k of pool) total += KIND_WEIGHTS[k]
+  if (total <= 0) return pool[0]
+  let r = Math.random() * total
+  for (const k of pool) {
+    r -= KIND_WEIGHTS[k]
+    if (r <= 0) return k
+  }
+  return pool[pool.length - 1]
+}
 
 type KindConfig = {
   // Uniform scale on the GLB. Per-kind because the source assets come from
@@ -42,9 +69,7 @@ const KIND_CONFIG: Record<GarbageKind, KindConfig> = {
   // Tiny plastic bottle.
   plastic: { scale: 0.6, bobAmplitude: 0.10, rollAmplitude: 5, yOffset: -0.05, spinSpeedRange: 0.5 },
   // Heavy scrap metal — large but settled.
-  metal: { scale: 1.5, bobAmplitude: 0.08, rollAmplitude: 3, yOffset: -0.05, spinSpeedRange: 0.3 },
-  // Lively surface critter — temporarily reuses the plants GLB.
-  fish: { scale: 0.7, bobAmplitude: 0.12, rollAmplitude: 6, yOffset: -0.02, spinSpeedRange: 0.7, glbName: 'plants' }
+  metal: { scale: 1.5, bobAmplitude: 0.08, rollAmplitude: 3, yOffset: -0.05, spinSpeedRange: 0.3 }
 }
 
 export interface FloatingGarbageParams {

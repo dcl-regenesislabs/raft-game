@@ -1,6 +1,6 @@
 import { Entity, SkyboxTime, engine } from '@dcl/sdk/ecs'
 
-import { StorageContents } from './components'
+import { STORAGE_MAX_STACK, StorageContents } from './components'
 
 import {
   DEBUG_MODE,
@@ -165,11 +165,11 @@ function seedDebugInventory(): void {
 function seedDebugStorage(entity: Entity): void {
   const items: ReadonlyArray<{ id: string; count: number }> = [
     // Materials
-    { id: 'wood', count: 1000 },
-    { id: 'plants', count: 1000 },
-    { id: 'plastic', count: 1000 },
-    { id: 'rope', count: 1000 },
-    { id: 'metal', count: 1000 },
+    { id: 'wood', count: STORAGE_MAX_STACK },
+    { id: 'plants', count: STORAGE_MAX_STACK },
+    { id: 'plastic', count: STORAGE_MAX_STACK },
+    { id: 'rope', count: STORAGE_MAX_STACK },
+    { id: 'metal', count: STORAGE_MAX_STACK },
     // Crafted placeables / building pieces
     { id: 'platform', count: 10 },
     { id: 'grill', count: 10 },

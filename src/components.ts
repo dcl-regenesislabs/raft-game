@@ -59,6 +59,11 @@ export const PlatformConstruction = engine.defineComponent(
 // at the same dimensions.
 export const STORAGE_SLOT_COUNT = 25
 
+// Per-slot stack cap inside a placed storage chest. Higher than the
+// player's pocket cap (`PLAYER_STACK_CAP` in `ui/items.ts`) so chests
+// remain a strict capacity upgrade — the whole reason to build them.
+export const STORAGE_MAX_STACK = 99
+
 // Per-storage contents attached to the platform entity carrying a
 // PlatformConstruction with kind === 'storage'. Indexed by slot (0 is
 // top-left, row-major). Empty slots use id === '' and count 0; stackable
