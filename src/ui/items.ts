@@ -136,27 +136,6 @@ const CRAFTED_STACK = (id: string, texture: string): ItemDef => ({
   maxStackSize: PLAYER_STACK_CAP
 })
 
-// Stackable AND equippable tool — collapses into one slot like
-// CRAFTED_STACK but the player can also select it from the bar to
-// equip a first-person viewmodel and surface the action button.
-// Used for the fishing rod (multiple instances stack as durability
-// charges, but only one viewmodel is ever held).
-const CRAFTED_TOOL_STACK = (
-  id: string,
-  texture: string,
-  heldKind: HeldItemKind
-): ItemDef => ({
-  id,
-  texture,
-  stackable: true,
-  selectable: true,
-  heldKind,
-  hasAction: true,
-  consumable: false,
-  ingredient: false,
-  maxStackSize: PLAYER_STACK_CAP
-})
-
 // Stackable, equippable item that doesn't swap the first-person viewmodel
 // (heldKind: null) but does surface an action button on mobile so touch
 // players can commit a placement. Used for "place on platform" items
@@ -248,7 +227,7 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   purifier: CRAFTED_PLACEABLE('purifier', 'images/hud/items/water-purifier.png'),
   grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/grill.png'),
   storage: CRAFTED_PLACEABLE('storage', 'images/hud/items/storage.png'),
-  fishingRod: CRAFTED_TOOL_STACK('fishingRod', 'images/hud/items/fishing-rod.png', 'fishingRod'),
+  fishingRod: TOOL('fishingRod', 'images/hud/items/fishing-rod.png', 'fishingRod'),
   knife: CRAFTED_STACK('knife', 'images/hud/items/knife.png'),
   cup: CRAFTED_CONTAINER('cup', 'images/hud/items/cup.png'),
   // Liquids live in cups: empty cup, salt-water cup, fresh-water cup.
