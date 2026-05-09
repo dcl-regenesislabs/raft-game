@@ -33,7 +33,6 @@ function seedDebugInventory(): void {
   // already reserved in the default bottom-bar layout, so seeding
   // them here would just allocate duplicate slots.
   addCollected('fishingRod', 1)
-  addCollected('knife', 1)
   // Containers are non-stackable — each instance gets its own slot, so
   // the seed only adds one of each variant. The cup goes in too so the
   // player can test the empty-cup → fill flow without crafting first.

@@ -11,6 +11,7 @@ import { actionButtonJustPressed } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
 import {
   getSelectedSlot,
+  getSlotItem,
   getSlotPressCount,
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
@@ -43,12 +44,14 @@ import {
 
 type Mode = 'idle' | 'placing' | 'destroying'
 
-// Inventory slot index for the hammer.
-const HAMMER_SLOT = 1
+const HAMMER_ITEM_ID = 'hammer'
 
 let mode: Mode = 'idle'
-// Last hammer-slot press count we acted on. Lets us detect re-presses
-// (selection unchanged but slot pressed again) to toggle place ↔ destroy.
+// Last hammer-slot press tracking. Stored as (slot index, press count) so
+// re-presses of the same slot AND moves of the hammer to a different slot
+// are both treated as "press" events that toggle place ↔ destroy. -1 means
+// the hammer isn't currently the equipped item.
+let lastHammerSlot = -1
 let lastHammerPressCount = 0
 
 export function getRaftBuilderMode(): Mode {
@@ -98,18 +101,31 @@ export function raftBuilderSystem(dt: number): void {
   }
 }
 
-// Drive mode transitions from inventory selection: hammer slot enters/toggles
-// place/destroy, any other slot returns to idle. Re-presses of the hammer
-// slot (counter delta) flip placing ↔ destroying without leaving the slot.
+// Drive mode transitions from inventory selection: selecting (or
+// re-pressing) a slot whose item is the hammer enters/toggles
+// place/destroy; any other equipped item returns to idle. Looking up the
+// hammer by item id rather than a hardcoded slot index lets the player
+// keep the hammer in any hot-bar position without other tools (e.g. the
+// fishing rod) accidentally inheriting construction mode.
 function syncModeToInventory(): void {
-  const pressCount = getSlotPressCount(HAMMER_SLOT)
-  const newPress = pressCount > lastHammerPressCount
-  lastHammerPressCount = pressCount
+  const selected = getSelectedSlot()
+  const isHammer = getSlotItem(selected)?.id === HAMMER_ITEM_ID
 
-  if (getSelectedSlot() !== HAMMER_SLOT) {
+  if (!isHammer) {
     if (mode !== 'idle') setMode('idle')
+    lastHammerSlot = -1
+    lastHammerPressCount = 0
     return
   }
+
+  // Press detected when the hammer's slot index changes (fresh selection,
+  // including the very first time the player picks it) OR when the press
+  // counter for the same slot ticks up (re-press to toggle modes).
+  const pressCount = getSlotPressCount(selected)
+  const newPress =
+    selected !== lastHammerSlot || pressCount > lastHammerPressCount
+  lastHammerSlot = selected
+  lastHammerPressCount = pressCount
 
   if (!newPress) return
   setMode(mode === 'placing' ? 'destroying' : 'placing')

@@ -106,17 +106,19 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
       { materialId: 'rope', amount: 8 }
     ]
   },
-  {
-    id: 'knife',
-    name: 'KNIFE',
-    description:
-      'A honed metal blade for gutting fish, butchering meat, and cutting rope.',
-    texture: 'images/hud/items/knife.png',
-    cost: [
-      { materialId: 'wood', amount: 2 },
-      { materialId: 'metal', amount: 8 }
-    ]
-  },
+  // KNIFE — not implemented yet; hide from the craft list until the
+  // gameplay (gutting / butchering / rope-cutting) is wired up.
+  // {
+  //   id: 'knife',
+  //   name: 'KNIFE',
+  //   description:
+  //     'A honed metal blade for gutting fish, butchering meat, and cutting rope.',
+  //   texture: 'images/hud/items/knife.png',
+  //   cost: [
+  //     { materialId: 'wood', amount: 2 },
+  //     { materialId: 'metal', amount: 8 }
+  //   ]
+  // },
   {
     id: 'cup',
     name: 'CUP',
