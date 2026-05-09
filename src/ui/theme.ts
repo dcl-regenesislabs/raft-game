@@ -162,7 +162,7 @@ export const CRAFT_BUTTON_RIGHT =
 // corner — the stats bars normally there are hidden while the craft menu
 // is open, so the slot is free, and a corner anchor keeps the materials
 // reference visible without crowding the centered modal.
-export const CRAFT_LIST_WIDTH = 280
+export const CRAFT_LIST_WIDTH = 340
 export const CRAFT_LIST_HEIGHT = 540
 export const CRAFT_DETAILS_WIDTH = 360
 export const CRAFT_INVENTORY_SIZE = 400

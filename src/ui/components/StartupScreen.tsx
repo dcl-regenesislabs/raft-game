@@ -22,10 +22,10 @@ import {
 // existence probe (in saveClient) confirms a save is available, and
 // reuses its own label as the "checking" indicator.
 
-// Wide-screen variant of the scene thumbnail. Source is 1672×941
-// (~16:9); the 1366×768 virtual canvas is also 16:9, so 'stretch'
-// fills the frame without visible distortion.
-const HERO_TEXTURE = 'images/raft_game_widescreen.png'
+// Hero art shared with the navmap thumbnail (scene.json). Source is
+// 1672×941 (~16:9); the 1366×768 virtual canvas is also 16:9, so
+// 'stretch' fills the frame without visible distortion.
+const HERO_TEXTURE = 'images/RAFT_GAME.png'
 const BUTTON_W = 360
 const BUTTON_H = CRAFT_BUTTON_H
 // Same nine-slice fractions as the system menu buttons so the painted
@@ -43,7 +43,7 @@ export function StartupScreen(): ReactEcs.JSX.Element {
   const canLoad = probeDone && hasSavedGame()
   // While the probe is in flight the load button doubles as the
   // status indicator — saves the player a separate "checking…" line.
-  const loadLabel = probeDone ? 'LOAD GAME' : 'CHECKING SAVE…'
+  const loadLabel = probeDone ? 'LOAD WORLD' : 'CHECKING SAVE…'
   return (
     <UiEntity
       uiTransform={{
@@ -62,7 +62,7 @@ export function StartupScreen(): ReactEcs.JSX.Element {
       }}
     >
       <StartupActionButton
-        label="NEW GAME"
+        label="NEW WORLD"
         onPress={() => {
           dismissStartupGate()
         }}
@@ -77,7 +77,7 @@ export function StartupScreen(): ReactEcs.JSX.Element {
       />
       {!IS_PRODUCTION && (
         <StartupActionButton
-          label="NEW GAME - DEBUG"
+          label="NEW WORLD - DEBUG"
           onPress={() => {
             applyDebugSeeds()
             dismissStartupGate()
