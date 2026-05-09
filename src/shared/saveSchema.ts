@@ -27,6 +27,11 @@ import {
   serializeLearnedRecipes
 } from '../ui/learnedRecipes'
 import {
+  hydratePlayerPosition,
+  serializePlayerPosition,
+  type PositionSnapshot
+} from '../ui/playerPosition'
+import {
   hydrateRaft,
   serializeRaft,
   type PlatformSnapshot
@@ -52,9 +57,14 @@ export interface SaveBlob {
   recipes: string[]
   vitals: VitalsSnapshot
   raft: PlatformSnapshot[]
+  // Optional so saves written before this field was added still load.
+  // The `version` constant doesn't need to bump for purely-additive
+  // fields; missing position just means "leave the player where they are".
+  position?: PositionSnapshot
 }
 
 export function buildSaveBlob(mode: SceneMode): SaveBlob {
+  const position = serializePlayerPosition()
   return {
     version: SAVE_BLOB_VERSION,
     mode,
@@ -66,7 +76,8 @@ export function buildSaveBlob(mode: SceneMode): SaveBlob {
     },
     recipes: serializeLearnedRecipes(),
     vitals: serializeVitals(),
-    raft: serializeRaft()
+    raft: serializeRaft(),
+    ...(position !== null ? { position } : {})
   }
 }
 
@@ -82,6 +93,7 @@ export function applySaveBlob(blob: SaveBlob): void {
   hydrateVitals(blob.vitals)
   hydrateRaft(blob.raft)
   refreshHeldItemFromSelection(blob.inventory.selected)
+  if (blob.position !== undefined) hydratePlayerPosition(blob.position)
 }
 
 // After hydrating the layout + selection, the held viewmodel is still
@@ -130,5 +142,19 @@ export function parseSaveBlob(raw: string): SaveBlob | null {
   if (!Array.isArray(v.recipes)) return null
   if (typeof v.vitals !== 'object' || v.vitals === null) return null
   if (!Array.isArray(v.raft)) return null
+  if (v.position !== undefined) {
+    const p = v.position
+    if (
+      typeof p !== 'object' ||
+      p === null ||
+      typeof p.x !== 'number' ||
+      typeof p.y !== 'number' ||
+      typeof p.z !== 'number'
+    ) {
+      // Tolerate a malformed position field rather than dropping the
+      // whole save — strip it and keep the rest.
+      v.position = undefined
+    }
+  }
   return v as SaveBlob
 }

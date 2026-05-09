@@ -14,11 +14,8 @@ import {
 } from '../systemSession'
 import {
   CRAFT_BUTTON_FG,
-  CRAFT_BUTTON_FRAME_H,
-  CRAFT_BUTTON_FRAME_W,
   CRAFT_BUTTON_H,
   CRAFT_BUTTON_TEXTURE,
-  CRAFT_BUTTON_W,
   CRAFT_TEXT_COLOR,
   CRAFT_TEXT_DIM_COLOR
 } from '../theme'
@@ -29,6 +26,14 @@ import {
 const PANEL_WIDTH = 560
 const PANEL_HEIGHT = 460
 const BACKDROP_COLOR = Color4.create(0, 0, 0, 0.55)
+
+// Wider, full-width-feeling buttons for the system menu. We render the red
+// button texture as nine-slices so the painted side bevels keep their
+// pixel size at any width — only the red center stretches.
+const SYSTEM_BUTTON_W = 320
+const SYSTEM_BUTTON_H = CRAFT_BUTTON_H
+const SYSTEM_BUTTON_INLINE_W = 200
+const SYSTEM_BUTTON_SLICE = { top: 0.2, right: 0.16, bottom: 0.2, left: 0.16 }
 
 export function SystemMenu(): ReactEcs.JSX.Element | null {
   if (!isSystemMenuOpen()) return null
@@ -53,7 +58,7 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'flex-start',
-          padding: { top: 48, bottom: 32, left: 40, right: 40 }
+          padding: { top: 48, bottom: 32, left: 24, right: 24 }
         }}
       >
         <Label
@@ -97,6 +102,7 @@ function ActionColumn(): ReactEcs.JSX.Element {
       <SystemActionButton
         label="SAVE"
         onPress={() => {
+          setSystemMenuOpen(false)
           void requestSave()
         }}
       />
@@ -168,6 +174,7 @@ function ConfirmColumn(props: { kind: SystemConfirm }): ReactEcs.JSX.Element {
           label={isRestart ? 'CONFIRM' : 'RELOAD'}
           onPress={() => {
             setSystemConfirm(null)
+            setSystemMenuOpen(false)
             if (isRestart) {
               void requestWipe()
             } else {
@@ -186,40 +193,32 @@ function SystemActionButton(props: {
   onPress: () => void
   inline?: boolean
 }): ReactEcs.JSX.Element {
-  const margin = props.inline === true
-    ? { left: 12, right: 12 }
-    : { top: 8 }
+  const inline = props.inline === true
+  const width = inline ? SYSTEM_BUTTON_INLINE_W : SYSTEM_BUTTON_W
+  const margin = inline ? { left: 12, right: 12 } : { top: 8 }
   return (
     <UiEntity
       uiTransform={{
-        width: CRAFT_BUTTON_FRAME_W,
-        height: CRAFT_BUTTON_FRAME_H,
+        width,
+        height: SYSTEM_BUTTON_H,
         alignItems: 'center',
         justifyContent: 'center',
         margin
       }}
+      uiBackground={{
+        textureMode: 'nine-slices',
+        texture: { src: CRAFT_BUTTON_TEXTURE },
+        textureSlices: SYSTEM_BUTTON_SLICE
+      }}
+      onMouseDown={props.onPress}
     >
-      <UiEntity
-        uiTransform={{
-          width: CRAFT_BUTTON_W,
-          height: CRAFT_BUTTON_H,
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-        uiBackground={{
-          textureMode: 'stretch',
-          texture: { src: CRAFT_BUTTON_TEXTURE }
-        }}
-        onMouseDown={props.onPress}
-      >
-        <Label
-          value={props.label}
-          fontSize={18}
-          color={CRAFT_BUTTON_FG}
-          textAlign="middle-center"
-          uiTransform={{ width: '100%', height: '100%' }}
-        />
-      </UiEntity>
+      <Label
+        value={props.label}
+        fontSize={18}
+        color={CRAFT_BUTTON_FG}
+        textAlign="middle-center"
+        uiTransform={{ width: '100%', height: '100%' }}
+      />
     </UiEntity>
   )
 }
@@ -262,34 +261,26 @@ function CloseButton(): ReactEcs.JSX.Element {
   return (
     <UiEntity
       uiTransform={{
-        width: CRAFT_BUTTON_FRAME_W,
-        height: CRAFT_BUTTON_FRAME_H,
+        width: SYSTEM_BUTTON_W,
+        height: SYSTEM_BUTTON_H,
         alignItems: 'center',
         justifyContent: 'center',
         margin: { top: 16 }
       }}
+      uiBackground={{
+        textureMode: 'nine-slices',
+        texture: { src: CRAFT_BUTTON_TEXTURE },
+        textureSlices: SYSTEM_BUTTON_SLICE
+      }}
+      onMouseDown={() => setSystemMenuOpen(false)}
     >
-      <UiEntity
-        uiTransform={{
-          width: CRAFT_BUTTON_W,
-          height: CRAFT_BUTTON_H,
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-        uiBackground={{
-          textureMode: 'stretch',
-          texture: { src: CRAFT_BUTTON_TEXTURE }
-        }}
-        onMouseDown={() => setSystemMenuOpen(false)}
-      >
-        <Label
-          value="CLOSE"
-          fontSize={18}
-          color={CRAFT_BUTTON_FG}
-          textAlign="middle-center"
-          uiTransform={{ width: '100%', height: '100%' }}
-        />
-      </UiEntity>
+      <Label
+        value="CLOSE"
+        fontSize={18}
+        color={CRAFT_BUTTON_FG}
+        textAlign="middle-center"
+        uiTransform={{ width: '100%', height: '100%' }}
+      />
     </UiEntity>
   )
 }

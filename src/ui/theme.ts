@@ -138,26 +138,23 @@ export const INVENTORY_BUTTON_SIZE = 140
 // Pulled slightly above the safe-area top edge so the circular frames
 // nest visually into the corner. Shared by both top-right buttons.
 export const INVENTORY_BUTTON_TOP = -15
-// Distance from the safe-area right edge to the backpack frame.
-export const INVENTORY_BUTTON_RIGHT = 100
 // Same trick as the action button: an outer frame sized to the peak-press
 // scale prevents the button from shifting when it grows.
 export const INVENTORY_BUTTON_FRAME = Math.round(INVENTORY_BUTTON_SIZE * 1.25)
 export const INVENTORY_BUTTON_ICON_INSET_PCT = 24
 
 export const CRAFT_BUTTON_ICON = 'images/hud/saw.png'
-// Sit one button-size to the left of the backpack so visible edges are
-// flush (no gap from the frame padding around either button). The -30
-// nudge tightens the gap further so the pair reads as a unit.
+export const SYSTEM_BUTTON_ICON = 'images/hud/icons/settings.png'
+
+// Top-right row, ordered left→right as: SAW, BACKPACK, SETTINGS. The
+// settings (system) button sits closest to the right edge; backpack is
+// one step left; saw is two steps left. The -30 nudge per step tightens
+// the gap so the trio reads as a single row.
+export const SYSTEM_BUTTON_RIGHT = 100
+export const INVENTORY_BUTTON_RIGHT =
+  SYSTEM_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
 export const CRAFT_BUTTON_RIGHT =
   INVENTORY_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
-
-// SYSTEM (save/load/restart) button — same circular frame as the
-// inventory/craft toggles, sits one button-step to the left of the saw
-// so the three top-right buttons read as a single row.
-export const SYSTEM_BUTTON_RIGHT =
-  CRAFT_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
-export const SYSTEM_BUTTON_ICON = 'images/hud/icons/settings.png'
 
 // --- Craft double-menu -----------------------------------------------------
 // The list and details panels render centered using the nine-sliced

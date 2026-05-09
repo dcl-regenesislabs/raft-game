@@ -222,7 +222,7 @@ function CraftItemRow(props: {
       />
       <Label
         value={props.item.name}
-        fontSize={16}
+        fontSize={14}
         color={selected ? CRAFT_TEXT_LIGHT_COLOR : CRAFT_TEXT_COLOR}
         textAlign="middle-left"
         uiTransform={{ flexGrow: 1, height: '100%', margin: { left: 10 } }}

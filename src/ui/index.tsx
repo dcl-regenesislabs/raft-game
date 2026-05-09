@@ -16,6 +16,7 @@ import { InventoryPanel } from './components/InventoryPanel'
 import { ItemReceivedOverlay } from './components/ItemReceivedNotification'
 import { NotificationOverlay } from './components/Notification'
 import { RotateButtons } from './components/RotateButtons'
+import { StartupScreen } from './components/StartupScreen'
 import { StatsBars } from './components/StatsBars'
 import { StorageMenu } from './components/StorageMenu'
 import { SystemButton } from './components/SystemButton'
@@ -26,6 +27,7 @@ import { isCraftOpen } from './craftToggle'
 import { isGameOver } from './gameOver'
 import { isInventoryOpen } from './inventoryToggle'
 import { isPurifying } from './purifySession'
+import { isStartupGateActive } from './startupGate'
 import { isStorageOpen } from './storageToggle'
 import { isSystemMenuOpen } from './systemSession'
 
@@ -73,6 +75,16 @@ function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs
 }
 
 function ui(): ReactEcs.JSX.Element {
+  // Boot-time title/gate sits ABOVE everything else, ignoring the safe
+  // area so the black backdrop covers the full canvas. Suppresses all
+  // regular HUD until the player picks NEW GAME or LOAD LAST GAME.
+  if (isStartupGateActive()) {
+    return (
+      <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
+        <StartupScreen />
+      </UiEntity>
+    )
+  }
   // Death overlay sits OUTSIDE the safe area so its dark backdrop covers
   // the full viewport (notch / home-indicator strips included). All
   // regular HUD elements suppress while dead.
