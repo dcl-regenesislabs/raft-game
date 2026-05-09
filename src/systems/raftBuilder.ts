@@ -25,12 +25,14 @@ import {
   enterDestroying,
   exitDestroying,
   getDestroyHoverEntity,
+  resetRaftDestructionState,
   tickDestroying
 } from './raft/destruction'
 import {
   commitPlaceFromHover,
   enterPlacing,
   exitPlacing,
+  resetRaftPlacementState,
   tickPlacing
 } from './raft/placement'
 
@@ -56,6 +58,17 @@ let lastHammerPressCount = 0
 
 export function getRaftBuilderMode(): Mode {
   return mode
+}
+
+// Wipes builder/placement state so the BACK TO LOBBY flow can destroy
+// the spectral ghosts and placement markers without leaving stale refs
+// behind. Delegates the placement-side cache wipe to its owning module.
+export function resetRaftBuilderState(): void {
+  mode = 'idle'
+  lastHammerSlot = -1
+  lastHammerPressCount = 0
+  resetRaftPlacementState()
+  resetRaftDestructionState()
 }
 
 export function getDestroyHoverTarget(): Entity | null {

@@ -37,7 +37,8 @@ export {
   getHeldItemRest,
   setHeldCup,
   setHeldFood,
-  setHeldItem
+  setHeldItem,
+  setHeldViewmodelHidden
 } from './heldItem'
 export type { HeldItemConfig, HeldItemKind } from './heldItem'
 export { createPlacementClickArea } from './placementClickArea'

@@ -5,6 +5,7 @@ import { movePlayerTo } from '~system/RestrictedActions'
 import { FALL_LIFE_DAMAGE_PCT } from '../config/gameConfig'
 import { WATER_LEVEL } from '../factories/sceneLevels'
 import { isGameOver } from '../ui/gameOver'
+import { isStartupGateActive } from '../ui/startupGate'
 import { adjustStat } from '../ui/statsBars'
 
 // How far below the water surface the player has to drop before we bail them
@@ -53,6 +54,12 @@ export function createFallRescueSystem(platformCenter: Vector3) {
       cooldownRemaining -= dt
       if (cooldownRemaining < 0) cooldownRemaining = 0
     }
+
+    // While the lobby is up the player legitimately stands at y≈0.3
+    // (lobby raft surface) — far below the game's WATER_LEVEL=4 fall
+    // threshold. Suppress the rescue so the lobby doesn't constantly
+    // teleport the player back onto a non-existent main raft.
+    if (isStartupGateActive()) return
 
     const player = Transform.getOrNull(engine.PlayerEntity)
     if (player === null) return

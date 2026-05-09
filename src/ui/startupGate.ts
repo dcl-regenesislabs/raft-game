@@ -44,6 +44,16 @@ export function dismissStartupGate(): void {
   active = false
 }
 
+// Bring the gate back up after it has already been dismissed. Used by
+// the BACK TO LOBBY flow so the player lands in the lobby with the
+// title overlay covering the HUD, just like a fresh boot.
+export function reopenStartupGate(): void {
+  exiting = false
+  exitElapsed = 0
+  exitAction = null
+  active = true
+}
+
 // 1 = fully opaque (visible state), 0 = fully faded out. Used by the
 // StartupScreen renderer to fade the backdrop, logo, and buttons in
 // lockstep during the exit transition.
@@ -77,10 +87,22 @@ export function setSaveProbeResult(found: boolean): void {
   savedGameAvailable = found
 }
 
-// Drives the exit fade and the input-lock modifier. The lock pattern
-// matches the death-screen / inventory-toggle locks — only writes the
-// modifier when our state has changed, so the locks compose without
-// fighting each other on stable frames.
+// Drives the exit fade and the input-lock modifier.
+//
+// Three input states:
+//   - `exiting`: the player has committed to a portal and the screen is
+//     fading out. Full lock so they can't drift off the raft as the
+//     world swaps underneath.
+//   - `active && !exiting`: the lobby is walkable, but we still
+//     disable double-jump so the player can't pop above the blocker
+//     walls while choosing a portal.
+//   - `!active`: gameplay. We release our lock once and stop writing
+//     so peer systems (inventory, gameOver) can drive the modifier.
+//
+// While the gate is `active` we re-apply the modifier every frame —
+// peer systems also write to it on their own state changes (e.g.
+// inventory close → all-false), and that would otherwise clobber the
+// double-jump block.
 export function startupGateInputLockSystem(dt: number): void {
   if (exiting) {
     exitElapsed += dt
@@ -96,16 +118,31 @@ export function startupGateInputLockSystem(dt: number): void {
       action?.()
     }
   }
-  if (active === lastModifierApplied) return
-  lastModifierApplied = active
-  InputModifier.createOrReplace(engine.PlayerEntity, {
-    mode: InputModifier.Mode.Standard({
-      disableWalk: active,
-      disableJog: active,
-      disableRun: active,
-      disableJump: active,
-      disableDoubleJump: active,
-      disableGliding: active
+  if (active) {
+    InputModifier.createOrReplace(engine.PlayerEntity, {
+      mode: InputModifier.Mode.Standard({
+        disableWalk: exiting,
+        disableJog: exiting,
+        disableRun: exiting,
+        disableJump: exiting,
+        disableDoubleJump: true,
+        disableGliding: exiting
+      })
     })
-  })
+    lastModifierApplied = true
+    return
+  }
+  if (lastModifierApplied !== false) {
+    lastModifierApplied = false
+    InputModifier.createOrReplace(engine.PlayerEntity, {
+      mode: InputModifier.Mode.Standard({
+        disableWalk: false,
+        disableJog: false,
+        disableRun: false,
+        disableJump: false,
+        disableDoubleJump: false,
+        disableGliding: false
+      })
+    })
+  }
 }

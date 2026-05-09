@@ -84,6 +84,19 @@ export function isHookInFlight(): boolean {
   return hookEntity !== null
 }
 
+// Drops every cached entity reference without removing the entities —
+// the BACK TO LOBBY sweep is what actually destroys them. Exists purely
+// to keep this module's view of the world consistent with the post-sweep
+// scene, so isHookInFlight()/grabbedItems don't keep pointing at dead
+// ids when the player re-enters the game world via a portal.
+export function resetHookThrowerState(): void {
+  hookEntity = null
+  ropeEntity = null
+  grabbedItems = []
+  chargeT = 0
+  charging = false
+}
+
 export function hookThrowerSystem(dt: number): void {
   const locked = isInventoryActionLocked()
   const handPos = computeHandPos()

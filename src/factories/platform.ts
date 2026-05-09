@@ -59,6 +59,11 @@ export type CreatePlatformOptions = {
   // parent stays grid-aligned so placement neighbour math and any
   // construction child placed later don't have to reason about rotation.
   yawDeg?: number
+  // Override the world-Y of the raft collider centre. Defaults to
+  // `center.y` so existing call sites keep their floating-water height.
+  // The lobby uses this to drop rafts to ground level (y=0) without
+  // touching the global WATER_LEVEL.
+  yOverride?: number
 }
 
 export function gridCellToWorld(gridX: number, gridZ: number): Vector3 {
@@ -73,11 +78,12 @@ export function createPlatform(
   center: Vector3,
   options: CreatePlatformOptions = {}
 ): Entity {
-  const { gridX = 0, gridZ = 0, isMain = false, yawDeg = 0 } = options
+  const { gridX = 0, gridZ = 0, isMain = false, yawDeg = 0, yOverride } = options
+  const baseY = yOverride !== undefined ? yOverride : center.y
 
   const platform = engine.addEntity()
   Transform.create(platform, {
-    position: Vector3.create(center.x, center.y + PLATFORM_SIZE_Y / 2, center.z),
+    position: Vector3.create(center.x, baseY + PLATFORM_SIZE_Y / 2, center.z),
     scale: Vector3.create(PLATFORM_SIZE_X, PLATFORM_SIZE_Y, PLATFORM_SIZE_Z)
   })
   // CL_PHYSICS so the player can stand on it; CL_POINTER so hover/click events
@@ -100,7 +106,7 @@ export function createPlatform(
       RAFT_VISUAL_SIZE / PLATFORM_SIZE_Z
     )
   })
-  GltfContainer.create(visual, { src: 'assets/scene/items/raft_v2.glb' })
+  GltfContainer.create(visual, { src: 'assets/scene/items/raft_v3.glb' })
 
   Platform.create(platform, { gridX, gridZ })
   if (isMain) MainPlatform.create(platform)

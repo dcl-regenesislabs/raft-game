@@ -74,6 +74,21 @@ export function getConstructionPlacementMode(): Mode {
   return mode
 }
 
+// Drops the cached spectral-ghost map and the hover/raycaster state so
+// the BACK TO LOBBY sweep can destroy the ghost entities without
+// stranding dead refs in this module. Next entry to a placement mode
+// re-registers the raycast and lazy-creates ghosts for the kind.
+export function resetConstructionPlacementState(): void {
+  if (mode !== 'idle') {
+    raycastSystem.removeRaycasterEntity(engine.CameraEntity)
+  }
+  ghosts.clear()
+  mode = 'idle'
+  hoverPlatform = null
+  hoverValid = false
+  lastPlaceMs = 0
+}
+
 let lastPlaceMs = 0
 // Latest hover state from the camera-forward raycast. `targetPlatform`
 // is the platform entity under the cursor (or null); `valid` records

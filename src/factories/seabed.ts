@@ -16,13 +16,17 @@ const SAND_TEXTURE = 'assets/scene/seabed/sand.png'
 // regardless of scene size (10 tiles for 5x5; 100 tiles for 50x50).
 const TILES_PER_PARCEL = 2
 
-export function createSeabed(parcelGrid: number = DEMO_PARCEL_GRID): Entity {
+export function createSeabed(
+  parcelGrid: number = DEMO_PARCEL_GRID,
+  yOverride?: number
+): Entity {
   const totalSize = parcelGrid * PARCEL_SIZE_M
   const tileCount = parcelGrid * TILES_PER_PARCEL
+  const surfaceY = yOverride !== undefined ? yOverride : SEABED_Y
 
   const entity = engine.addEntity()
   Transform.create(entity, {
-    position: Vector3.create(totalSize / 2, SEABED_Y, totalSize / 2),
+    position: Vector3.create(totalSize / 2, surfaceY, totalSize / 2),
     rotation: Quaternion.fromEulerDegrees(-90, 0, 0),
     scale: Vector3.create(totalSize, totalSize, 1)
   })

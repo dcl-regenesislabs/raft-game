@@ -251,6 +251,82 @@ export const enum CookStatus {
   Burned = 2
 }
 
+// Marker tag attached to every entity that belongs to the lobby world
+// (rafts, bridges, water, walls, decor, portals). The lobby teardown
+// sweeps over all entities carrying this tag and removes them in one
+// pass so the game-world build can run on a clean scene.
+export const LobbyTag = engine.defineComponent('mystic-pond:lobby-tag', {})
+
+// Identifies a clickable button on the lobby's information panel.
+// `kind` selects the deferred action to run after the gate's exit fade
+// ('NEW' | 'LOAD' | 'DEBUG'). Stored as a plain string so we don't
+// depend on enum schema support; the lobby interact system normalises
+// it via a switch.
+export const LobbyButton = engine.defineComponent('mystic-pond:lobby-button', {
+  kind: Schemas.String
+})
+
+// Marker on the single cross-realm portal that sits in the demo lobby
+// and offers a jump to the FULL game (raft.dcl.eth). Triggered by
+// proximity OR click; the SDK's `changeRealm` call surfaces its own
+// confirmation dialog, so this marker just identifies the trigger
+// entity — no per-instance fields needed.
+export const LobbyTeleport = engine.defineComponent('mystic-pond:lobby-teleport', {})
+
+// Drives a slow sin-based color cycle on the lobby portal's interior
+// plane so the gateway reads as living energy rather than a static
+// emissive sheet. The system in `systems/portalPulse.ts` reads
+// `elapsed` (seconds since spawn), advances it by dt, and writes a
+// fresh `emissiveColor` + `emissiveIntensity` onto the entity's PBR
+// material every frame. `speed` is radians/second of the cycle;
+// `pulseAmp` is the +/- range applied to the base intensity.
+export const PortalPulse = engine.defineComponent('mystic-pond:portal-pulse', {
+  elapsed: Schemas.Number,
+  speed: Schemas.Number,
+  baseIntensity: Schemas.Number,
+  pulseAmp: Schemas.Number
+})
+
+// Combined UV scroll + rotation. Drives the lobby portal interior so
+// the texture drifts AND swirls each frame. Kept distinct from
+// `WaterScroll` so the water-floor system stays a pure scroll
+// without branching for an unused rotation field. `rotation` is the
+// accumulated angle in radians; `rotSpeed` is rad/second.
+export const PortalUvSwirl = engine.defineComponent('mystic-pond:portal-uv-swirl', {
+  speedU: Schemas.Number,
+  speedV: Schemas.Number,
+  offsetU: Schemas.Number,
+  offsetV: Schemas.Number,
+  rotSpeed: Schemas.Number,
+  rotation: Schemas.Number,
+  tileCount: Schemas.Number
+})
+
+// Per-button hover state for the lobby panel. Stores the click-target
+// plate's base scale (so the system can return to it on hover-leave),
+// the linked visual + text entities (both zoom in lockstep with the
+// click plate), and the lerp pair `targetMul` (snapped on hover
+// events) / `currentMul` (smoothed toward target). The hover system in
+// `systems/lobbyButtonHover.ts` owns updates; the factory just seeds
+// these to the at-rest values.
+//
+// The click plate (entity carrying this component) is intentionally
+// bigger than the visible plane so steep-angle aim rays still land —
+// `visualEntity` is the child showing the texture at the smaller
+// "real" button size.
+export const LobbyButtonHover = engine.defineComponent('mystic-pond:lobby-button-hover', {
+  visualEntity: Schemas.Entity,
+  textEntity: Schemas.Entity,
+  // At-rest local scale of the visual child relative to its click-plate
+  // parent. Multiplied by `currentMul` each frame so the visible plate
+  // zooms while the click plate (the parent) stays fixed — this keeps
+  // the trigger area independent of the hover animation.
+  visualLocalX: Schemas.Number,
+  visualLocalY: Schemas.Number,
+  targetMul: Schemas.Number,
+  currentMul: Schemas.Number
+})
+
 // Drives circular motion around a fixed point on the XZ plane. Used by sharks
 // patrolling the platform. Consumed by `systems/sharkOrbit.ts`.
 export const SharkOrbit = engine.defineComponent('shark-orbit', {

@@ -45,6 +45,7 @@ import {
   smoothingAlpha,
   wrapAngle
 } from '../utils/math'
+import { isStartupGateActive } from '../ui/startupGate'
 import { resetSharkHits } from './sharkAttack'
 
 // Director responsibilities (per frame):
@@ -90,6 +91,13 @@ const attackCache = new Map<Entity, AttackCache>()
 let timeSinceLastAttack = 0
 
 export function sharkDirectorSystem(dt: number): void {
+  // Lobby is up — there's no game world for the director to grow a
+  // shark population around. Without this gate the director sees the
+  // 6×6 lobby raft island, treats it as the player's run-state raft,
+  // and spawns sharks orbiting it (visible flying past the island
+  // because the lobby sits 4m below the game's WATER_LEVEL).
+  if (isStartupGateActive()) return
+
   const target = computePlatformTarget()
 
   if (target !== null) {

@@ -100,6 +100,21 @@ export function isFishingLineActive(): boolean {
   return lineEntity !== null
 }
 
+// Drops every cached entity reference without removing the entities —
+// the BACK TO LOBBY sweep is what actually destroys them. Mirrors
+// `resetHookThrowerState` so the post-sweep view of the world stays
+// internally consistent.
+export function resetFishingRodState(): void {
+  lineEntity = null
+  ropeEntity = null
+  warningEntity = null
+  warningBlinkT = 0
+  catchSprites = []
+  chargeT = 0
+  charging = false
+  biteIntensity = 0
+}
+
 // 0..1 sine pulse exposed to the UI. Non-zero only while a fish is
 // biting; the action button reads this each render to drive the
 // "scream" animation (scale + texture flash).

@@ -1,24 +1,22 @@
 import { SkyboxTime, engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
 
-import { initSaveClient, saveClientTickSystem } from './client/saveClient'
+import {
+  initSaveClient,
+  saveClientTickSystem
+} from './client/saveClient'
 import { runServer } from './server/server'
 
-import {
-  SHARK_INITIAL_COUNT,
-  SHARK_INITIAL_RADIUS
-} from './config/gameConfig'
 import {
   GRID_ORIGIN,
   configureGridOrigin,
   createFirstPersonArea,
   createHeldItem,
-  createPlatform,
-  createSeabed,
-  createWaterFloorV2,
-  spawnRingShark
+  setHeldViewmodelHidden
 } from './factories'
+import { createLobby } from './factories/lobby'
 import { DEMO_PARCEL_GRID, FULL_PARCEL_GRID } from './factories/sceneLevels'
+import { bootstrapSceneFlow } from './runtime/sceneFlow'
 import { getSceneMode } from './runtime/sceneMode'
 import { constructionInteractSystem } from './systems/constructionInteract'
 import { constructionPlacementSystem } from './systems/constructionPlacement'
@@ -35,6 +33,10 @@ import { hammerSwingSystem } from './systems/hammerSwing'
 import { hookThrowAnimSystem } from './systems/hookThrowAnim'
 import { hookThrowerSystem } from './systems/hookThrower'
 import { inventoryInputSystem } from './systems/inventoryInput'
+import { lobbyButtonHoverSystem } from './systems/lobbyButtonHover'
+import { lobbyPortalSystem } from './systems/lobbyPortalSystem'
+import { portalPulseSystem } from './systems/portalPulse'
+import { portalUvSwirlSystem } from './systems/portalUvSwirl'
 import { lookAtTargetSystem } from './systems/lookAtTarget'
 import { raftBuilderSystem } from './systems/raftBuilder'
 import { sharkAttackSystem } from './systems/sharkAttack'
@@ -90,6 +92,10 @@ export async function main(): Promise<void> {
 
   createFirstPersonArea(parcelGrid)
   createHeldItem('hook')
+  // Stash the viewmodel until the player commits to a portal — the
+  // lobby renders the startup overlay over the HUD and shouldn't show
+  // any equipped tool through it.
+  setHeldViewmodelHidden(true)
   engine.addSystem(firstPersonItemSwaySystem)
   engine.addSystem(spearAttackSystem)
   engine.addSystem(hammerSwingSystem)
@@ -105,15 +111,19 @@ export async function main(): Promise<void> {
   engine.addSystem(cupFillSystem)
   engine.addSystem(foodEatSystem)
   engine.addSystem(hookThrowAnimSystem)
-  createSeabed(parcelGrid)
-  createWaterFloorV2(parcelGrid)
+  // Game-world geometry (seabed, the y=4 water plane, the main raft,
+  // and the sharks) is intentionally deferred to `buildGameWorld`
+  // below — only the lobby exists at boot. Systems below stay
+  // registered because their queries no-op on empty entity sets.
   engine.addSystem(waterScrollSystem)
-  createPlatform(GRID_ORIGIN, { gridX: 0, gridZ: 0, isMain: true })
-  spawnSharks()
   engine.addSystem(sharkOrbitSystem)
   engine.addSystem(sharkDirectorSystem)
   engine.addSystem(sharkAttackSystem)
   engine.addSystem(sharkPointerEventsSystem)
+  engine.addSystem(lobbyPortalSystem)
+  engine.addSystem(portalPulseSystem)
+  engine.addSystem(portalUvSwirlSystem)
+  engine.addSystem(lobbyButtonHoverSystem)
   engine.addSystem(garbageSpawnerSystem)
   engine.addSystem(floatingGarbageSystem)
   engine.addSystem(grillFireSystem)
@@ -150,17 +160,15 @@ export async function main(): Promise<void> {
   // auto-load mutates them on first sync.
   initSaveClient()
   engine.addSystem(saveClientTickSystem)
-  setupUi()
-}
 
-function spawnSharks(): void {
-  const phaseStep = (Math.PI * 2) / SHARK_INITIAL_COUNT
-  for (let i = 0; i < SHARK_INITIAL_COUNT; i++) {
-    spawnRingShark({
-      centerX: GRID_ORIGIN.x,
-      centerZ: GRID_ORIGIN.z,
-      radius: SHARK_INITIAL_RADIUS,
-      phase: phaseStep * i
-    })
-  }
+  // Build the lobby world (water at y=0, raft island, bridges, portals)
+  // and arm the portal-trigger handler via the scene-flow runtime. The
+  // handler runs the gate's exit fade, then on fade completion swaps the
+  // lobby for the actual game world and runs the kind-specific bootstrap
+  // (load / debug / nothing). Bootstrap also caches mode/parcelGrid so the
+  // SystemMenu's BACK TO LOBBY can rebuild the same configuration.
+  createLobby(parcelGrid, mode)
+  bootstrapSceneFlow(mode, parcelGrid)
+
+  setupUi()
 }

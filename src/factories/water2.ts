@@ -22,13 +22,17 @@ const WATER_ALPHA = 0.95
 // One image repeat per parcel keeps a constant tile density across scene
 // sizes (5 tiles for the demo, 50 for the BIG raft world).
 
-export function createWaterFloorV2(parcelGrid: number = DEMO_PARCEL_GRID): Entity {
+export function createWaterFloorV2(
+  parcelGrid: number = DEMO_PARCEL_GRID,
+  yOverride?: number
+): Entity {
   const totalSize = parcelGrid * PARCEL_SIZE_M
   const tileCount = parcelGrid
+  const surfaceY = yOverride !== undefined ? yOverride : WATER_Y
 
   const entity = engine.addEntity()
   Transform.create(entity, {
-    position: Vector3.create(totalSize / 2, WATER_Y, totalSize / 2),
+    position: Vector3.create(totalSize / 2, surfaceY, totalSize / 2),
     rotation: Quaternion.fromEulerDegrees(-90, 0, 0),
     scale: Vector3.create(totalSize, totalSize, 1)
   })

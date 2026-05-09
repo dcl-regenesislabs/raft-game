@@ -120,6 +120,21 @@ export function exitPlacing(): void {
   resetPlacementRotation()
 }
 
+// Drops cached spectral-ghost entity refs without removing them — the
+// BACK TO LOBBY sweep destroys the underlying entities, and the next
+// enterPlacing() will lazy-create fresh ghosts. Without this, the next
+// enter would call hideSpectral on dead entity ids and crash.
+export function resetRaftPlacementState(): void {
+  unregisterCameraForwardRaycast()
+  validGhost = null
+  noStockGhost = null
+  cursorGhost = null
+  placeHoverCell = null
+  placeCursorWorld = null
+  lastPlaceMs = 0
+  lastPlacingOccupancy = ''
+}
+
 // Each frame while in placing mode: sync the marker set against current
 // occupancy and update the preview ghost positioning.
 export function tickPlacing(dt: number): void {

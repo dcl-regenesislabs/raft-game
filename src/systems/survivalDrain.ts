@@ -5,6 +5,7 @@ import {
   THIRST_DRAIN_PCT_PER_S
 } from '../config/gameConfig'
 import { isGameOver, triggerGameOver } from '../ui/gameOver'
+import { isStartupGateActive } from '../ui/startupGate'
 import { adjustStat, getStat } from '../ui/statsBars'
 
 // Designer-facing rates in gameConfig are percentage-points-per-second; the
@@ -19,6 +20,9 @@ export function survivalDrainSystem(dt: number): void {
   // life/hunger/thirst would keep ticking and the player would re-die
   // immediately on Play Again before the reset frame even rendered.
   if (isGameOver()) return
+  // Same idea for the lobby — the player hasn't started the run yet,
+  // so survival timers shouldn't tick while they're picking a portal.
+  if (isStartupGateActive()) return
 
   adjustStat('hunger', -HUNGER_DRAIN_PCT_PER_S * PCT * dt)
   adjustStat('thirst', -THIRST_DRAIN_PCT_PER_S * PCT * dt)

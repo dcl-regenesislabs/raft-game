@@ -12,6 +12,15 @@ export const SEABED_Y = SCENE_BASE_Y
 // lands at ~50 m (PLATFORM_SIZE_Y/2 above WATER_LEVEL).
 export const WATER_LEVEL = SCENE_BASE_Y + 4
 
+// Y stack for the lobby world. Sand sits flush with the parcel floor,
+// water rises just above it (so the surface reads as wet sand under
+// shallow water), and rafts float a few cm higher so the deck stays
+// dry. Keeping all three within ~0.5 m means the player walking on the
+// raft can still see the seabed through the alpha-blended water.
+export const LOBBY_SEABED_Y = 0
+export const LOBBY_WATER_Y = 0.18
+export const LOBBY_RAFT_Y = 0.3
+
 // World units per parcel side. Decentraland fixes this at 16 m.
 export const PARCEL_SIZE_M = 16
 

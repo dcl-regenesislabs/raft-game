@@ -8,6 +8,7 @@ import {
 } from '../factories/floatingGarbage'
 import { GRID_ORIGIN } from '../factories/platform'
 import { aabbHalfExtentAlong, getPlatformExtent } from '../factories/platformExtent'
+import { isStartupGateActive } from '../ui/startupGate'
 import {
   SEA_FLOW_DIR_X,
   SEA_FLOW_DIR_Z,
@@ -50,6 +51,9 @@ const MIN_UPSTREAM_GAP = 6
 let elapsed = SPAWN_INTERVAL_S
 
 export function garbageSpawnerSystem(dt: number): void {
+  // Suppress while the lobby is up — debris spawned at WATER_LEVEL=4
+  // would float in the sky above the lobby raft (which sits at y=0).
+  if (isStartupGateActive()) return
   elapsed += dt
   if (elapsed < SPAWN_INTERVAL_S) return
   elapsed = 0

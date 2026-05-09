@@ -19,7 +19,7 @@ let status: SystemStatus = { kind: 'idle' }
 // Pending confirm step for destructive actions. The modal renders a
 // secondary panel when this is non-null and routes the confirmation
 // click to the matching handler.
-export type SystemConfirm = 'restart' | 'load' | null
+export type SystemConfirm = 'restart' | 'load' | 'lobby' | null
 let confirm: SystemConfirm = null
 
 export function isSystemMenuOpen(): boolean {

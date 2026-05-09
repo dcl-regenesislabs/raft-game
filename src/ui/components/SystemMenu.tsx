@@ -2,6 +2,7 @@ import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
 import { requestLoad, requestSave, requestWipe } from '../../client/saveClient'
+import { returnToLobby } from '../../runtime/sceneFlow'
 import { Panel } from '../panel'
 import {
   getSystemConfirm,
@@ -20,11 +21,11 @@ import {
   CRAFT_TEXT_DIM_COLOR
 } from '../theme'
 
-// Modal sized to fit the three primary actions in a column with breathing
+// Modal sized to fit the four primary actions in a column with breathing
 // room for a status line and an optional confirm step. Centered with the
 // rest of the panel-style modals (death screen, craft menu).
 const PANEL_WIDTH = 560
-const PANEL_HEIGHT = 460
+const PANEL_HEIGHT = 520
 const BACKDROP_COLOR = Color4.create(0, 0, 0, 0.55)
 
 // Wider, full-width-feeling buttons for the system menu. We render the red
@@ -69,7 +70,7 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
           uiTransform={{ width: '100%', height: 56 }}
         />
         <Label
-          value="Save your progress, reload your last save, or restart from scratch."
+          value="Save, reload, return to the lobby, or wipe and start over."
           fontSize={16}
           color={CRAFT_TEXT_DIM_COLOR}
           textAlign="middle-center"
@@ -92,7 +93,7 @@ function ActionColumn(): ReactEcs.JSX.Element {
     <UiEntity
       uiTransform={{
         width: '100%',
-        height: 220,
+        height: 280,
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
@@ -113,6 +114,12 @@ function ActionColumn(): ReactEcs.JSX.Element {
         }}
       />
       <SystemActionButton
+        label="BACK TO LOBBY"
+        onPress={() => {
+          setSystemConfirm('lobby')
+        }}
+      />
+      <SystemActionButton
         label="RESTART"
         onPress={() => {
           setSystemConfirm('restart')
@@ -123,18 +130,12 @@ function ActionColumn(): ReactEcs.JSX.Element {
 }
 
 function ConfirmColumn(props: { kind: SystemConfirm }): ReactEcs.JSX.Element {
-  const isRestart = props.kind === 'restart'
-  const headline = isRestart
-    ? 'Wipe ALL progress and start over?'
-    : 'Reload last save and discard local changes?'
-  const sub = isRestart
-    ? 'Your saved game on the server will be deleted. This cannot be undone.'
-    : 'Anything you did since your last Save will be lost.'
+  const { headline, sub, confirmLabel } = describeConfirm(props.kind)
   return (
     <UiEntity
       uiTransform={{
         width: '100%',
-        height: 220,
+        height: 280,
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
@@ -171,21 +172,61 @@ function ConfirmColumn(props: { kind: SystemConfirm }): ReactEcs.JSX.Element {
           inline
         />
         <SystemActionButton
-          label={isRestart ? 'CONFIRM' : 'RELOAD'}
+          label={confirmLabel}
           onPress={() => {
             setSystemConfirm(null)
             setSystemMenuOpen(false)
-            if (isRestart) {
-              void requestWipe()
-            } else {
-              void requestLoad(false)
-            }
+            runConfirmAction(props.kind)
           }}
           inline
         />
       </UiEntity>
     </UiEntity>
   )
+}
+
+function describeConfirm(kind: SystemConfirm): {
+  headline: string
+  sub: string
+  confirmLabel: string
+} {
+  switch (kind) {
+    case 'restart':
+      return {
+        headline: 'Wipe ALL progress and start over?',
+        sub: 'Your saved game on the server will be deleted. This cannot be undone.',
+        confirmLabel: 'CONFIRM'
+      }
+    case 'load':
+      return {
+        headline: 'Reload last save and discard local changes?',
+        sub: 'Anything you did since your last Save will be lost.',
+        confirmLabel: 'RELOAD'
+      }
+    case 'lobby':
+      return {
+        headline: 'Return to the lobby?',
+        sub: 'The current world will be torn down. SAVE first if you want to keep it.',
+        confirmLabel: 'RETURN'
+      }
+    default:
+      // Unreachable — ConfirmColumn is only rendered when confirm !== null.
+      return { headline: '', sub: '', confirmLabel: '' }
+  }
+}
+
+function runConfirmAction(kind: SystemConfirm): void {
+  switch (kind) {
+    case 'restart':
+      void requestWipe()
+      return
+    case 'load':
+      void requestLoad(false)
+      return
+    case 'lobby':
+      returnToLobby()
+      return
+  }
 }
 
 function SystemActionButton(props: {

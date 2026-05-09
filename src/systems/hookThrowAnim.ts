@@ -4,7 +4,8 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import {
   getHeldItemEntity,
   getHeldItemKind,
-  getHeldItemRest
+  getHeldItemRest,
+  isHeldViewmodelHidden
 } from '../factories/heldItem'
 import { getThrowChargeT, isHookInFlight } from './hookThrower'
 
@@ -26,6 +27,10 @@ function easeOutQuad(t: number): number {
 export function hookThrowAnimSystem(_dt: number): void {
   const entity = getHeldItemEntity()
   if (entity === null) return
+
+  // While the lobby gate keeps the viewmodel stashed, leave visibility
+  // alone — we'd otherwise re-show the hidden hook every frame.
+  if (isHeldViewmodelHidden()) return
 
   const isHookHeld = getHeldItemKind() === 'hook'
   const inFlight = isHookInFlight()

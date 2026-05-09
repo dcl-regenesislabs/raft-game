@@ -32,6 +32,14 @@ export function getDestroyHoverEntity(): Entity | null {
   return destroyHoverEntity
 }
 
+// Wipes the cached hover ref + raycast registration so the BACK TO
+// LOBBY sweep can destroy platforms without leaving a stale entity id
+// pointing into a now-empty engine.
+export function resetRaftDestructionState(): void {
+  unregisterCameraForwardRaycast()
+  destroyHoverEntity = null
+}
+
 export function enterDestroying(): void {
   for (const [entity] of engine.getEntitiesWith(Platform)) {
     if (MainPlatform.getOrNull(entity) !== null) continue

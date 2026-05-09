@@ -85,6 +85,12 @@ let heldKind: HeldItemKind = 'hook'
 // Active food id while heldKind === 'food'. Used by the eat system so it
 // knows which food to consume from the inventory. Null otherwise.
 let heldFoodId: string | null = null
+// Global hide flag. While true, both viewmodel children stay invisible
+// regardless of which kind is "equipped" — the lobby uses this so the
+// startup HOOK doesn't render under the title overlay. Item-swap calls
+// (setHeldItem/Food/Cup) still update heldKind, so unhiding restores
+// the right child.
+let viewmodelHidden = false
 
 export function createHeldItem(initial: HeldItemKind = 'hook'): Entity {
   // Tool child — carries the GLB. Pose is set per-tool by setHeldItem.
@@ -130,10 +136,9 @@ export function setHeldItem(kind: HeldItemKind): void {
   const cfg = HELD_ITEMS[kind]
   GltfContainer.createOrReplace(toolEntity, { src: cfg.src })
   applyRestPose(toolEntity, cfg)
-  setVisible(toolEntity, true)
-  setVisible(spriteEntity, false)
   heldKind = kind
   heldFoodId = null
+  applyKindVisibility()
 }
 
 // Equip a food item as a Sprite3D (textured plane) parented to the camera.
@@ -146,10 +151,9 @@ export function setHeldFood(foodId: string, texture: string): void {
   applySpriteTexture(spriteEntity, texture)
   applyRestPose(spriteEntity, HELD_ITEMS.food)
   clearToolGlb(toolEntity)
-  setVisible(toolEntity, false)
-  setVisible(spriteEntity, true)
   heldKind = 'food'
   heldFoodId = foodId
+  applyKindVisibility()
 }
 
 // Equip a container (cup / saltWater / freshWater) as a Sprite3D. Same
@@ -163,10 +167,34 @@ export function setHeldCup(containerId: string, texture: string): void {
   applySpriteTexture(spriteEntity, texture)
   applyRestPose(spriteEntity, HELD_ITEMS.cup)
   clearToolGlb(toolEntity)
-  setVisible(toolEntity, false)
-  setVisible(spriteEntity, true)
   heldKind = 'cup'
   heldFoodId = containerId
+  applyKindVisibility()
+}
+
+// Lobby uses this to stash the viewmodel under the startup overlay so
+// the seeded HOOK doesn't peek through. While hidden, both viewmodel
+// children stay invisible across item swaps; unhiding re-shows the
+// child that matches the current heldKind.
+export function setHeldViewmodelHidden(hidden: boolean): void {
+  viewmodelHidden = hidden
+  applyKindVisibility()
+}
+
+export function isHeldViewmodelHidden(): boolean {
+  return viewmodelHidden
+}
+
+function applyKindVisibility(): void {
+  if (toolEntity === null || spriteEntity === null) return
+  if (viewmodelHidden) {
+    setVisible(toolEntity, false)
+    setVisible(spriteEntity, false)
+    return
+  }
+  const isSprite = heldKind === 'food' || heldKind === 'cup'
+  setVisible(toolEntity, !isSprite)
+  setVisible(spriteEntity, isSprite)
 }
 
 // Returns whichever child is currently active so the sway / gesture
@@ -179,6 +207,15 @@ export function setHeldCup(containerId: string, texture: string): void {
 export function getHeldItemEntity(): Entity | null {
   if (heldKind === 'food' || heldKind === 'cup') return spriteEntity
   return toolEntity
+}
+
+// Both camera-parented children that make up the held viewmodel. Used by
+// the BACK TO LOBBY sweep to preserve them — they're attached to
+// engine.CameraEntity so swapping them out would force a re-create on
+// every lobby return. Either entry may be null if createHeldItem has
+// not yet run.
+export function getHeldItemViewmodelEntities(): readonly (Entity | null)[] {
+  return [toolEntity, spriteEntity]
 }
 
 export function getHeldItemKind(): HeldItemKind {
