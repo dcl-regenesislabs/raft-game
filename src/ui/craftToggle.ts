@@ -6,6 +6,7 @@
 import { setCookOpen } from './cookToggle'
 import { setInventoryOpen } from './inventoryToggle'
 import { closeStorageMenu, isStorageOpen } from './storageToggle'
+import { setSystemMenuOpen } from './systemSession'
 import { CRAFTABLE_ITEMS } from './craftableItems'
 
 const PRESS_DURATION_S = 0.32
@@ -40,6 +41,7 @@ export function toggleCraft(): void {
     setInventoryOpen(false)
     setCookOpen(false)
     if (isStorageOpen()) closeStorageMenu()
+    setSystemMenuOpen(false)
   }
 }
 

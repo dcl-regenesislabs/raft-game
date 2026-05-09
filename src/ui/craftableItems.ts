@@ -29,7 +29,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'ROPE',
     description:
       'Two handfuls of seaweed twisted into a length of rope. The backbone of every tool you\'ll build.',
-    texture: 'images/hud/items/item-05.png',
+    texture: 'images/hud/items/rope.png',
     cost: [
       { materialId: 'plants', amount: 2 }
     ],
@@ -40,7 +40,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'HAMMER',
     description:
       'A sturdy building hammer for raising platforms and lashing your raft together.',
-    texture: 'images/hud/items/item-01.png',
+    texture: 'images/hud/items/hammer.png',
     cost: [
       { materialId: 'wood', amount: 4 },
       { materialId: 'rope', amount: 2 }
@@ -51,7 +51,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'PLATFORM',
     description:
       'A wooden raft tile. Place it next to an existing platform to expand your raft.',
-    texture: 'images/hud/items/item-20.png',
+    texture: 'images/hud/items/raft_v2.png',
     cost: [
       { materialId: 'wood', amount: 2 },
       { materialId: 'plastic', amount: 2 },
@@ -64,7 +64,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'WOODEN SPEAR',
     description:
       'A pointed wooden shaft for warding off circling sharks at close range.',
-    texture: 'images/hud/items/item-19.png',
+    texture: 'images/hud/items/spear.png',
     cost: [
       { materialId: 'wood', amount: 8 },
       { materialId: 'rope', amount: 3 }
@@ -75,7 +75,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'WATER PURIFIER',
     description:
       'Boils sea water through layers of rope-woven mesh and salvaged plastic to make it drinkable.',
-    texture: 'images/hud/items/item-06.png',
+    texture: 'images/hud/items/water-purifier.png',
     cost: [
       { materialId: 'wood', amount: 6 },
       { materialId: 'rope', amount: 5 },
@@ -88,7 +88,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'GRILL',
     description:
       'A scrap-metal cooking station. Char fish and meat into proper meals.',
-    texture: 'images/hud/items/item-07.png',
+    texture: 'images/hud/items/grill.png',
     cost: [
       { materialId: 'metal', amount: 3 },
       { materialId: 'wood', amount: 6 },
@@ -100,7 +100,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'FISHING ROD',
     description:
       'A real rod with a long line. Casts further than the throw hook and pulls in larger fish.',
-    texture: 'images/hud/items/item-15.png',
+    texture: 'images/hud/items/fishing-rod.png',
     cost: [
       { materialId: 'wood', amount: 6 },
       { materialId: 'rope', amount: 8 }
@@ -111,7 +111,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'KNIFE',
     description:
       'A honed metal blade for gutting fish, butchering meat, and cutting rope.',
-    texture: 'images/hud/items/item-16.png',
+    texture: 'images/hud/items/knife.png',
     cost: [
       { materialId: 'wood', amount: 2 },
       { materialId: 'metal', amount: 8 }
@@ -122,7 +122,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'CUP',
     description:
       'A simple vessel carved from wood and lined with plastic. Holds water and other liquids.',
-    texture: 'images/hud/items/item-09.png',
+    texture: 'images/hud/items/cup.png',
     cost: [
       { materialId: 'wood', amount: 2 },
       { materialId: 'plastic', amount: 2 }

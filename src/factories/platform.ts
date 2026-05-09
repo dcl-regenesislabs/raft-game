@@ -23,6 +23,15 @@ export const PLATFORM_SIZE_Z = 3
 export const PLATFORM_COLOR = Color4.create(0.45, 0.30, 0.18, 1) // walnut wood
 export const PLATFORM_DESTROY_TINT = Color4.create(0.85, 0.18, 0.18, 1) // angry red
 
+// World-meter footprint of the raft GLB child. Smaller than PLATFORM_SIZE_X
+// so the visible deck reads as a single tile while the (3×3) collider stays
+// authoritative for grid math. Shared with the spectral placement ghost so
+// preview and committed raft cannot drift.
+export const RAFT_VISUAL_SIZE = 1.6
+// Vertical nudge (world meters) applied to the raft visual. Negative sinks
+// the deck so it flushes with the player walk surface above the collider.
+export const RAFT_VISUAL_Y_OFFSET = -0.3
+
 export function computeGridOrigin(parcelGrid: number): Vector3 {
   const halfExtent = (parcelGrid * PARCEL_SIZE_M) / 2
   return Vector3.create(halfExtent, WATER_LEVEL, halfExtent)
@@ -79,23 +88,19 @@ export function createPlatform(
   const visual = engine.addEntity()
   // Cancel the parent's non-uniform (X, Y, Z) = (3, 0.3, 3) scale, then apply
   // RAFT_VISUAL_SIZE so the model renders proportionally at the target world
-  // size regardless of the parent's footprint scale.
-  const visualSize = 1.7
-  // World-space vertical nudge (meters). Negative = sink the raft slightly so
-  // its deck flushes with the player walk surface. Divided by parent Y scale
-  // because position is in the parent's local space.
-  const visualYOffsetMeters = -0.15
+  // size regardless of the parent's footprint scale. Position divides by
+  // parent Y scale because local-space coordinates inherit it.
   Transform.create(visual, {
     parent: platform,
-    position: Vector3.create(0, visualYOffsetMeters / PLATFORM_SIZE_Y, 0),
+    position: Vector3.create(0, RAFT_VISUAL_Y_OFFSET / PLATFORM_SIZE_Y, 0),
     rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
     scale: Vector3.create(
-      visualSize / PLATFORM_SIZE_X,
-      visualSize / PLATFORM_SIZE_Y,
-      visualSize / PLATFORM_SIZE_Z
+      RAFT_VISUAL_SIZE / PLATFORM_SIZE_X,
+      RAFT_VISUAL_SIZE / PLATFORM_SIZE_Y,
+      RAFT_VISUAL_SIZE / PLATFORM_SIZE_Z
     )
   })
-  GltfContainer.create(visual, { src: 'assets/scene/items/raft.glb' })
+  GltfContainer.create(visual, { src: 'assets/scene/items/raft_v2.glb' })
 
   Platform.create(platform, { gridX, gridZ })
   if (isMain) MainPlatform.create(platform)

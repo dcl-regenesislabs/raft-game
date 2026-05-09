@@ -297,6 +297,37 @@ export function getAllCollected(): ReadonlyMap<string, number> {
   return collectedCounts
 }
 
+// Save-system snapshot of the per-id collected tally. Pure data — the
+// hot-bar selection and press-pulse timers are session UI state and are
+// not persisted. The hot-bar selection IS persisted (see
+// `serializeSelectedSlot`) because losing your equipped item across
+// reloads would feel broken.
+export function serializeInventoryCounts(): Array<{ id: string; count: number }> {
+  const out: Array<{ id: string; count: number }> = []
+  for (const [id, count] of collectedCounts) {
+    if (count > 0) out.push({ id, count })
+  }
+  return out
+}
+
+export function hydrateInventoryCounts(
+  entries: ReadonlyArray<{ id: string; count: number }>
+): void {
+  collectedCounts.clear()
+  for (const { id, count } of entries) {
+    if (count > 0) collectedCounts.set(id, count)
+  }
+}
+
+export function serializeSelectedSlot(): number {
+  return selected
+}
+
+export function hydrateSelectedSlot(index: number): void {
+  if (index < 0 || index >= SLOT_COUNT) return
+  selected = index
+}
+
 // Wipes the collected-counts ledger and snaps the bottom-bar selection
 // back to slot 0. Paired with `resetInventoryLayout()` for the death-screen
 // Play Again flow — the inventory layout reset would leave stale counts

@@ -1,5 +1,8 @@
 import { Entity, SkyboxTime, engine } from '@dcl/sdk/ecs'
+import { isServer } from '@dcl/sdk/network'
 
+import { initSaveClient, saveClientTickSystem } from './client/saveClient'
+import { runServer } from './server/server'
 import { STORAGE_MAX_STACK, StorageContents } from './components'
 
 import {
@@ -56,11 +59,20 @@ import { inventoryToggleResetSystem } from './ui/inventoryToggle'
 import { tickItemReceivedNotification } from './ui/itemReceivedNotification'
 import { tickNotification } from './ui/notification'
 import { storageToggleResetSystem } from './ui/storageToggle'
+import { systemToggleTickSystem } from './ui/systemToggle'
 import { pressPulseTickSystem } from './ui/pressPulse'
 import { purifySessionTickSystem } from './ui/purifySession'
 import { worldClickGateResetSystem } from './ui/worldClickGate'
 
 export async function main(): Promise<void> {
+  // Authoritative server runs the same entry point headlessly. It only
+  // needs the save/load message handlers — none of the visual / input /
+  // simulation systems below should run server-side, so we bail out
+  // immediately after wiring the room.
+  if (isServer()) {
+    runServer()
+    return
+  }
   // Detect which deployment we're running in. raft.dcl.eth is the FULL
   // 50x50 game; everything else (italy2026 demo, local preview) gets the
   // 5x5 demo layout. configureGridOrigin must run before any factory below
@@ -116,6 +128,7 @@ export async function main(): Promise<void> {
   engine.addSystem(inventoryToggleResetSystem)
   engine.addSystem(craftToggleResetSystem)
   engine.addSystem(storageToggleResetSystem)
+  engine.addSystem(systemToggleTickSystem)
   engine.addSystem(gameOverInputLockSystem)
   engine.addSystem(pressPulseTickSystem)
   engine.addSystem(tickNotification)
@@ -128,6 +141,12 @@ export async function main(): Promise<void> {
   // independent state.
   engine.addSystem(actionButtonResetSystem)
   engine.addSystem(worldClickGateResetSystem)
+  // Save-system networking: register room listeners once, then run the
+  // tick system that watches for state-sync and auto-loads on the rising
+  // edge. Must come after the gameplay state modules above because the
+  // auto-load mutates them on first sync.
+  initSaveClient()
+  engine.addSystem(saveClientTickSystem)
   setupUi()
 
   if (DEBUG_MODE) {
@@ -171,25 +190,25 @@ function seedDebugStorage(entity: Entity): void {
     { id: 'rope', count: STORAGE_MAX_STACK },
     { id: 'metal', count: STORAGE_MAX_STACK },
     // Crafted placeables / building pieces
-    { id: 'platform', count: 10 },
-    { id: 'grill', count: 10 },
-    { id: 'purifier', count: 10 },
-    { id: 'storage', count: 10 },
+    { id: 'platform', count: STORAGE_MAX_STACK },
+    { id: 'grill', count: STORAGE_MAX_STACK },
+    { id: 'purifier', count: STORAGE_MAX_STACK },
+    { id: 'storage', count: STORAGE_MAX_STACK },
     // Cooking ingredients (the 14 sources documented in COOKING.md)
-    { id: 'sardines', count: 10 },
-    { id: 'mussels', count: 10 },
-    { id: 'clams', count: 10 },
-    { id: 'squid', count: 10 },
-    { id: 'shark_meat', count: 10 },
-    { id: 'seaweed', count: 10 },
-    { id: 'tomatoes', count: 10 },
-    { id: 'garlic', count: 10 },
-    { id: 'sea_salt', count: 10 },
-    { id: 'olive_oil', count: 10 },
-    { id: 'potato', count: 10 },
-    { id: 'crab', count: 10 },
-    { id: 'spaghetti', count: 10 },
-    { id: 'fettuccine', count: 10 }
+    { id: 'sardines', count: STORAGE_MAX_STACK },
+    { id: 'mussels', count: STORAGE_MAX_STACK },
+    { id: 'clams', count: STORAGE_MAX_STACK },
+    { id: 'squid', count: STORAGE_MAX_STACK },
+    { id: 'shark_meat', count: STORAGE_MAX_STACK },
+    { id: 'seaweed', count: STORAGE_MAX_STACK },
+    { id: 'tomatoes', count: STORAGE_MAX_STACK },
+    { id: 'garlic', count: STORAGE_MAX_STACK },
+    { id: 'sea_salt', count: STORAGE_MAX_STACK },
+    { id: 'olive_oil', count: STORAGE_MAX_STACK },
+    { id: 'potato', count: STORAGE_MAX_STACK },
+    { id: 'crab', count: STORAGE_MAX_STACK },
+    { id: 'spaghetti', count: STORAGE_MAX_STACK },
+    { id: 'fettuccine', count: STORAGE_MAX_STACK }
   ]
   const c = StorageContents.getMutable(entity)
   for (let i = 0; i < items.length && i < c.slots.length; i++) {

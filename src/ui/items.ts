@@ -208,7 +208,7 @@ const layout: (ItemDef | null)[] = [
   // allocates fresh slots on first pickup, so crafted hammers/spears and
   // collected grills/purifiers find a home dynamically (leftmost empty
   // slot, which means the bar fills up first).
-  TOOL('hook', 'images/hud/items/item-00.png', 'hook')
+  TOOL('hook', 'images/hud/items/hook.png', 'hook')
 ]
 
 while (layout.length < INVENTORY_TOTAL_SLOTS) layout.push(null)
@@ -226,11 +226,11 @@ export const INVENTORY_LAYOUT: readonly (ItemDef | null)[] = layout
 const MATERIAL_CATALOG: Record<string, ItemDef> = {
   // Wood doubles as the cook menu's fuel — `ingredient: true` so the
   // burner slot accepts it. Other materials never enter the cook flow.
-  wood: MATERIAL('wood', 'images/hud/items/item-02.png', { ingredient: true }),
-  plants: MATERIAL('plants', 'images/hud/items/item-04.png'),
-  plastic: MATERIAL('plastic', 'images/hud/items/item-03.png'),
-  rope: MATERIAL('rope', 'images/hud/items/item-05.png'),
-  metal: MATERIAL('metal', 'images/hud/items/item-08.png'),
+  wood: MATERIAL('wood', 'images/hud/items/wood.png', { ingredient: true }),
+  plants: MATERIAL('plants', 'images/hud/items/plants.png'),
+  plastic: MATERIAL('plastic', 'images/hud/items/plastic.png'),
+  rope: MATERIAL('rope', 'images/hud/items/rope.png'),
+  metal: MATERIAL('metal', 'images/hud/items/metal.png'),
   // Coal is the burned-output of the cook flow: a grill left for 120s+
   // turns its plate into coal. Stackable, not an ingredient (you can't
   // re-cook it back into food). Reuses the world-sprite texture as its
@@ -242,21 +242,21 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   // Tools mirror the starter-layout TOOL defs so a crafted hammer/spear
   // behaves identically to the one the player started with — same icon,
   // same equippable behaviour, same heldKind viewmodel.
-  hammer: TOOL('hammer', 'images/hud/items/item-01.png', 'hammer'),
-  spear: TOOL('spear', 'images/hud/items/item-19.png', 'spear'),
-  platform: CRAFTED_STACK('platform', 'images/hud/items/item-20.png'),
-  purifier: CRAFTED_PLACEABLE('purifier', 'images/hud/items/item-06.png'),
-  grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/item-07.png'),
+  hammer: TOOL('hammer', 'images/hud/items/hammer.png', 'hammer'),
+  spear: TOOL('spear', 'images/hud/items/spear.png', 'spear'),
+  platform: CRAFTED_STACK('platform', 'images/hud/items/raft_v2.png'),
+  purifier: CRAFTED_PLACEABLE('purifier', 'images/hud/items/water-purifier.png'),
+  grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/grill.png'),
   storage: CRAFTED_PLACEABLE('storage', 'images/hud/items/storage.png'),
-  fishingRod: CRAFTED_TOOL_STACK('fishingRod', 'images/hud/items/item-15.png', 'fishingRod'),
-  knife: CRAFTED_STACK('knife', 'images/hud/items/item-16.png'),
-  cup: CRAFTED_CONTAINER('cup', 'images/hud/items/item-09.png'),
+  fishingRod: CRAFTED_TOOL_STACK('fishingRod', 'images/hud/items/fishing-rod.png', 'fishingRod'),
+  knife: CRAFTED_STACK('knife', 'images/hud/items/knife.png'),
+  cup: CRAFTED_CONTAINER('cup', 'images/hud/items/cup.png'),
   // Liquids live in cups: empty cup, salt-water cup, fresh-water cup.
   // Each is a non-stackable container variant — see CRAFTED_CONTAINER
   // above for the mental model. Drinking them is handled by the
   // container-action system, not the food-eat counter.
-  saltWater: CRAFTED_CONTAINER('saltWater', 'images/hud/items/item-21.png'),
-  freshWater: CRAFTED_CONTAINER('freshWater', 'images/hud/items/item-10.png')
+  saltWater: CRAFTED_CONTAINER('saltWater', 'images/hud/items/salt-water.png'),
+  freshWater: CRAFTED_CONTAINER('freshWater', 'images/hud/items/fresh-water.png')
 }
 
 // Cooking ingredients gathered from the four world sources documented in
@@ -436,7 +436,7 @@ export function transmuteSlot(slotIndex: number, newId: string): boolean {
 export function resetInventoryLayout(): void {
   for (let i = 0; i < layout.length; i++) layout[i] = null
   const starters: ItemDef[] = [
-    TOOL('hook', 'images/hud/items/item-00.png', 'hook')
+    TOOL('hook', 'images/hud/items/hook.png', 'hook')
   ]
   // Drop everything from the by-id lookup so stale defs from previously
   // collected materials don't survive the reset; re-seed with the starter
@@ -468,4 +468,37 @@ export function swapInventorySlots(a: number, b: number): void {
 export function clearInventorySlot(slotIndex: number): void {
   if (slotIndex < 0 || slotIndex >= layout.length) return
   layout[slotIndex] = null
+}
+
+// Save-system snapshot of the slot layout — one id per cell, '' for
+// empty slots. We save ids only, not the full ItemDef, because the def
+// is pure catalog data and re-resolves on hydrate via the existing
+// catalog lookups (same path `ensureCollectibleSlot` uses).
+export function serializeInventoryLayout(): string[] {
+  return layout.map((slot) => (slot === null ? '' : slot.id))
+}
+
+export function hydrateInventoryLayout(ids: ReadonlyArray<string>): void {
+  for (let i = 0; i < layout.length; i++) layout[i] = null
+  for (const key of Object.keys(ITEMS_BY_ID)) delete ITEMS_BY_ID[key]
+  const limit = Math.min(ids.length, layout.length)
+  for (let i = 0; i < limit; i++) {
+    const id = ids[i]
+    if (id === '') continue
+    const def =
+      MATERIAL_CATALOG[id] ??
+      CRAFTED_CATALOG[id] ??
+      INGREDIENT_CATALOG[id] ??
+      PLATE_CATALOG[id] ??
+      null
+    if (def === null) {
+      // Unknown id (catalog drift across SDK upgrades or save versions).
+      // Leaving the slot empty is safer than crashing the whole hydrate
+      // path — the count-side ledger will surface the missing item next
+      // time the player picks one up.
+      continue
+    }
+    layout[i] = def
+    ITEMS_BY_ID[def.id] = def
+  }
 }

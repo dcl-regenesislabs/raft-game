@@ -14,6 +14,7 @@ import { setCookOpen } from './cookToggle'
 import { setCraftOpen } from './craftToggle'
 import { setInventoryOpen } from './inventoryToggle'
 import { clearStoragePick } from './storageSession'
+import { setSystemMenuOpen } from './systemSession'
 
 let open = false
 let activeStorage: Entity | null = null
@@ -42,6 +43,7 @@ export function openStorageMenu(entity: Entity): void {
   setInventoryOpen(false)
   setCraftOpen(false)
   setCookOpen(false)
+  setSystemMenuOpen(false)
 }
 
 export function closeStorageMenu(): void {

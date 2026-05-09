@@ -18,6 +18,8 @@ import { NotificationOverlay } from './components/Notification'
 import { RotateButtons } from './components/RotateButtons'
 import { StatsBars } from './components/StatsBars'
 import { StorageMenu } from './components/StorageMenu'
+import { SystemButton } from './components/SystemButton'
+import { SystemMenu } from './components/SystemMenu'
 import { isCookOpen } from './cookToggle'
 import { isCrafting } from './craftSession'
 import { isCraftOpen } from './craftToggle'
@@ -25,6 +27,7 @@ import { isGameOver } from './gameOver'
 import { isInventoryOpen } from './inventoryToggle'
 import { isPurifying } from './purifySession'
 import { isStorageOpen } from './storageToggle'
+import { isSystemMenuOpen } from './systemSession'
 
 // Both platforms use the same 1366×768 virtual canvas (entry-level
 // laptop reference) so a single set of pixel constants in `theme.ts`
@@ -120,16 +123,18 @@ function ui(): ReactEcs.JSX.Element {
         {/* Standalone hot-bar hides while a panel is up — the inventory
             panel and the craft menu both render their own bar attached
             under the inventory grid via <InventoryWithBar/>. */}
-        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && <BottomBar />}
-        {!isCookOpen() && !isStorageOpen() && <StatsBars />}
-        {!isCookOpen() && !isStorageOpen() && <ActionButton />}
+        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <BottomBar />}
+        {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <StatsBars />}
+        {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ActionButton />}
         {!isCookOpen() && !isStorageOpen() && <InventoryButton />}
         {!isCookOpen() && !isStorageOpen() && <CraftButton />}
+        {!isCookOpen() && !isStorageOpen() && <SystemButton />}
         <InventoryPanel />
         <CraftDoubleMenu />
         <CookMenu />
         <StorageMenu />
-        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && <RotateButtons />}
+        <SystemMenu />
+        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <RotateButtons />}
         <ChargeReticle />
         <NotificationOverlay />
         <ItemReceivedOverlay />

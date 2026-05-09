@@ -8,7 +8,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
-import { PLATFORM_SIZE_Y } from './platform'
+import { PLATFORM_SIZE_Y, RAFT_VISUAL_SIZE, RAFT_VISUAL_Y_OFFSET } from './platform'
 
 // Pure opaque colors — the pulse animates hue (dark → light) only.
 const DEFAULT_DIM = Color4.create(0.2, 0.7, 0.3, 1)
@@ -16,12 +16,7 @@ const DEFAULT_BRIGHT = Color4.create(0.5, 1.0, 0.6, 1)
 // Radians per second of the sin() that drives the blink. ~1 Hz pulse.
 const BLINK_RATE = Math.PI * 2
 
-// Mirror createPlatform's visual sizing so the ghost reads as "the same raft."
-// Keep in sync with the visualSize / visualYOffsetMeters constants in
-// platform.ts; if they drift, the preview will desync from the placed raft.
-const RAFT_VISUAL_SIZE = 1.7
-const RAFT_VISUAL_Y_OFFSET = -0.15
-const RAFT_GLB = 'assets/scene/items/raft.glb'
+const RAFT_GLB = 'assets/scene/items/raft_v2.glb'
 
 export type SpectralPalette = {
   dim?: Color4
@@ -44,7 +39,7 @@ const states = new Map<Entity, State>()
 // its own palette and blink phase so multiple ghosts (e.g. a green "valid"
 // preview and a red cursor-follower) can coexist.
 //
-// Visual: GltfContainer with raft.glb, but every node's material is replaced
+// Visual: GltfContainer with the raft GLB, but every node's material is replaced
 // via GltfNodeModifiers with an opaque tinted PBR override. `path: ''` makes
 // the override global.
 export function createSpectralPlatform(palette: SpectralPalette = {}): Entity {

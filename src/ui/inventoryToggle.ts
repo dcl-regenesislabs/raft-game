@@ -17,6 +17,7 @@ import {
   isStorageActionLocked,
   isStorageOpen
 } from './storageToggle'
+import { isSystemMenuOpen, setSystemMenuOpen } from './systemSession'
 
 const PRESS_DURATION_S = 0.32
 const PRESS_PEAK_BONUS = 0.18
@@ -49,6 +50,7 @@ export function isInventoryActionLocked(): boolean {
     isCraftOpen() ||
     isCookOpen() ||
     isStorageActionLocked() ||
+    isSystemMenuOpen() ||
     isCrafting() ||
     isPurifying() ||
     isGameOver()
@@ -80,6 +82,7 @@ export function toggleInventory(): void {
   if (next && isCraftOpen()) setCraftOpen(false)
   if (next && isCookOpen()) setCookOpen(false)
   if (next && isStorageOpen()) closeStorageMenu()
+  if (next && isSystemMenuOpen()) setSystemMenuOpen(false)
 }
 
 // Runs every frame: advances the press-pulse clock, and on any change to
@@ -96,6 +99,7 @@ export function inventoryToggleResetSystem(dt: number): void {
     isCraftOpen() ||
     isCookOpen() ||
     isStorageOpen() ||
+    isSystemMenuOpen() ||
     isCrafting() ||
     isPurifying()
   if (lock === lastModifierApplied) return

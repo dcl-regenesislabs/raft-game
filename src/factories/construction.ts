@@ -23,7 +23,7 @@ export const CONSTRUCTION_KINDS: readonly ConstructionKind[] = ['grill', 'purifi
 
 const SRC: Record<ConstructionKind, string> = {
   grill: 'assets/scene/items/grill.glb',
-  purifier: 'assets/scene/items/purifier.glb',
+  purifier: 'assets/scene/items/purifier_v2.glb',
   storage: 'assets/scene/items/storage.glb'
 }
 
@@ -31,7 +31,7 @@ const SRC: Record<ConstructionKind, string> = {
 // furniture sitting on the raft deck, not dwarfing it.
 const VISUAL_SIZE_M: Record<ConstructionKind, number> = {
   grill: 0.6,
-  purifier: 0.6,
+  purifier: 0.72,
   storage: 0.6
 }
 
@@ -44,7 +44,7 @@ const VISUAL_SIZE_M: Record<ConstructionKind, number> = {
 // placement will visibly jump on commit.
 const DECK_OFFSET_M: Record<ConstructionKind, number> = {
   grill: 0.62,
-  purifier: 0.52,
+  purifier: 0.8,
   storage: 0.4
 }
 

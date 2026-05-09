@@ -13,12 +13,13 @@
     "deploy:demo": "npm run prepare:demo && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org",
     "deploy:full": "npm run prepare:full && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org",
     "upgrade-sdk": "npm install --save-dev @dcl/sdk@latest",
-    "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next"
+    "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next",
+    "server-logs": "sdk-commands sdk-server-logs"
   },
   "devDependencies": {
     "@dcl/asset-packs": "latest",
-    "@dcl/js-runtime": "7.23.1-25397904513.commit-a5e9263",
-    "@dcl/sdk": "next"
+    "@dcl/js-runtime": "7.23.2-25521226778.commit-1828100",
+    "@dcl/sdk": "^7.23.2-25521226778.commit-1828100"
   },
   "engines": {
     "node": ">=16.0.0",

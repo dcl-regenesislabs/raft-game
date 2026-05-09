@@ -43,3 +43,22 @@ export function restoreStat(
   const afterBonus = Math.max(0, Math.min(STAT_OVERCAP_MAX, afterBase + bonus))
   stats[kind] = afterBonus
 }
+
+export interface VitalsSnapshot {
+  life: number
+  hunger: number
+  thirst: number
+}
+
+export function serializeVitals(): VitalsSnapshot {
+  return { life: stats.life, hunger: stats.hunger, thirst: stats.thirst }
+}
+
+// Apply saved vitals. Each value is clamped to [0, STAT_OVERCAP_MAX]
+// directly (rather than going through setStat, which clamps to 1) so
+// over-cap reserves survive a save/load round-trip.
+export function hydrateVitals(snapshot: VitalsSnapshot): void {
+  stats.life = Math.max(0, Math.min(STAT_OVERCAP_MAX, snapshot.life))
+  stats.hunger = Math.max(0, Math.min(STAT_OVERCAP_MAX, snapshot.hunger))
+  stats.thirst = Math.max(0, Math.min(STAT_OVERCAP_MAX, snapshot.thirst))
+}

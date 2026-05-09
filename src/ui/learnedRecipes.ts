@@ -52,3 +52,16 @@ export function resetLearnedRecipes(): void {
   learned.clear()
   seedStarterRecipes()
 }
+
+export function serializeLearnedRecipes(): string[] {
+  return getLearnedRecipeIds()
+}
+
+// Replace the learned set with the saved ids. Always re-seeds the
+// 1-ingredient starters first so the baseline holds even if the saved
+// blob predates a starter recipe being added to the catalog.
+export function hydrateLearnedRecipes(ids: ReadonlyArray<string>): void {
+  learned.clear()
+  seedStarterRecipes()
+  for (const id of ids) learned.add(id)
+}
