@@ -154,11 +154,10 @@ export const CRAFT_BUTTON_RIGHT =
 
 // SYSTEM (save/load/restart) button — same circular frame as the
 // inventory/craft toggles, sits one button-step to the left of the saw
-// so the three top-right buttons read as a single row. No icon asset
-// yet; the button renders a "SYS" text label inside the frame.
+// so the three top-right buttons read as a single row.
 export const SYSTEM_BUTTON_RIGHT =
   CRAFT_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
-export const SYSTEM_BUTTON_LABEL = 'SYS'
+export const SYSTEM_BUTTON_ICON = 'images/hud/icons/settings.png'
 
 // --- Craft double-menu -----------------------------------------------------
 // The list and details panels render centered using the nine-sliced
