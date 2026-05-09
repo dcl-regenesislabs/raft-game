@@ -3,13 +3,14 @@ import {
   BillboardMode,
   Entity,
   Material,
+  MaterialTransparencyMode,
   MeshRenderer,
   TextureFilterMode,
   TextureWrapMode,
   Transform,
   engine
 } from '@dcl/sdk/ecs'
-import { Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 
 // Billboarded sprite of a freshly-caught item, hung on the fishing
 // hook so the catch is visible while the line reels back to the
@@ -34,13 +35,28 @@ export function createFishingCatchSprite(texture: string): Entity {
   })
   MeshRenderer.setPlane(entity)
   Billboard.create(entity, { billboardMode: BillboardMode.BM_ALL })
-  Material.setBasicMaterial(entity, {
+  // PBR with emissive-only albedo preserves the basic-material unlit look
+  // and keeps alpha-test transparency working on the unity-desktop client
+  // (basic materials show a black background there).
+  Material.setPbrMaterial(entity, {
     texture: Material.Texture.Common({
       src: texture,
       filterMode: TextureFilterMode.TFM_BILINEAR,
       wrapMode: TextureWrapMode.TWM_CLAMP
     }),
+    emissiveTexture: Material.Texture.Common({
+      src: texture,
+      filterMode: TextureFilterMode.TFM_BILINEAR,
+      wrapMode: TextureWrapMode.TWM_CLAMP
+    }),
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 1),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
     alphaTest: 0.5,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
     castShadows: false
   })
   return entity

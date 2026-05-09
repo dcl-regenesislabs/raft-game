@@ -3,13 +3,14 @@ import {
   BillboardMode,
   Entity,
   Material,
+  MaterialTransparencyMode,
   MeshRenderer,
   TextureFilterMode,
   TextureWrapMode,
   Transform,
   engine
 } from '@dcl/sdk/ecs'
-import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { GrillFire } from '../components'
 import { getCookableById, type CookableItem } from '../ui/cookableItems'
@@ -95,13 +96,28 @@ export function createFlameSprite(platform: Entity, yawDeg: number): Entity {
     scale: Vector3.create(GRILL_FIRE_WORLD_W, GRILL_FIRE_WORLD_H, GRILL_FIRE_WORLD_W)
   })
   Billboard.create(sprite, { billboardMode: BillboardMode.BM_Y })
-  Material.setBasicMaterial(sprite, {
+  // PBR with emissive-only albedo keeps the basic-material unlit look while
+  // honouring alpha-test transparency on the unity-desktop client (basic
+  // materials render with a black background there).
+  Material.setPbrMaterial(sprite, {
     texture: Material.Texture.Common({
       src: GRILL_FIRE_TEXTURE,
       filterMode: TextureFilterMode.TFM_BILINEAR,
       wrapMode: TextureWrapMode.TWM_CLAMP
     }),
+    emissiveTexture: Material.Texture.Common({
+      src: GRILL_FIRE_TEXTURE,
+      filterMode: TextureFilterMode.TFM_BILINEAR,
+      wrapMode: TextureWrapMode.TWM_CLAMP
+    }),
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 1),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
     alphaTest: 0.5,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
     castShadows: false
   })
   GrillFire.create(sprite, {
@@ -165,13 +181,21 @@ export function createPlateSprite(
   )
 }
 
-// Replaces the basic material on an existing flat sprite — used to
-// swap the plate texture to coal at the burn transition without
-// rebuilding the entity.
+// Replaces the material on an existing flat sprite — used to swap the
+// plate texture to coal at the burn transition without rebuilding the
+// entity.
 export function setSpriteTexture(entity: Entity, texture: string): void {
-  Material.setBasicMaterial(entity, {
+  Material.setPbrMaterial(entity, {
     texture: Material.Texture.Common({ src: texture }),
+    emissiveTexture: Material.Texture.Common({ src: texture }),
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 1),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
     alphaTest: 0.5,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
     castShadows: false
   })
 }
@@ -210,9 +234,17 @@ function spawnFlatSprite(
     scale: Vector3.create(sizeM, sizeM, 1)
   })
   MeshRenderer.setPlane(entity)
-  Material.setBasicMaterial(entity, {
+  Material.setPbrMaterial(entity, {
     texture: Material.Texture.Common({ src: texture }),
+    emissiveTexture: Material.Texture.Common({ src: texture }),
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 1),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
     alphaTest: 0.5,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
     castShadows: false
   })
   return entity

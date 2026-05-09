@@ -4,7 +4,7 @@
   "display": {
     "title": "Raft Game",
     "description": "Survive on a raft in Decentraland — fish, scavenge, craft, and build.",
-    "navmapThumbnail": "images/RAFT_GAME.png",
+    "navmapThumbnail": "images/raft_game.png",
     "favicon": "favicon_asset"
   },
   "owner": "Kuruk",

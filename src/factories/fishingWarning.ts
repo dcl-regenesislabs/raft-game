@@ -3,6 +3,7 @@ import {
   BillboardMode,
   Entity,
   Material,
+  MaterialTransparencyMode,
   MeshRenderer,
   TextureFilterMode,
   TextureWrapMode,
@@ -10,7 +11,7 @@ import {
   VisibilityComponent,
   engine
 } from '@dcl/sdk/ecs'
-import { Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 
 // Billboarded "fish biting!" sprite that hovers over the floating
 // fishing line during the FishingPhase.Biting reaction window.
@@ -30,13 +31,28 @@ export function createFishingWarningSprite(): Entity {
   })
   MeshRenderer.setPlane(entity)
   Billboard.create(entity, { billboardMode: BillboardMode.BM_ALL })
-  Material.setBasicMaterial(entity, {
+  // PBR with emissive-only albedo preserves the basic-material unlit look
+  // and keeps alpha-test transparency working on the unity-desktop client
+  // (basic materials show a black background there).
+  Material.setPbrMaterial(entity, {
     texture: Material.Texture.Common({
       src: WARNING_TEXTURE,
       filterMode: TextureFilterMode.TFM_BILINEAR,
       wrapMode: TextureWrapMode.TWM_CLAMP
     }),
+    emissiveTexture: Material.Texture.Common({
+      src: WARNING_TEXTURE,
+      filterMode: TextureFilterMode.TFM_BILINEAR,
+      wrapMode: TextureWrapMode.TWM_CLAMP
+    }),
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 1),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
     alphaTest: 0.5,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
     castShadows: false
   })
   VisibilityComponent.create(entity, { visible: false })

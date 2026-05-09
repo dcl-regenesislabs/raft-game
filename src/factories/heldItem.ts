@@ -3,12 +3,13 @@ import {
   GltfContainer,
   GltfNodeModifiers,
   Material,
+  MaterialTransparencyMode,
   MeshRenderer,
   Transform,
   VisibilityComponent,
   engine
 } from '@dcl/sdk/ecs'
-import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
 export type HeldItemKind = 'hook' | 'hammer' | 'spear' | 'fishingRod' | 'food' | 'cup'
 
@@ -200,10 +201,21 @@ function applyRestPose(entity: Entity, cfg: HeldItemConfig): void {
 }
 
 function applySpriteTexture(entity: Entity, texture: string): void {
-  Material.setBasicMaterial(entity, {
+  // PBR with the texture on emissive (and a black albedo) keeps the
+  // unlit basic-material look, while transparencyMode = MTM_ALPHA_TEST
+  // ensures alpha is honoured on the unity-desktop client (basic
+  // materials render with a black background there).
+  Material.setPbrMaterial(entity, {
     texture: Material.Texture.Common({ src: texture }),
-    // Cutout transparency keeps the plane silhouette tight to the icon.
+    emissiveTexture: Material.Texture.Common({ src: texture }),
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 1),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
     alphaTest: 0.5,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
     castShadows: false
   })
 }

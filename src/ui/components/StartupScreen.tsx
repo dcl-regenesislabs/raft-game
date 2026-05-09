@@ -5,9 +5,11 @@ import { requestLoad } from '../../client/saveClient'
 import { IS_PRODUCTION } from '../../config/env'
 import { applyDebugSeeds } from '../../runtime/debugSeeds'
 import {
-  dismissStartupGate,
+  getStartupGateOpacity,
   hasSavedGame,
-  isSaveProbeComplete
+  isSaveProbeComplete,
+  isStartupGateExiting,
+  startStartupGateExit
 } from '../startupGate'
 import {
   CRAFT_BUTTON_FG,
@@ -15,32 +17,37 @@ import {
   CRAFT_BUTTON_TEXTURE
 } from '../theme'
 
-// Full-screen title overlay shown on every scene boot. The scene
-// thumbnail (which already has the RAFT GAME wordmark + characters
-// burned in) is the background; the action buttons sit at the bottom.
-// The LOAD button is dimmed and non-interactive until the save-
-// existence probe (in saveClient) confirms a save is available, and
-// reuses its own label as the "checking" indicator.
+// Full-screen title overlay shown on every scene boot. A solid black
+// backdrop sits behind a centered RAFT GAME logo (transparent
+// background) and the action buttons. Pressing a button starts an
+// exit fade — the entire screen fades from opaque to transparent in
+// lockstep, and the deferred action (load / debug seed / nothing) runs
+// after the fade so the scene reveal isn't muddied by mid-fade state
+// changes.
 
-// Hero art shared with the navmap thumbnail (scene.json). Source is
-// 1672×941 (~16:9); the 1366×768 virtual canvas is also 16:9, so
-// 'stretch' fills the frame without visible distortion.
-const HERO_TEXTURE = 'images/RAFT_GAME.png'
+// Logo art with the wordmark on a transparent background — the screen
+// backdrop shows through. Source is 1672×941 with the near-black pixels
+// knocked out via ImageMagick fuzz. Rendered at fixed size so the
+// wordmark doesn't bloat to fill the viewport.
+const LOGO_TEXTURE = 'images/raft_game_logo.png'
+const LOGO_W = 720
+const LOGO_H = 405
 const BUTTON_W = 360
 const BUTTON_H = CRAFT_BUTTON_H
 // Same nine-slice fractions as the system menu buttons so the painted
 // bevels keep their pixel size at this larger width.
 const BUTTON_SLICE = { top: 0.2, right: 0.16, bottom: 0.2, left: 0.16 }
-// Dim color tints applied to the LOAD button when no save exists.
-const BUTTON_DIM_TINT = Color4.create(1, 1, 1, 0.35)
-const BUTTON_DIM_LABEL = Color4.create(1, 1, 1, 0.5)
-// Pulled in from the canvas bottom so the button column doesn't kiss
-// the edge — leaves a strip of the raft / water visible underneath.
-const BUTTONS_BOTTOM_PADDING = 48
+// Multiplier on alpha for the LOAD button when no save exists or while
+// the probe is still in flight. Combined with the gate's exit fade so
+// dim and exit compose smoothly.
+const BUTTON_DIM_FACTOR = 0.35
+const BUTTON_DIM_LABEL_FACTOR = 0.5
 
 export function StartupScreen(): ReactEcs.JSX.Element {
   const probeDone = isSaveProbeComplete()
   const canLoad = probeDone && hasSavedGame()
+  const exiting = isStartupGateExiting()
+  const opacity = getStartupGateOpacity()
   // While the probe is in flight the load button doubles as the
   // status indicator — saves the player a separate "checking…" line.
   const loadLabel = probeDone ? 'LOAD WORLD' : 'CHECKING SAVE…'
@@ -53,34 +60,50 @@ export function StartupScreen(): ReactEcs.JSX.Element {
         height: '100%',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'flex-end',
-        padding: { bottom: BUTTONS_BOTTOM_PADDING }
+        justifyContent: 'center'
       }}
-      uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: HERO_TEXTURE }
-      }}
+      uiBackground={{ color: Color4.create(0, 0, 0, opacity) }}
     >
+      <UiEntity
+        uiTransform={{
+          width: LOGO_W,
+          height: LOGO_H,
+          margin: { bottom: 16 }
+        }}
+        uiBackground={{
+          textureMode: 'stretch',
+          texture: { src: LOGO_TEXTURE },
+          color: Color4.create(1, 1, 1, opacity)
+        }}
+      />
       <StartupActionButton
         label="NEW WORLD"
+        opacity={opacity}
+        disabled={exiting}
         onPress={() => {
-          dismissStartupGate()
+          startStartupGateExit(() => {})
         }}
       />
       <StartupActionButton
         label={loadLabel}
+        opacity={opacity}
         enabled={canLoad}
+        disabled={exiting}
         onPress={() => {
-          dismissStartupGate()
-          void requestLoad(false)
+          startStartupGateExit(() => {
+            void requestLoad(false)
+          })
         }}
       />
       {!IS_PRODUCTION && (
         <StartupActionButton
           label="NEW WORLD - DEBUG"
+          opacity={opacity}
+          disabled={exiting}
           onPress={() => {
-            applyDebugSeeds()
-            dismissStartupGate()
+            startStartupGateExit(() => {
+              applyDebugSeeds()
+            })
           }}
         />
       )}
@@ -91,9 +114,15 @@ export function StartupScreen(): ReactEcs.JSX.Element {
 function StartupActionButton(props: {
   label: string
   onPress: () => void
+  opacity: number
   enabled?: boolean
+  disabled?: boolean
 }): ReactEcs.JSX.Element {
   const enabled = props.enabled !== false
+  const interactive = enabled && props.disabled !== true
+  // Compose the gate's overall fade with the per-button dim state.
+  const tintAlpha = props.opacity * (enabled ? 1 : BUTTON_DIM_FACTOR)
+  const labelAlpha = props.opacity * (enabled ? 1 : BUTTON_DIM_LABEL_FACTOR)
   return (
     <UiEntity
       uiTransform={{
@@ -107,14 +136,19 @@ function StartupActionButton(props: {
         textureMode: 'nine-slices',
         texture: { src: CRAFT_BUTTON_TEXTURE },
         textureSlices: BUTTON_SLICE,
-        color: enabled ? undefined : BUTTON_DIM_TINT
+        color: Color4.create(1, 1, 1, tintAlpha)
       }}
-      onMouseDown={enabled ? props.onPress : undefined}
+      onMouseDown={interactive ? props.onPress : undefined}
     >
       <Label
         value={props.label}
         fontSize={20}
-        color={enabled ? CRAFT_BUTTON_FG : BUTTON_DIM_LABEL}
+        color={Color4.create(
+          CRAFT_BUTTON_FG.r,
+          CRAFT_BUTTON_FG.g,
+          CRAFT_BUTTON_FG.b,
+          enabled ? props.opacity : labelAlpha
+        )}
         textAlign="middle-center"
         uiTransform={{ width: '100%', height: '100%' }}
       />

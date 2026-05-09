@@ -53,6 +53,7 @@ import { dragResetSystem } from './ui/inventoryDrag'
 import { inventoryToggleResetSystem } from './ui/inventoryToggle'
 import { tickItemReceivedNotification } from './ui/itemReceivedNotification'
 import { tickNotification } from './ui/notification'
+import { preloadHudAssets } from './ui/hudPreload'
 import { startupGateInputLockSystem } from './ui/startupGate'
 import { storageToggleResetSystem } from './ui/storageToggle'
 import { systemToggleTickSystem } from './ui/systemToggle'
@@ -81,6 +82,11 @@ export async function main(): Promise<void> {
   // lighting stays consistent across long play sessions and screenshots.
   // Works in both local preview and Worlds deployments.
   SkyboxTime.create(engine.RootEntity, { fixedTime: 43200 })
+
+  // Kick off HUD texture preload as early as possible so the renderer
+  // warms its cache while the startup gate is up. Fire-and-forget — no
+  // gameplay system blocks on it.
+  preloadHudAssets()
 
   createFirstPersonArea(parcelGrid)
   createHeldItem('hook')
