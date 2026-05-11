@@ -2,8 +2,9 @@
 // tools and spawns the 8-platform ring around the main raft (grill
 // east, purifier west, fully-stocked storage chest north). Wired to
 // the NEW GAME - DEBUG button on the lobby information panel, which
-// is shown in every build (including production) so playtesters can
-// always reach a stocked starting state.
+// is shown when `DEBUG_MODE` is true in `config/gameConfig.ts` —
+// independent of IS_PRODUCTION, so playtesters can keep it on in
+// production builds and turn it off for a clean public release.
 //
 // Pulled out of `main()` so the regular NEW GAME path leaves the player
 // with a genuinely clean state in dev too: only the main platform, an

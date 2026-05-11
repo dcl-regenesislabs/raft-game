@@ -8,19 +8,17 @@
 //   - it would make sense to expose to a hot-reload / config-file flow,
 //   - or it's referenced by more than one system.
 
-import { IS_PRODUCTION } from './env'
-
 // --- Debug -----------------------------------------------------------------
-// Master debug switch. When effective:
-//   - Inventory is pre-seeded with every craftable / material / food so
-//     recipes can be exercised without grinding.
-//   - 8 platforms are spawned around the main raft, with a grill and a
-//     water purifier already placed on two of them.
+// Master debug switch. When true:
+//   - The DEBUG button is shown on the lobby information panel.
+//   - Picking it pre-seeds the inventory with every craftable / material
+//     / food and spawns the 8-platform ring around the main raft (grill
+//     east, water purifier west, fully-stocked storage chest north).
 //
-// AND-ed with `!IS_PRODUCTION` so deploys force this off regardless of
-// what's committed here — the deploy npm scripts flip IS_PRODUCTION to
-// true, which neutralises any debug aids the dev forgot to disable.
-export const DEBUG_MODE = true && !IS_PRODUCTION
+// Standalone toggle — independent of IS_PRODUCTION. Flip to `false`
+// before deploying if you want a clean lobby with only NEW WORLD and
+// LOAD WORLD visible to players.
+export const DEBUG_MODE = true
 
 // --- Shark director --------------------------------------------------------
 // Initial patrol population. The director scales up/down each frame from

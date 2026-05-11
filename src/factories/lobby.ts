@@ -20,6 +20,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
+import { DEBUG_MODE } from '../config/gameConfig'
 import {
   LobbyButton,
   LobbyButtonHover,
@@ -411,7 +412,9 @@ function buildActionPanel(cx: number, cz: number): void {
   const baseY = LOBBY_DECK_Y + PANEL_LIFT
   spawnButton('NEW', 'NEW WORLD', panelX, baseY - 0.075, buttonZ, BIG_BUTTON)
   spawnButton('LOAD', 'LOAD WORLD', panelX, baseY - 0.825, buttonZ, BIG_BUTTON)
-  spawnButton('DEBUG', 'DEBUG', panelX, baseY - 1.28, buttonZ, SMALL_BUTTON)
+  if (DEBUG_MODE) {
+    spawnButton('DEBUG', 'DEBUG', panelX, baseY - 1.28, buttonZ, SMALL_BUTTON)
+  }
 }
 
 interface ButtonShape {
