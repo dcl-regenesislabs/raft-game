@@ -180,6 +180,15 @@ export const INVENTORY_TOTAL_SLOTS = 30
 export const INVENTORY_GRID_SLOT_COUNT =
   INVENTORY_TOTAL_SLOTS - BOTTOM_BAR_SLOT_COUNT
 
+// Items the player starts with on a fresh game. Pulled into its own
+// catalog so the hydrate path can resolve them on load — they aren't in
+// MATERIAL_CATALOG / CRAFTED_CATALOG / INGREDIENT_CATALOG / PLATE_CATALOG,
+// and without an entry here the save round-trip would silently drop the
+// starter hook as "unknown id".
+const STARTER_TOOL_CATALOG: Record<string, ItemDef> = {
+  hook: TOOL('hook', 'images/hud/items/hook.png', 'hook')
+}
+
 const layout: (ItemDef | null)[] = [
   // ----- Bottom bar (0–4) -----
   // The hook is the player's only starter tool — every other slot is
@@ -187,7 +196,7 @@ const layout: (ItemDef | null)[] = [
   // allocates fresh slots on first pickup, so crafted hammers/spears and
   // collected grills/purifiers find a home dynamically (leftmost empty
   // slot, which means the bar fills up first).
-  TOOL('hook', 'images/hud/items/hook.png', 'hook')
+  STARTER_TOOL_CATALOG.hook
 ]
 
 while (layout.length < INVENTORY_TOTAL_SLOTS) layout.push(null)
@@ -341,6 +350,7 @@ export function getCatalogItem(id: string): ItemDef | null {
     CRAFTED_CATALOG[id] ??
     INGREDIENT_CATALOG[id] ??
     PLATE_CATALOG[id] ??
+    STARTER_TOOL_CATALOG[id] ??
     null
   )
 }
@@ -414,9 +424,7 @@ export function transmuteSlot(slotIndex: number, newId: string): boolean {
 // player restarts with the same baseline a fresh scene load gives them.
 export function resetInventoryLayout(): void {
   for (let i = 0; i < layout.length; i++) layout[i] = null
-  const starters: ItemDef[] = [
-    TOOL('hook', 'images/hud/items/hook.png', 'hook')
-  ]
+  const starters: ItemDef[] = [STARTER_TOOL_CATALOG.hook]
   // Drop everything from the by-id lookup so stale defs from previously
   // collected materials don't survive the reset; re-seed with the starter
   // loadout below.
@@ -469,6 +477,7 @@ export function hydrateInventoryLayout(ids: ReadonlyArray<string>): void {
       CRAFTED_CATALOG[id] ??
       INGREDIENT_CATALOG[id] ??
       PLATE_CATALOG[id] ??
+      STARTER_TOOL_CATALOG[id] ??
       null
     if (def === null) {
       // Unknown id (catalog drift across SDK upgrades or save versions).
