@@ -159,11 +159,12 @@ export function drinkContainerSlot(
 }
 
 // Subtract one of the named food (no-op if the stack is empty) and apply
-// its hunger/thirst effects. Effects are expressed in the food table's
-// 0..100 scale; the stat layer stores 0..1, so each unit divides by 100
-// here. "Bonus hunger" routes through `restoreStat` which allows the
-// underlying value to exceed 1 as a reserve. Returns true when one was
-// actually consumed so the caller can gate animation/feedback on success.
+// its hunger/thirst/life effects. Effects are expressed in the food
+// table's 0..100 scale; the stat layer stores 0..1, so each unit divides
+// by 100 here. "Bonus hunger" routes through `restoreStat` which allows
+// the underlying value to exceed 1 as a reserve. Life restoration is
+// clamped at the normal 1.0 cap. Returns true when one was actually
+// consumed so the caller can gate animation/feedback on success.
 export function consumeFoodById(id: string): boolean {
   const taken = subtractCollected(id, 1)
   if (taken === 0) return false
@@ -172,11 +173,15 @@ export function consumeFoodById(id: string): boolean {
   const hunger = (effect.hunger ?? 0) / 100
   const hungerBonus = (effect.hungerBonus ?? 0) / 100
   const thirst = (effect.thirst ?? 0) / 100
+  const life = (effect.life ?? 0) / 100
   if (hunger !== 0 || hungerBonus !== 0) {
     restoreStat('hunger', hunger, hungerBonus)
   }
   if (thirst !== 0) {
     restoreStat('thirst', thirst)
+  }
+  if (life !== 0) {
+    restoreStat('life', life)
   }
   return true
 }
