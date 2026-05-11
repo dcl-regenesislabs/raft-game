@@ -40,7 +40,7 @@ export function lobbyButtonHoverSystem(dt: number): void {
 
   const loadAvailable = isSaveProbeComplete() && hasSavedGame()
 
-  for (const [entity, btn] of engine.getEntitiesWith(LobbyButtonHover, LobbyButton)) {
+  for (const [entity, , btn] of engine.getEntitiesWith(LobbyButtonHover, LobbyButton)) {
     const enter = inputSystem.isTriggered(
       InputAction.IA_POINTER,
       PointerEventType.PET_HOVER_ENTER,
