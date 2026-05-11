@@ -268,11 +268,12 @@ export function getCollectedCount(kind: string): number {
 
 // Decrement the player's tally, clamped at zero. Returns the count that
 // was actually subtracted so callers can detect insufficient materials.
-// When the stack hits zero, the matching inventory grid slot is dropped
-// so the icon doesn't linger as a ghost with no count badge — the next
-// pickup re-allocates a fresh slot. Slot 0 (the hook starter) is the
-// only permanently-reserved slot; everything else, including the rest
-// of the bottom bar, is allocated on demand by `ensureCollectibleSlot`.
+// When the stack hits zero, the matching inventory slot is dropped so the
+// icon doesn't linger as a ghost with no count badge — the next pickup
+// re-allocates a fresh slot. Applies to every slot, including the bottom
+// hot-bar: stackables (food, grills, purifiers, …) are all allocated on
+// demand by `ensureCollectibleSlot` so none of them are pinned to a fixed
+// slot. The hook starter is non-stackable so it never reaches this path.
 export function subtractCollected(kind: string, count: number = 1): number {
   if (count <= 0) return 0
   const cur = collectedCounts.get(kind) ?? 0
@@ -284,10 +285,21 @@ export function subtractCollected(kind: string, count: number = 1): number {
 }
 
 function clearEmptyStackableSlot(id: string): void {
-  for (let i = BOTTOM_BAR_SLOT_COUNT; i < INVENTORY_TOTAL_SLOTS; i++) {
+  for (let i = 0; i < INVENTORY_TOTAL_SLOTS; i++) {
     const def = getInventorySlot(i)
     if (def !== null && def.id === id) {
+      const wasSelected = i === selected
+      const heldKind = def.heldKind
       clearInventorySlot(i)
+      // If the slot the player had equipped is now empty, snap back to
+      // slot 0 and drop the sprite viewmodel so a consumed food/cup
+      // doesn't keep floating in front of the camera.
+      if (wasSelected) {
+        selected = 0
+        if (heldKind === 'food' || heldKind === 'cup') {
+          setHeldItem('hook')
+        }
+      }
       return
     }
   }
