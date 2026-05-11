@@ -61,6 +61,11 @@ const ISLAND_HALF = 3
 const BRIDGE_REACH = 10
 const CELL = RAFT_SIZE
 const LOBBY_DECK_Y = LOBBY_RAFT_Y + PLATFORM_SIZE_Y
+// World-meter Z nudge applied to every lobby element (island, bridge,
+// walls, decor, portal, campfire, fishing). Negative shifts toward the
+// south bridge (-Z); seabed and water remain centred since they cover
+// the whole parcel footprint.
+const LOBBY_Z_OFFSET = -0.9
 
 // Cell-grid X index the south bridge is aligned to. With the irregular
 // south row spanning gx = -3..1 (gx=2 corner removed), the geometric
@@ -153,7 +158,7 @@ export type LobbyButtonKind = 'NEW' | 'LOAD' | 'DEBUG'
 
 export function createLobby(parcelGrid: number, mode: SceneMode): void {
   const cx = GRID_ORIGIN.x
-  const cz = GRID_ORIGIN.z
+  const cz = GRID_ORIGIN.z + LOBBY_Z_OFFSET
 
   const seabed = createSeabed(parcelGrid, LOBBY_SEABED_Y)
   LobbyTag.create(seabed)
@@ -163,9 +168,7 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
 
   buildIslandRafts(cx, cz)
   buildSideWingRafts(cx, cz)
-  if (mode === 'demo') {
-    buildSouthBridge(cx, cz)
-  }
+  buildSouthBridge(cx, cz)
   buildBlockerWalls(cx, cz, mode, parcelGrid)
   buildDecor(cx, cz)
   buildActionPanel(cx, cz)
@@ -180,8 +183,9 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
 // World-space position the player teleports to on lobby entry: the
 // SOUTH end of the only bridge into the central island. Lifted into a
 // helper so `runtime/sceneFlow.ts` can drop the avatar here on the BACK
-// TO LOBBY path without re-deriving the bridge geometry. Demo-only —
-// FULL mode has no bridge and uses the parcel-centre spawn instead.
+// TO LOBBY path without re-deriving the bridge geometry. Used by DEMO
+// only — FULL mode uses the parcel-centre spawn even though the bridge
+// is now visible in both modes.
 const BRIDGE_REACH_M = BRIDGE_REACH * CELL
 const ISLAND_HALF_M = ISLAND_HALF * CELL
 // Half-cell south of the bridge's southernmost row so the marker sits
@@ -191,7 +195,8 @@ const ISLAND_HALF_M = ISLAND_HALF * CELL
 // is `cz - ISLAND_HALF_M - BRIDGE_REACH_M + CELL/2`.
 const BRIDGE_TAIL_OFFSET = ISLAND_HALF_M + BRIDGE_REACH_M - CELL / 2
 export function getLobbyArrivalPosition(cx: number, cz: number): { x: number; z: number } {
-  return { x: cellCentre(cx, BRIDGE_GX), z: cz - BRIDGE_TAIL_OFFSET }
+  const shiftedCz = cz + LOBBY_Z_OFFSET
+  return { x: cellCentre(cx, BRIDGE_GX), z: shiftedCz - BRIDGE_TAIL_OFFSET }
 }
 
 export function teardownLobby(): void {
@@ -223,12 +228,12 @@ function buildIslandRafts(cx: number, cz: number): void {
 }
 
 // Single south-facing bridge connecting the central island to the
-// scene's southern parcel border. Demo-mode only — players spawn at
-// the bridge's southern tip and walk north under the welcome arch onto
-// the island. One cell wide (3 m), aligned to the cell-grid X line at
-// `BRIDGE_GX` so it shares an X edge with the island's middle south
-// cell — the connection looks like a flush plank-walk instead of half
-// a cell offset.
+// scene's southern parcel border. Built in both DEMO and FULL modes;
+// in DEMO the player spawns at the bridge's southern tip and walks
+// north under the welcome arch onto the island. One cell wide (3 m),
+// aligned to the cell-grid X line at `BRIDGE_GX` so it shares an X
+// edge with the island's middle south cell — the connection looks
+// like a flush plank-walk instead of half a cell offset.
 function buildSouthBridge(cx: number, cz: number): void {
   for (let span = ISLAND_HALF; span < ISLAND_HALF + BRIDGE_REACH; span++) {
     tagged(createPlatform(
@@ -271,7 +276,6 @@ function buildBlockerWalls(
   const isCell = (gx: number, gz: number): boolean => cellSet.has(`${gx},${gz}`)
 
   const halfCell = CELL / 2
-  const bridgeOpen = mode === 'demo'
   const bridgeCx = cellCentre(cx, BRIDGE_GX)
   const bridgeMinX = bridgeCx - halfCell
   const bridgeMaxX = bridgeCx + halfCell
@@ -295,7 +299,7 @@ function buildBlockerWalls(
       const cellMaxX = x + halfCell
       const overlapMin = Math.max(cellMinX, bridgeMinX)
       const overlapMax = Math.min(cellMaxX, bridgeMaxX)
-      const overlaps = bridgeOpen && gz === -ISLAND_HALF && overlapMin < overlapMax
+      const overlaps = gz === -ISLAND_HALF && overlapMin < overlapMax
       if (!overlaps) {
         spawnWall(x, z - halfCell, CELL, WALL_THICKNESS)
         continue
@@ -313,14 +317,18 @@ function buildBlockerWalls(
     }
   }
 
-  if (!bridgeOpen) return
-
-  // Bridge sides + far end so the player can't fall off the walkway.
+  // Bridge sides so the player can't fall off the walkway mid-span.
   const bridgeReachM = BRIDGE_REACH * CELL
   const bridgeMidOffset = ISLAND_HALF * CELL + bridgeReachM / 2
   spawnWall(bridgeCx + halfCell, cz - bridgeMidOffset, WALL_THICKNESS, bridgeReachM)
   spawnWall(bridgeCx - halfCell, cz - bridgeMidOffset, WALL_THICKNESS, bridgeReachM)
-  spawnWall(bridgeCx, cz - ISLAND_HALF * CELL - bridgeReachM, CELL, WALL_THICKNESS)
+  // South cap at the bridge tip. In DEMO 5x5 the bridge tip sits at the
+  // south parcel border, so we drop this wall to let the player walk
+  // off the tip; in FULL mode the cap stays in place since the bridge
+  // ends in mid-scene with open water beyond.
+  if (mode !== 'demo') {
+    spawnWall(bridgeCx, cz - ISLAND_HALF * CELL - bridgeReachM, CELL, WALL_THICKNESS)
+  }
 }
 
 function spawnWall(

@@ -232,7 +232,7 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   // same equippable behaviour, same heldKind viewmodel.
   hammer: TOOL('hammer', 'images/hud/items/hammer.png', 'hammer'),
   spear: TOOL('spear', 'images/hud/items/spear.png', 'spear'),
-  platform: CRAFTED_STACK('platform', 'images/hud/items/raft_v2.png'),
+  platform: CRAFTED_STACK('platform', 'images/hud/items/raft_v4.png'),
   purifier: CRAFTED_PLACEABLE('purifier', 'images/hud/items/water-purifier.png'),
   grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/grill.png'),
   storage: CRAFTED_PLACEABLE('storage', 'images/hud/items/storage.png'),

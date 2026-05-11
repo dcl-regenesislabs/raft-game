@@ -27,7 +27,14 @@ export const PLATFORM_DESTROY_TINT = Color4.create(0.85, 0.18, 0.18, 1) // angry
 // so the visible deck reads as a single tile while the (3×3) collider stays
 // authoritative for grid math. Shared with the spectral placement ghost so
 // preview and committed raft cannot drift.
-export const RAFT_VISUAL_SIZE = 1.6
+export const RAFT_VISUAL_SIZE = 3
+// Source mesh native footprint (raft_v4.glb is ~0.955 × 0.998 in plan view).
+// Used to derive per-axis fit factors so RAFT_VISUAL_SIZE means "world meters
+// per side" on both X and Z — the raw mesh is not perfectly square.
+const RAFT_MESH_BBOX_X = 0.9551
+const RAFT_MESH_BBOX_Z = 0.998
+export const RAFT_FIT_X = 1 / RAFT_MESH_BBOX_X
+export const RAFT_FIT_Z = 1 / RAFT_MESH_BBOX_Z
 // Vertical nudge (world meters) applied to the raft visual. Negative sinks
 // the deck so it flushes with the player walk surface above the collider.
 export const RAFT_VISUAL_Y_OFFSET = -0.3
@@ -101,12 +108,12 @@ export function createPlatform(
     position: Vector3.create(0, RAFT_VISUAL_Y_OFFSET / PLATFORM_SIZE_Y, 0),
     rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
     scale: Vector3.create(
-      RAFT_VISUAL_SIZE / PLATFORM_SIZE_X,
+      (RAFT_VISUAL_SIZE * RAFT_FIT_X) / PLATFORM_SIZE_X,
       RAFT_VISUAL_SIZE / PLATFORM_SIZE_Y,
-      RAFT_VISUAL_SIZE / PLATFORM_SIZE_Z
+      (RAFT_VISUAL_SIZE * RAFT_FIT_Z) / PLATFORM_SIZE_Z
     )
   })
-  GltfContainer.create(visual, { src: 'assets/scene/items/raft_v1.glb' })
+  GltfContainer.create(visual, { src: 'assets/scene/items/raft_v4.glb' })
 
   Platform.create(platform, { gridX, gridZ })
   if (isMain) MainPlatform.create(platform)

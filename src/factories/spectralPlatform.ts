@@ -8,7 +8,13 @@ import {
 } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
-import { PLATFORM_SIZE_Y, RAFT_VISUAL_SIZE, RAFT_VISUAL_Y_OFFSET } from './platform'
+import {
+  PLATFORM_SIZE_Y,
+  RAFT_FIT_X,
+  RAFT_FIT_Z,
+  RAFT_VISUAL_SIZE,
+  RAFT_VISUAL_Y_OFFSET
+} from './platform'
 
 // Pure opaque colors — the pulse animates hue (dark → light) only.
 const DEFAULT_DIM = Color4.create(0.2, 0.7, 0.3, 1)
@@ -16,7 +22,7 @@ const DEFAULT_BRIGHT = Color4.create(0.5, 1.0, 0.6, 1)
 // Radians per second of the sin() that drives the blink. ~1 Hz pulse.
 const BLINK_RATE = Math.PI * 2
 
-const RAFT_GLB = 'assets/scene/items/raft_v1.glb'
+const RAFT_GLB = 'assets/scene/items/raft_v4.glb'
 
 export type SpectralPalette = {
   dim?: Color4
@@ -78,7 +84,11 @@ export function showSpectralAt(
     world.z
   )
   transform.rotation = Quaternion.fromEulerDegrees(0, yawDeg, 0)
-  transform.scale = Vector3.create(RAFT_VISUAL_SIZE, RAFT_VISUAL_SIZE, RAFT_VISUAL_SIZE)
+  transform.scale = Vector3.create(
+    RAFT_VISUAL_SIZE * RAFT_FIT_X,
+    RAFT_VISUAL_SIZE,
+    RAFT_VISUAL_SIZE * RAFT_FIT_Z
+  )
   if (!state.isVisible) {
     state.isVisible = true
     state.blinkPhase = 0

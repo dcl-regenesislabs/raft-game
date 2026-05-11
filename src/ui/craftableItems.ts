@@ -51,7 +51,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     name: 'PLATFORM',
     description:
       'A wooden raft tile. Place it next to an existing platform to expand your raft.',
-    texture: 'images/hud/items/raft_v2.png',
+    texture: 'images/hud/items/raft_v4.png',
     cost: [
       { materialId: 'wood', amount: 2 },
       { materialId: 'plastic', amount: 2 },
