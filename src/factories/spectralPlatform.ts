@@ -16,7 +16,7 @@ const DEFAULT_BRIGHT = Color4.create(0.5, 1.0, 0.6, 1)
 // Radians per second of the sin() that drives the blink. ~1 Hz pulse.
 const BLINK_RATE = Math.PI * 2
 
-const RAFT_GLB = 'assets/scene/items/raft_v3.glb'
+const RAFT_GLB = 'assets/scene/items/raft_v2.glb'
 
 export type SpectralPalette = {
   dim?: Color4

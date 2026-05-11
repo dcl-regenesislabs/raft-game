@@ -106,7 +106,7 @@ export function createPlatform(
       RAFT_VISUAL_SIZE / PLATFORM_SIZE_Z
     )
   })
-  GltfContainer.create(visual, { src: 'assets/scene/items/raft_v3.glb' })
+  GltfContainer.create(visual, { src: 'assets/scene/items/raft_v2.glb' })
 
   Platform.create(platform, { gridX, gridZ })
   if (isMain) MainPlatform.create(platform)
