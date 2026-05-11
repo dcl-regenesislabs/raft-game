@@ -202,12 +202,11 @@ export function returnToLobby(): void {
     createLobby(cachedParcelGrid, cachedSceneMode)
   }
   armLobbyExit()
-  // Drop the player back at the lobby's bridge-tail spawn (demo) or
-  // the parcel centre (full). Lobby rafts sit at LOBBY_RAFT_Y; +1 m
-  // gives a tiny drop onto the deck so the player lands cleanly.
-  const arrival = cachedSceneMode === 'demo'
-    ? getLobbyArrivalPosition(GRID_ORIGIN.x, GRID_ORIGIN.z)
-    : { x: GRID_ORIGIN.x, z: GRID_ORIGIN.z }
+  // Drop the player back at the lobby's bridge-tail spawn in both
+  // modes — the bridge is now visible in DEMO and FULL. Lobby rafts
+  // sit at LOBBY_RAFT_Y; +1 m gives a tiny drop onto the deck so the
+  // player lands cleanly.
+  const arrival = getLobbyArrivalPosition(GRID_ORIGIN.x, GRID_ORIGIN.z)
   void movePlayerTo({
     newRelativePosition: {
       x: arrival.x,

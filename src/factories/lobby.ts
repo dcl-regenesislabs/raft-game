@@ -183,9 +183,8 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
 // World-space position the player teleports to on lobby entry: the
 // SOUTH end of the only bridge into the central island. Lifted into a
 // helper so `runtime/sceneFlow.ts` can drop the avatar here on the BACK
-// TO LOBBY path without re-deriving the bridge geometry. Used by DEMO
-// only — FULL mode uses the parcel-centre spawn even though the bridge
-// is now visible in both modes.
+// TO LOBBY path without re-deriving the bridge geometry. Used in both
+// DEMO and FULL — the bridge is built in both modes.
 const BRIDGE_REACH_M = BRIDGE_REACH * CELL
 const ISLAND_HALF_M = ISLAND_HALF * CELL
 // Half-cell south of the bridge's southernmost row so the marker sits
