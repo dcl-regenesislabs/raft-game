@@ -96,13 +96,14 @@ export function setSaveProbeResult(found: boolean): void {
 //   - `active && !exiting`: the lobby is walkable, but we still
 //     disable double-jump and gliding so the player can't pop above
 //     or drift over the blocker walls while choosing a portal.
-//   - `!active`: gameplay. We release our lock once and stop writing
-//     so peer systems (inventory, gameOver) can drive the modifier.
+//   - `!active`: gameplay. We release our locomotion lock once and stop
+//     writing so peer systems (inventory, gameOver) can drive the
+//     modifier. Double-jump and gliding remain disabled scene-wide.
 //
 // While the gate is `active` we re-apply the modifier every frame —
 // peer systems also write to it on their own state changes (e.g.
-// inventory close → all-false), and that would otherwise clobber the
-// double-jump and gliding blocks.
+// inventory close → walk-unlocked), and that would otherwise clobber
+// the double-jump and gliding blocks.
 export function startupGateInputLockSystem(dt: number): void {
   if (exiting) {
     exitElapsed += dt
@@ -140,8 +141,8 @@ export function startupGateInputLockSystem(dt: number): void {
         disableJog: false,
         disableRun: false,
         disableJump: false,
-        disableDoubleJump: false,
-        disableGliding: false
+        disableDoubleJump: true,
+        disableGliding: true
       })
     })
   }
