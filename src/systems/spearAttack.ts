@@ -11,7 +11,11 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { SharkHittable } from '../components'
-import { getHeldItemEntity, getHeldItemKind } from '../factories/heldItem'
+import {
+  getHeldItemEntity,
+  getHeldItemKind,
+  isHeldViewmodelHidden
+} from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
 import { isSelectionPointerLockoutActive } from '../ui/inventoryState'
@@ -53,6 +57,9 @@ let cooldownRemaining = 0
 let hitResolvedThisSwing = false
 
 export function spearAttackSystem(dt: number): void {
+  // Lobby gate: viewmodel hidden = startup overlay up; clicks on raft
+  // UI shouldn't trigger a stab.
+  if (isHeldViewmodelHidden()) return
   const entity = getHeldItemEntity()
   if (entity === null) return
 

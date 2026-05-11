@@ -30,6 +30,7 @@ import {
   hideRope,
   updateRopeBetween
 } from '../factories'
+import { isHeldViewmodelHidden } from '../factories/heldItem'
 import { WATER_LEVEL } from '../factories/sceneLevels'
 import {
   actionButtonJustPressed,
@@ -98,6 +99,14 @@ export function resetHookThrowerState(): void {
 }
 
 export function hookThrowerSystem(dt: number): void {
+  // Lobby gate: while the held viewmodel is stashed (startup overlay
+  // up, BACK TO LOBBY screen up), clicks on raft buttons / portals
+  // shouldn't double as charge-the-hook input. Mirrors the guard
+  // already present in hookThrowAnimSystem.
+  if (isHeldViewmodelHidden()) {
+    cancelCharge()
+    return
+  }
   const locked = isInventoryActionLocked()
   const handPos = computeHandPos()
 

@@ -122,8 +122,6 @@ const BUTTON_TEXTURE = 'images/hud/red_button.png'
 // Decoration GLBs reused from the survival-game pack.
 const BARREL_GLB = 'assets/scene/items/barrel.glb'
 const WOOD_GLB = 'assets/scene/items/wood.glb'
-const PLANTS_GLB = 'assets/scene/items/plants.glb'
-const FISHING_ROD_GLB = 'assets/scene/items/fishing_rod.glb'
 // Pre-baked grayscale copy of red_button.png — swapped in when a button
 // is in its inert state (LOAD World pre-probe / no-save). Keeps the
 // chipped-corner alpha intact so the button silhouette doesn't shift
@@ -137,7 +135,7 @@ const WELCOME_SCALE = 3
 // Centre-pivot GLB lifted by half its scaled height so the base lands
 // on the deck — original 1.7 lift at scale 2 becomes 2.55 at scale 3.
 const WELCOME_LIFT = 2.55
-const PANEL_LIFT = 1.4
+const PANEL_LIFT = 2.1
 const PORTAL_LIFT = 1.5
 // barrel.glb is centre-pivot too (~1.91 m tall, half-height ~0.95).
 // Lift = half-height * scale so the barrel base lands on the deck
@@ -145,7 +143,6 @@ const PORTAL_LIFT = 1.5
 const BARREL_LIFT_FULL = 0.8    // scale 1.0
 const BARREL_LIFT_CAMPFIRE = 0.7  // scale 0.9
 const BARREL_LIFT_BUCKET = 0.4  // scale 0.55
-
 // Cross-realm destination for the demo's teleport portal. Hard-coded
 // rather than read from config because the demo's whole purpose is to
 // drive players to the FULL world.
@@ -173,8 +170,6 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
   buildActionPanel(cx, cz)
   if (mode === 'demo') {
     spawnTeleportPortal(cx + 4.5, cz + 6)
-    const arrival = getLobbyArrivalPosition(cx, cz)
-    buildSpawnMarker(arrival.x, arrival.z)
   }
   buildCampfireZone(cx - 10.5, cz, mode)
   buildFishingCorner(cx + 10.5, cz, mode)
@@ -347,13 +342,11 @@ function spawnWall(
 // "WELCOME" face reads toward the bridge (-Z), greeting the player as
 // they walk north onto the island.
 function buildDecor(cx: number, cz: number): void {
+  const archX = cellCentre(cx, BRIDGE_GX)
+  const archZ = cz - ISLAND_HALF * CELL + 0.65
   const welcome = engine.addEntity()
   Transform.create(welcome, {
-    position: Vector3.create(
-      cellCentre(cx, BRIDGE_GX),
-      LOBBY_DECK_Y + WELCOME_LIFT,
-      cz - ISLAND_HALF * CELL + 0.5
-    ),
+    position: Vector3.create(archX, LOBBY_DECK_Y + WELCOME_LIFT, archZ),
     rotation: Quaternion.fromEulerDegrees(0, 180, 0),
     scale: Vector3.create(WELCOME_SCALE, WELCOME_SCALE, WELCOME_SCALE)
   })
@@ -370,8 +363,8 @@ function buildDecor(cx: number, cz: number): void {
 // 2.34:1 aspect so the labels have room to breathe. fontSize is in
 // DCL TextShape units (default = 10) — these values are tuned so the
 // label sits comfortably inside the plate without bleeding past it.
-const BIG_BUTTON: ButtonShape = { width: 1.2, height: 0.4, fontSize: 1.8 }
-const SMALL_BUTTON: ButtonShape = { width: 0.52, height: 0.18, fontSize: 0.75 }
+const BIG_BUTTON: ButtonShape = { width: 1.8, height: 0.6, fontSize: 2.7 }
+const SMALL_BUTTON: ButtonShape = { width: 0.78, height: 0.27, fontSize: 1.125 }
 
 // Click-plate padding factors. The click target is intentionally
 // bigger than the visible plate so steep aim angles still register —
@@ -393,8 +386,8 @@ const HIT_DEPTH = 0.05
 // of the lobby island per the hub-concept layout — info kiosk on one
 // side, the cross-realm portal on the other, both facing south so the
 // player at spawn can read both signs at once.
-const PANEL_OFFSET_X = -4.5
-const PANEL_OFFSET_Z = 6
+const PANEL_OFFSET_X = -1.5
+const PANEL_OFFSET_Z = 3
 function buildActionPanel(cx: number, cz: number): void {
   const panelX = cx + PANEL_OFFSET_X
   const panelZ = cz + PANEL_OFFSET_Z
@@ -402,7 +395,7 @@ function buildActionPanel(cx: number, cz: number): void {
   Transform.create(panel, {
     position: Vector3.create(panelX, LOBBY_DECK_Y + PANEL_LIFT, panelZ),
     rotation: Quaternion.fromEulerDegrees(0, 180, 0),
-    scale: Vector3.create(1.6, 1.6, 1.6)
+    scale: Vector3.create(2.4, 2.4, 2.4)
   })
   GltfContainer.create(panel, {
     src: PANEL_GLB,
@@ -411,14 +404,14 @@ function buildActionPanel(cx: number, cz: number): void {
   LobbyTag.create(panel)
 
   // Z is offset toward the player so the button surface sits just in
-  // front of the panel mesh (avoids z-fighting). Pulled in tight at
-  // 0.08 m so the plates read as printed onto the panel's "screen"
-  // face rather than floating in front of it.
-  const buttonZ = panelZ - 0.08
+  // front of the panel mesh (avoids z-fighting). Scaled with the panel
+  // (0.08 m at scale 1.6 → 0.12 m at scale 2.4) so the plates still
+  // read as printed onto the panel's "screen" face instead of floating.
+  const buttonZ = panelZ - 0.12
   const baseY = LOBBY_DECK_Y + PANEL_LIFT
-  spawnButton('NEW', 'NEW WORLD', panelX, baseY - 0.05, buttonZ, BIG_BUTTON)
-  spawnButton('LOAD', 'LOAD WORLD', panelX, baseY - 0.55, buttonZ, BIG_BUTTON)
-  spawnButton('DEBUG', 'DEBUG', panelX, baseY - 0.92, buttonZ, SMALL_BUTTON)
+  spawnButton('NEW', 'NEW WORLD', panelX, baseY - 0.075, buttonZ, BIG_BUTTON)
+  spawnButton('LOAD', 'LOAD WORLD', panelX, baseY - 0.825, buttonZ, BIG_BUTTON)
+  spawnButton('DEBUG', 'DEBUG', panelX, baseY - 1.28, buttonZ, SMALL_BUTTON)
 }
 
 interface ButtonShape {
@@ -580,19 +573,42 @@ function spawnTeleportPortal(worldX: number, worldZ: number): void {
 
   spawnPortalInterior(worldX, worldZ)
 
+  // Red button plate behind the FULL GAME label, mirroring the NEW
+  // WORLD / LOAD WORLD buttons on the kiosk so the portal reads as a
+  // call-to-action of the same family. Static (no billboard): the
+  // plate's default plane normal points -Z, which matches the player's
+  // approach from the south, same convention as the kiosk buttons. The
+  // text is parented to the plate and inverse-scaled so glyphs render
+  // at their natural aspect ratio despite the parent's non-uniform
+  // stretch.
+  const PLATE_SCALE = 0.5
+  const PLATE_W = 2.7 * PLATE_SCALE
+  const PLATE_H = 0.9 * PLATE_SCALE
+  const plateY = LOBBY_DECK_Y + PORTAL_LIFT + 1.1
+  const plateZ = worldZ - 0.5
+  const plate = engine.addEntity()
+  Transform.create(plate, {
+    position: Vector3.create(worldX, plateY, plateZ),
+    scale: Vector3.create(PLATE_W, PLATE_H, 1)
+  })
+  MeshRenderer.setPlane(plate)
+  applyLobbyButtonMaterial(plate, true)
+  LobbyTag.create(plate)
+
   const text = engine.addEntity()
   Transform.create(text, {
-    position: Vector3.create(worldX, LOBBY_DECK_Y + PORTAL_LIFT + 2.4, worldZ)
+    parent: plate,
+    position: Vector3.create(0, 0, -0.04),
+    scale: Vector3.create(1 / PLATE_W, 1 / PLATE_H, 1)
   })
   TextShape.create(text, {
     text: 'FULL GAME',
-    fontSize: 4,
-    textColor: Color4.create(1, 0.78, 0.4, 1),
+    fontSize: 4 * PLATE_SCALE,
+    textColor: Color4.create(1, 1, 1, 1),
     outlineColor: Color3.create(0.05, 0.05, 0.05),
     outlineWidth: 0.2,
     textAlign: TextAlignMode.TAM_MIDDLE_CENTER
   })
-  Billboard.create(text, { billboardMode: BillboardMode.BM_Y })
   LobbyTag.create(text)
 }
 
@@ -663,48 +679,8 @@ function buildSideWingRafts(cx: number, cz: number): void {
   }
 }
 
-// Glowing disc painted onto the centre of the deck. Marks the spawn
-// circle in the concept art's "social area" — a flat textured plane so
-// it costs one draw and no system to animate.
-function buildSpawnMarker(cx: number, cz: number): void {
-  const marker = engine.addEntity()
-  Transform.create(marker, {
-    position: Vector3.create(cx, LOBBY_DECK_Y + 0.01, cz),
-    rotation: Quaternion.fromEulerDegrees(90, 0, 0),
-    scale: Vector3.create(2.4, 2.4, 1)
-  })
-  MeshRenderer.setPlane(marker)
-  Material.setPbrMaterial(marker, {
-    texture: Material.Texture.Common({
-      src: PORTAL_TEXTURE,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_CLAMP
-    }),
-    emissiveTexture: Material.Texture.Common({
-      src: PORTAL_TEXTURE,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_CLAMP
-    }),
-    alphaTexture: Material.Texture.Common({
-      src: PORTAL_TEXTURE,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_CLAMP
-    }),
-    albedoColor: Color4.create(1, 1, 1, 1),
-    emissiveColor: Color3.create(0.55, 0.45, 1),
-    emissiveIntensity: 0.6,
-    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
-    castShadows: false,
-    roughness: 1,
-    metallic: 0,
-    specularIntensity: 0
-  })
-  LobbyTag.create(marker)
-}
-
-// West wing — three barrels arranged as a small seating cluster.
-// Earlier iterations had a campfire at the centre, but the fire model
-// was dropped; the barrel ring is kept as scavenger-raft decor.
+// West wing — three barrels arranged in a circle. Reads as the lobby's
+// gathering nook.
 function buildCampfireZone(wingX: number, wingZ: number, _mode: SceneMode): void {
   const barrelOffsets: Array<{ dx: number; dz: number; yawDeg: number }> = [
     { dx: 1.3, dz: 0, yawDeg: 30 },
@@ -718,41 +694,29 @@ function buildCampfireZone(wingX: number, wingZ: number, _mode: SceneMode): void
       rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
       scale: Vector3.create(0.9, 0.9, 0.9)
     })
-    GltfContainer.create(barrel, { src: BARREL_GLB })
+    GltfContainer.create(barrel, {
+      src: BARREL_GLB,
+      visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS
+    })
     LobbyTag.create(barrel)
   }
 }
 
-// East wing — fishing rod planted into the deck angled out over the
-// water, with a small bucket (re-scaled barrel) and a tuft of plants
-// at the wing edge to sell the "scavenger fishing nook" vibe.
+// East wing — a small bucket (re-scaled barrel) on the deck. The rod
+// and plant tuft that used to flank it were removed; the lone bucket
+// keeps the wing from reading as empty.
 function buildFishingCorner(wingX: number, wingZ: number, _mode: SceneMode): void {
-  const rod = engine.addEntity()
-  Transform.create(rod, {
-    position: Vector3.create(wingX + 0.4, LOBBY_DECK_Y + 0.6, wingZ - 0.2),
-    rotation: Quaternion.fromEulerDegrees(-25, 35, 0),
-    scale: Vector3.create(1.4, 1.4, 1.4)
-  })
-  GltfContainer.create(rod, { src: FISHING_ROD_GLB })
-  LobbyTag.create(rod)
-
   const bucket = engine.addEntity()
   Transform.create(bucket, {
     position: Vector3.create(wingX - 0.6, LOBBY_DECK_Y + BARREL_LIFT_BUCKET, wingZ + 0.6),
     rotation: Quaternion.fromEulerDegrees(0, 45, 0),
     scale: Vector3.create(0.55, 0.55, 0.55)
   })
-  GltfContainer.create(bucket, { src: BARREL_GLB })
-  LobbyTag.create(bucket)
-
-  const greenery = engine.addEntity()
-  Transform.create(greenery, {
-    position: Vector3.create(wingX + 0.7, LOBBY_DECK_Y + 0.05, wingZ + 1.0),
-    rotation: Quaternion.fromEulerDegrees(0, 60, 0),
-    scale: Vector3.create(0.8, 0.8, 0.8)
+  GltfContainer.create(bucket, {
+    src: BARREL_GLB,
+    visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS
   })
-  GltfContainer.create(greenery, { src: PLANTS_GLB })
-  LobbyTag.create(greenery)
+  LobbyTag.create(bucket)
 }
 
 // Static decoration scattered around the central island's perimeter to
@@ -760,10 +724,14 @@ function buildFishingCorner(wingX: number, wingZ: number, _mode: SceneMode): voi
 // the natural walking lanes (welcome → centre, centre → kiosk, centre
 // → portal) so the deck stays traversable.
 function buildPerimeterProps(cx: number, cz: number): void {
+  // The SE (2,-3) and NW (-3,2) deck cells are punched out by
+  // ISLAND_REMOVE, so the matching corner barrels are shifted 2 m
+  // inward along x — landing them on cells (1,-3) and (-2,2)
+  // respectively instead of hanging off the deck.
   const cornerBarrels: Array<{ x: number; z: number; yawDeg: number }> = [
     { x: -7, z: -7, yawDeg: 15 },
-    { x: 7, z: -7, yawDeg: 200 },
-    { x: -7, z: 7, yawDeg: 110 },
+    { x: 5, z: -7, yawDeg: 200 },
+    { x: -5, z: 7, yawDeg: 110 },
     { x: 7, z: 7, yawDeg: 290 }
   ]
   for (const { x, z, yawDeg } of cornerBarrels) {
@@ -773,7 +741,10 @@ function buildPerimeterProps(cx: number, cz: number): void {
       rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
       scale: Vector3.create(1, 1, 1)
     })
-    GltfContainer.create(barrel, { src: BARREL_GLB })
+    GltfContainer.create(barrel, {
+      src: BARREL_GLB,
+      visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS
+    })
     LobbyTag.create(barrel)
   }
 
@@ -788,22 +759,12 @@ function buildPerimeterProps(cx: number, cz: number): void {
       rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
       scale: Vector3.create(1.2, 1.2, 1.2)
     })
-    GltfContainer.create(wood, { src: WOOD_GLB })
+    GltfContainer.create(wood, {
+      src: WOOD_GLB,
+      visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS
+    })
     LobbyTag.create(wood)
   }
 
-  const plantTufts: Array<{ x: number; z: number; yawDeg: number }> = [
-    { x: -6, z: 6, yawDeg: 40 },
-    { x: 6, z: 6, yawDeg: -40 }
-  ]
-  for (const { x, z, yawDeg } of plantTufts) {
-    const plant = engine.addEntity()
-    Transform.create(plant, {
-      position: Vector3.create(cx + x, LOBBY_DECK_Y + 0.05, cz + z),
-      rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
-      scale: Vector3.create(0.7, 0.7, 0.7)
-    })
-    GltfContainer.create(plant, { src: PLANTS_GLB })
-    LobbyTag.create(plant)
-  }
 }
+

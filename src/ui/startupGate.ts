@@ -94,15 +94,15 @@ export function setSaveProbeResult(found: boolean): void {
 //     fading out. Full lock so they can't drift off the raft as the
 //     world swaps underneath.
 //   - `active && !exiting`: the lobby is walkable, but we still
-//     disable double-jump so the player can't pop above the blocker
-//     walls while choosing a portal.
+//     disable double-jump and gliding so the player can't pop above
+//     or drift over the blocker walls while choosing a portal.
 //   - `!active`: gameplay. We release our lock once and stop writing
 //     so peer systems (inventory, gameOver) can drive the modifier.
 //
 // While the gate is `active` we re-apply the modifier every frame —
 // peer systems also write to it on their own state changes (e.g.
 // inventory close → all-false), and that would otherwise clobber the
-// double-jump block.
+// double-jump and gliding blocks.
 export function startupGateInputLockSystem(dt: number): void {
   if (exiting) {
     exitElapsed += dt
@@ -126,7 +126,7 @@ export function startupGateInputLockSystem(dt: number): void {
         disableRun: exiting,
         disableJump: exiting,
         disableDoubleJump: true,
-        disableGliding: exiting
+        disableGliding: true
       })
     })
     lastModifierApplied = true

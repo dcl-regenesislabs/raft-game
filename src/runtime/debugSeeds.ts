@@ -1,8 +1,9 @@
-// Optional dev-only seed pack. Pre-fills the player inventory with the
-// crafted tools and spawns the 8-platform ring around the main raft
-// (grill east, purifier west, fully-stocked storage chest north). Wired
-// to the NEW GAME - DEBUG button on the startup screen — never runs on
-// production builds because that button is hidden when IS_PRODUCTION.
+// Optional seed pack. Pre-fills the player inventory with the crafted
+// tools and spawns the 8-platform ring around the main raft (grill
+// east, purifier west, fully-stocked storage chest north). Wired to
+// the NEW GAME - DEBUG button on the lobby information panel, which
+// is shown in every build (including production) so playtesters can
+// always reach a stocked starting state.
 //
 // Pulled out of `main()` so the regular NEW GAME path leaves the player
 // with a genuinely clean state in dev too: only the main platform, an
@@ -97,10 +98,10 @@ function seedDebugWorld(): void {
       gridX: gx,
       gridZ: gz
     })
-    if (gx === 1 && gz === 0) createConstruction(platform, 'grill')
-    else if (gx === -1 && gz === 0) createConstruction(platform, 'purifier')
+    if (gx === 1 && gz === 0) createConstruction(platform, 'grill', 90)
+    else if (gx === -1 && gz === 0) createConstruction(platform, 'purifier', 90)
     else if (gx === 0 && gz === 1) {
-      createConstruction(platform, 'storage')
+      createConstruction(platform, 'storage', 180)
       seedDebugStorage(platform)
     }
   }

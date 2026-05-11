@@ -28,6 +28,7 @@ export {
   tickSpectralConstructionBlink
 } from './spectralConstruction'
 export { createFirstPersonArea } from './firstPersonArea'
+export { createAvatarHideArea } from './avatarHideArea'
 export {
   HELD_ITEMS,
   createHeldItem,

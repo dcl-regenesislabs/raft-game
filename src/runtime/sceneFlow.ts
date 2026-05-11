@@ -23,6 +23,7 @@ import { requestLoad } from '../client/saveClient'
 import { SHARK_INITIAL_COUNT, SHARK_INITIAL_RADIUS } from '../config/gameConfig'
 import {
   GRID_ORIGIN,
+  createAvatarHideArea,
   createPlatform,
   createSeabed,
   createWaterFloorV2,
@@ -109,6 +110,10 @@ function buildGameWorld(parcelGrid: number): void {
   createSeabed(parcelGrid)
   createWaterFloorV2(parcelGrid)
   createPlatform(GRID_ORIGIN, { gridX: 0, gridZ: 0, isMain: true })
+  // Hide every avatar (self + other players) for the duration of the game
+  // session. Cleared by the BACK TO LOBBY sweep — entities with Transform
+  // not in the keep-set are removed, taking the modifier area with them.
+  createAvatarHideArea(parcelGrid)
   spawnSharks()
 }
 
