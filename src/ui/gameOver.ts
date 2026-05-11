@@ -96,8 +96,10 @@ export function gameOverInputLockSystem(dt: number): void {
       disableJog: dead,
       disableRun: dead,
       disableJump: dead,
-      disableDoubleJump: dead,
-      disableGliding: dead
+      // Double-jump and gliding are disabled scene-wide; keep them
+      // forced on so revive doesn't re-enable them.
+      disableDoubleJump: true,
+      disableGliding: true
     })
   })
 }

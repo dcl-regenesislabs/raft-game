@@ -110,8 +110,10 @@ export function inventoryToggleResetSystem(dt: number): void {
       disableJog: lock,
       disableRun: lock,
       disableJump: lock,
-      disableDoubleJump: lock,
-      disableGliding: lock
+      // Double-jump and gliding are disabled scene-wide; keep them
+      // forced on so unlocking the inventory doesn't re-enable them.
+      disableDoubleJump: true,
+      disableGliding: true
     })
   })
 }
