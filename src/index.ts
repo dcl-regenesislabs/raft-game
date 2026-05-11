@@ -33,6 +33,7 @@ import { hammerSwingSystem } from './systems/hammerSwing'
 import { hookThrowAnimSystem } from './systems/hookThrowAnim'
 import { hookThrowerSystem } from './systems/hookThrower'
 import { inventoryInputSystem } from './systems/inventoryInput'
+import { lifeRegenSystem } from './systems/lifeRegen'
 import { lobbyButtonHoverSystem } from './systems/lobbyButtonHover'
 import { lobbyPortalSystem } from './systems/lobbyPortalSystem'
 import { portalPulseSystem } from './systems/portalPulse'
@@ -130,6 +131,7 @@ export async function main(): Promise<void> {
   engine.addSystem(grillCookSystem)
   engine.addSystem(createFallRescueSystem(GRID_ORIGIN))
   engine.addSystem(survivalDrainSystem)
+  engine.addSystem(lifeRegenSystem)
   engine.addSystem(raftBuilderSystem)
   engine.addSystem(constructionPlacementSystem)
   engine.addSystem(hookThrowerSystem)

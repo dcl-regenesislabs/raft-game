@@ -74,6 +74,11 @@ export const LIFE_DAMAGE_SINGLE_PCT_PER_S = 0.75
 // Life damage per second when BOTH hunger AND thirst are at 0% (replaces,
 // does not stack with, the single-empty rate).
 export const LIFE_DAMAGE_BOTH_PCT_PER_S = 1.5
+// Passive life regeneration rate (percentage points per second). Tuned
+// so a fully empty bar refills in ~10 minutes — 10% per minute, i.e.
+// 1% every 6 seconds. Starvation/dehydration damage outpaces this by
+// 4-9×, so regen doesn't trivialise the survival loop.
+export const LIFE_REGEN_PCT_PER_S = 10 / 60
 
 // One-time life cost (percentage points) the player pays each time the
 // fall-rescue system bails them out of the water. Stacks with whatever
