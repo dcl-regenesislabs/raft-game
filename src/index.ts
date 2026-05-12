@@ -14,9 +14,10 @@ import {
   createHeldItem,
   setHeldViewmodelHidden
 } from './factories'
+import { SKIP_LOBBY } from './config/gameConfig'
 import { createLobby } from './factories/lobby'
 import { DEMO_PARCEL_GRID, FULL_PARCEL_GRID } from './factories/sceneLevels'
-import { bootstrapSceneFlow } from './runtime/sceneFlow'
+import { bootstrapSceneFlow, skipLobbyToDebug } from './runtime/sceneFlow'
 import { getSceneMode } from './runtime/sceneMode'
 import { constructionInteractSystem } from './systems/constructionInteract'
 import { constructionPlacementSystem } from './systems/constructionPlacement'
@@ -167,8 +168,16 @@ export async function main(): Promise<void> {
   // lobby for the actual game world and runs the kind-specific bootstrap
   // (load / debug / nothing). Bootstrap also caches mode/parcelGrid so the
   // SystemMenu's BACK TO LOBBY can rebuild the same configuration.
-  createLobby(parcelGrid, mode)
+  //
+  // SKIP_LOBBY (dev-only, force-disabled in production) jumps straight
+  // into the DEBUG-seeded game world. Bootstrap still runs so a later
+  // BACK TO LOBBY from the system menu can rebuild the lobby cleanly.
   bootstrapSceneFlow(mode, parcelGrid)
+  if (SKIP_LOBBY) {
+    skipLobbyToDebug(parcelGrid)
+  } else {
+    createLobby(parcelGrid, mode)
+  }
 
   setupUi()
 }

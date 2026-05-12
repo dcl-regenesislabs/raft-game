@@ -52,6 +52,7 @@ import { setCookOpen } from '../ui/cookToggle'
 import { setCraftOpen } from '../ui/craftToggle'
 import { setInventoryOpen } from '../ui/inventoryToggle'
 import {
+  dismissStartupGate,
   reopenStartupGate,
   startStartupGateExit
 } from '../ui/startupGate'
@@ -98,6 +99,25 @@ function armLobbyExit(): void {
       runPortalAction(kind)
     })
   })
+}
+
+// Dev-only fast-boot path. Bypasses lobby creation and the startup gate
+// entirely, builds the game world, drops the player onto the main raft,
+// and applies the DEBUG seed (inventory + 8-platform ring with grill,
+// purifier, and stocked storage). Gated by SKIP_LOBBY in gameConfig.ts —
+// force-disabled in production builds.
+export function skipLobbyToDebug(parcelGrid: number): void {
+  dismissStartupGate()
+  setHeldViewmodelHidden(false)
+  buildGameWorld(parcelGrid)
+  void movePlayerTo({
+    newRelativePosition: {
+      x: GRID_ORIGIN.x,
+      y: GRID_ORIGIN.y + 1,
+      z: GRID_ORIGIN.z
+    }
+  })
+  applyDebugSeeds()
 }
 
 // One-shot: builds the actual game world (seabed, animated water at
