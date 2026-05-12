@@ -1,6 +1,11 @@
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 
+import { getRaftBuilderMode } from '../../systems/raftBuilder'
+import {
+  PLATFORM_COST,
+  getPlatformMaterialAvailable
+} from '../../systems/raft/platformCost'
 import { isCookOpen } from '../cookToggle'
 import { getPickedIngredient, pickIngredient } from '../cookSlots'
 import {
@@ -15,7 +20,11 @@ import {
   selectSlot
 } from '../inventoryState'
 import { isInventoryOpen } from '../inventoryToggle'
-import { BOTTOM_BAR_SLOT_COUNT, getInventorySlot } from '../items'
+import {
+  BOTTOM_BAR_SLOT_COUNT,
+  getCatalogItem,
+  getInventorySlot
+} from '../items'
 import {
   BAR_BOTTOM,
   BAR_HEIGHT,
@@ -43,7 +52,11 @@ import { ItemCountBadge } from './ItemCountBadge'
 // any bar size.
 export function BottomBar(): ReactEcs.JSX.Element {
   const width = Math.round(BAR_WIDTH * BAR_SCALE)
-  const label = getBottomBarSelectedLabel()
+  // While the hammer is in placing mode the cost label takes over the
+  // slot the transient name label normally occupies — never both at once,
+  // since they'd stack on the same anchor and overlap visually.
+  const showCost = getRaftBuilderMode() === 'placing'
+  const label = showCost ? null : getBottomBarSelectedLabel()
   return (
     <UiEntity
       uiTransform={{
@@ -52,8 +65,99 @@ export function BottomBar(): ReactEcs.JSX.Element {
         margin: { left: -Math.round(width / 2) }
       }}
     >
+      {showCost && <BottomBarPlatformCostLabel width={width} />}
       {label !== null && <BottomBarSelectedLabel value={label} width={width} />}
       <BottomBarSurface width={width} />
+    </UiEntity>
+  )
+}
+
+// Red used for material rows where the player doesn't have enough to
+// build. Softer than pure red so it reads as a warning, not an error.
+const COST_INSUFFICIENT_COLOR = Color4.create(1, 0.45, 0.45, 1)
+
+// Sits above the hot-bar while the hammer is in placing mode and shows
+// each material in the platform recipe as "Name have/need", with the
+// number turning red when the player is short of that material.
+// Pixel size of the inline material icon rendered next to each count.
+// Slightly larger than the label cap height so the icon dominates the
+// row visually but doesn't push the pill taller than its 28px height.
+const COST_ICON_SIZE = 22
+const COST_ROW_GAP = 12
+
+function BottomBarPlatformCostLabel(props: {
+  width: number
+}): ReactEcs.JSX.Element {
+  return (
+    <UiEntity
+      uiTransform={{
+        positionType: 'absolute',
+        position: { bottom: '100%', left: 0 },
+        width: props.width,
+        height: 32,
+        margin: { bottom: 4 },
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <UiEntity
+        uiTransform={{
+          height: 32,
+          padding: { left: 12, right: 12 },
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'row'
+        }}
+        uiBackground={{ color: Color4.create(0, 0, 0, 0.55) }}
+      >
+        {PLATFORM_COST.map((row, i) => (
+          <PlatformCostRow
+            key={row.id}
+            id={row.id}
+            amount={row.amount}
+            showSeparator={i > 0}
+          />
+        ))}
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
+function PlatformCostRow(props: {
+  id: string
+  amount: number
+  showSeparator: boolean
+  key?: number | string
+}): ReactEcs.JSX.Element {
+  const have = getPlatformMaterialAvailable(props.id)
+  const ok = have >= props.amount
+  const color = ok ? Color4.White() : COST_INSUFFICIENT_COLOR
+  const def = getCatalogItem(props.id)
+  const iconTexture = def?.texture ?? null
+  return (
+    <UiEntity
+      uiTransform={{
+        height: 32,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: { left: props.showSeparator ? COST_ROW_GAP : 0 }
+      }}
+    >
+      {iconTexture !== null && (
+        <UiEntity
+          uiTransform={{
+            width: COST_ICON_SIZE,
+            height: COST_ICON_SIZE,
+            margin: { right: 4 }
+          }}
+          uiBackground={{
+            textureMode: 'stretch',
+            texture: { src: iconTexture }
+          }}
+        />
+      )}
+      <Label value={`${have}/${props.amount}`} fontSize={16} color={color} />
     </UiEntity>
   )
 }

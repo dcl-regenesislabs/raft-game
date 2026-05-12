@@ -14,6 +14,7 @@ import { DestroyBanner } from './components/DestroyBanner'
 import { InventoryButton } from './components/InventoryButton'
 import { InventoryPanel } from './components/InventoryPanel'
 import { ItemReceivedOverlay } from './components/ItemReceivedNotification'
+import { ModeToggleButton } from './components/ModeToggleButton'
 import { NotificationOverlay } from './components/Notification'
 import { RotateButtons } from './components/RotateButtons'
 import { StartupScreen } from './components/StartupScreen'
@@ -138,6 +139,7 @@ function ui(): ReactEcs.JSX.Element {
         {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <BottomBar />}
         {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <StatsBars />}
         {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ActionButton />}
+        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ModeToggleButton />}
         {!isCookOpen() && !isStorageOpen() && <InventoryButton />}
         {!isCookOpen() && !isStorageOpen() && <CraftButton />}
         {!isCookOpen() && !isStorageOpen() && <SystemButton />}

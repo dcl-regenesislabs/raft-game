@@ -31,7 +31,7 @@ export const SHARK_INITIAL_RADIUS = 12
 // at least one destructible (non-Main) platform exists.
 export const SHARK_ATTACK_INTERVAL_S = 5 * 60
 export const SHARK_APPROACH_DURATION_S = 2.0
-export const SHARK_BITE_DURATION_S = 5
+export const SHARK_BITE_DURATION_S = 60
 export const SHARK_RETURN_DURATION_S = 3.0
 // Exponential-smoothing rate for orbit centre + radius (s⁻¹).
 export const SHARK_CENTER_LERP_K = 2.0

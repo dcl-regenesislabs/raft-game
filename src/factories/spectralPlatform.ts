@@ -136,7 +136,7 @@ function setSpectralColor(ghost: Entity, color: Color4): void {
   ]
 }
 
-function buildSpectralPbMaterial(color: Color4) {
+export function buildSpectralPbMaterial(color: Color4) {
   return {
     material: {
       $case: 'pbr' as const,

@@ -17,10 +17,6 @@ import {
   showSpectralAt,
   tickSpectralBlink
 } from '../../factories/spectralPlatform'
-import {
-  getCollectedCount,
-  subtractCollected
-} from '../../ui/inventoryState'
 import { isInventoryActionLocked } from '../../ui/inventoryToggle'
 import { showNotification } from '../../ui/notification'
 import {
@@ -29,6 +25,7 @@ import {
 } from '../../ui/placementRotation'
 import { triggerHammerSwing } from '../hammerSwing'
 import { publishLookAtHit } from '../lookAtTarget'
+import { canAffordPlatform, spendPlatformCost } from './platformCost'
 import {
   GRID_HALF_EXTENT,
   NEIGHBOUR_DELTAS,
@@ -43,11 +40,6 @@ import {
   unregisterCameraForwardRaycast,
   type RaycastHandler
 } from './shared'
-
-// Inventory id of the buildable platform tile. Each successful placement
-// consumes one; placement is blocked (and the preview turns yellow) when
-// the count hits zero. Matches the `platform` entry in `craftableItems.ts`.
-const PLATFORM_ITEM_ID = 'platform'
 
 // Red palette for the cursor-following "invalid placement" hologram. Stays
 // solid red — no blink — so it reads clearly as a "not here" indicator vs
@@ -162,7 +154,7 @@ function updatePlacementPreview(dt: number): void {
   if (validGhost === null || noStockGhost === null || cursorGhost === null) return
   const yawDeg = getPlacementRotationDeg()
   if (placeHoverCell !== null) {
-    const hasStock = getCollectedCount(PLATFORM_ITEM_ID) > 0
+    const hasStock = canAffordPlatform()
     const active = hasStock ? validGhost : noStockGhost
     const inactive = hasStock ? noStockGhost : validGhost
     showSpectralAt(active, gridCellToWorld(placeHoverCell.gx, placeHoverCell.gz), yawDeg)
@@ -258,14 +250,14 @@ function attachPlacementClick(clickArea: Entity, gx: number, gz: number): void {
 }
 
 function placeRaft(gridX: number, gridZ: number): void {
-  // Each placement consumes one platform from the inventory. Bail when stock
-  // is empty and surface a notification so the click feels acknowledged
-  // (the yellow preview is the at-rest cue; this is the on-action cue).
-  if (getCollectedCount(PLATFORM_ITEM_ID) <= 0) {
-    showNotification('No platforms in inventory. Craft a PLATFORM to build.')
+  // Each placement spends the raw-material recipe (PLATFORM_COST). Bail
+  // when any material is short — the yellow preview is the at-rest cue,
+  // this notification is the on-action cue.
+  if (!canAffordPlatform()) {
+    showNotification('Not enough materials to build a platform.')
     return
   }
-  subtractCollected(PLATFORM_ITEM_ID, 1)
+  spendPlatformCost()
   createPlatform(gridCellToWorld(gridX, gridZ), {
     gridX,
     gridZ,

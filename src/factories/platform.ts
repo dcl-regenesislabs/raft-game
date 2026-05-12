@@ -81,6 +81,17 @@ export function gridCellToWorld(gridX: number, gridZ: number): Vector3 {
   )
 }
 
+// Tracks each platform → its child GLB-visual entity. Lookup table for
+// systems that need to retint the rendered raft (e.g. the destroy-mode
+// ghost overlay), since the visible mesh lives on the child entity but
+// callers only know the parent platform. Populated by createPlatform,
+// cleaned up by destroyPlatformEntity.
+const platformVisuals = new Map<Entity, Entity>()
+
+export function getPlatformVisual(platform: Entity): Entity | null {
+  return platformVisuals.get(platform) ?? null
+}
+
 export function createPlatform(
   center: Vector3,
   options: CreatePlatformOptions = {}
@@ -118,6 +129,7 @@ export function createPlatform(
   Platform.create(platform, { gridX, gridZ })
   if (isMain) MainPlatform.create(platform)
 
+  platformVisuals.set(platform, visual)
   return platform
 }
 
@@ -148,6 +160,7 @@ export function destroyPlatformEntity(entity: Entity): void {
       engine.removeEntity(sprite)
     }
   }
+  platformVisuals.delete(entity)
   engine.removeEntity(entity)
 }
 

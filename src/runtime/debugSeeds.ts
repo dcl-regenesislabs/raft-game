@@ -58,7 +58,6 @@ function seedDebugStorage(entity: Entity): void {
     { id: 'rope', count: STORAGE_MAX_STACK },
     { id: 'metal', count: STORAGE_MAX_STACK },
     // Crafted placeables / building pieces
-    { id: 'platform', count: STORAGE_MAX_STACK },
     { id: 'grill', count: STORAGE_MAX_STACK },
     { id: 'purifier', count: STORAGE_MAX_STACK },
     { id: 'storage', count: STORAGE_MAX_STACK },

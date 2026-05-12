@@ -60,6 +60,15 @@ export function getRaftBuilderMode(): Mode {
   return mode
 }
 
+// External flip of the place ↔ destroy mode, driven by the mode-toggle
+// button. Idempotent for any non-hammer state (the syncModeToInventory
+// pass next frame would snap back to idle anyway). The internal slot-
+// repress toggle in syncModeToInventory still works on top of this.
+export function toggleRaftBuilderMode(): void {
+  if (mode === 'placing') setMode('destroying')
+  else if (mode === 'destroying') setMode('placing')
+}
+
 // Wipes builder/placement state so the BACK TO LOBBY flow can destroy
 // the spectral ghosts and placement markers without leaving stale refs
 // behind. Delegates the placement-side cache wipe to its owning module.
@@ -79,7 +88,7 @@ export function raftBuilderSystem(dt: number): void {
   syncModeToInventory()
 
   if (mode === 'placing') tickPlacing(dt)
-  if (mode === 'destroying') tickDestroying()
+  if (mode === 'destroying') tickDestroying(dt)
 
   // Desktop E/F rotate the previewed raft. Mobile uses the top-middle
   // Left/Right buttons. Only active during placing — destroying doesn't

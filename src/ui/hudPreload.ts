@@ -44,7 +44,6 @@ const HUD_PRELOAD_ASSETS: readonly string[] = [
   'images/hud/items/metal.png',
   'images/hud/items/plants.png',
   'images/hud/items/plastic.png',
-  'images/hud/items/raft_v4.png',
   'images/hud/items/rope.png',
   'images/hud/items/salt-water.png',
   'images/hud/items/spear.png',

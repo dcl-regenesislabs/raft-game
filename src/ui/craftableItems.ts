@@ -47,19 +47,6 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     ]
   },
   {
-    id: 'platform',
-    name: 'PLATFORM',
-    description:
-      'A wooden raft tile. Place it next to an existing platform to expand your raft.',
-    texture: 'images/hud/items/raft_v4.png',
-    cost: [
-      { materialId: 'wood', amount: 2 },
-      { materialId: 'plastic', amount: 2 },
-      { materialId: 'rope', amount: 1 }
-    ],
-    craftSec: 1
-  },
-  {
     id: 'spear',
     name: 'WOODEN SPEAR',
     description:
