@@ -18,8 +18,8 @@ export interface CraftableItem {
   texture: string
   cost: readonly MaterialCost[]
   // Optional per-item craft duration in seconds. When omitted the craft
-  // session falls back to the default duration. Used to make foundational
-  // build pieces craft faster than tools/utility items.
+  // session falls back to the default duration. Use 0 for raw materials
+  // (e.g. rope) so they craft instantly without locking the HUD.
   craftSec?: number
 }
 
@@ -33,7 +33,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     cost: [
       { materialId: 'plants', amount: 2 }
     ],
-    craftSec: 1
+    craftSec: 0
   },
   {
     id: 'hammer',

@@ -10,12 +10,12 @@ import { notifyItemReceived } from './itemReceivedNotification'
 import { getCombinedCount, subtractFromAll } from './storageSession'
 
 // Default craft duration. Individual recipes can override via
-// `CraftableItem.craftSec` — e.g. platforms snap together in a second
-// while tools take the full default.
-const CRAFT_DEFAULT_SEC = 4
+// `CraftableItem.craftSec` — raw materials (e.g. rope) use 0 to craft
+// instantly without entering a session.
+const CRAFT_TIME = 2
 
 let activeId: string | null = null
-let activeDurationSec = CRAFT_DEFAULT_SEC
+let activeDurationSec = CRAFT_TIME
 let elapsedSec = 0
 
 export function isCrafting(): boolean {
@@ -24,6 +24,7 @@ export function isCrafting(): boolean {
 
 export function getCraftProgress(): number {
   if (activeId === null) return 0
+  if (activeDurationSec <= 0) return 1
   return Math.min(1, elapsedSec / activeDurationSec)
 }
 
@@ -51,8 +52,15 @@ export function startCraft(id: string): boolean {
   for (const cost of item.cost) {
     subtractFromAll(cost.materialId, cost.amount)
   }
+  const duration = item.craftSec ?? CRAFT_TIME
+  if (duration <= 0) {
+    // Instant craft — skip the session entirely so the HUD never locks.
+    addCollected(id, 1)
+    notifyItemReceived(id, 1)
+    return true
+  }
   activeId = id
-  activeDurationSec = item.craftSec ?? CRAFT_DEFAULT_SEC
+  activeDurationSec = duration
   elapsedSec = 0
   return true
 }
