@@ -332,50 +332,25 @@ export const ITEM_NOTIF_ICON_GAP = 14
 export const ITEM_NOTIF_TOP_INSET = NOTIFICATION_TOP_INSET + NOTIFICATION_HEIGHT + 12
 export const ITEM_NOTIF_BADGE_FONT_SIZE = 16
 
-// --- Stats bars (top-left anchor) ------------------------------------------
-// Source art `bar.png` is 600×124. The cream icon cell sits on the left,
-// followed by a wood-framed dark track that we fill left-to-right.
-// Percentages were measured from the source PNG.
-export const STATS_BAR_TEXTURE = 'images/hud/bar.png'
-export const STATS_BAR_WIDTH = 280
-export const STATS_BAR_HEIGHT = Math.round(STATS_BAR_WIDTH * (124 / 600))
-export const STATS_BAR_GAP = 6
-// Top-left anchor for both platforms. The inset clears the chat/compass
-// pill row on mobile and gives breathing room from the safe-area top edge
-// on desktop. Left edge hugs the safe area.
-export const STATS_BAR_TOP = 100
-export const STATS_BAR_LEFT = 0
-// Desktop pins the stats column to the bottom-left instead — keeps the
-// top edge clear for the player nameplate / debug chrome and matches the
-// mini craft inventory anchor on the same platform.
-export const STATS_BAR_LEFT_DESKTOP = 40
-export const STATS_BAR_BOTTOM_DESKTOP = 40
-// Painted dark-track inset within the bar art. Fill grows from FILL_LEFT
-// rightward up to FILL_RIGHT_LIMIT at 100%. Right limit stops at the
-// painted dark-track edge so 100% doesn't bleed onto the wood frame.
-export const STATS_FILL_LEFT_PCT = 21
-export const STATS_FILL_RIGHT_LIMIT_PCT = 95
-export const STATS_FILL_TOP_PCT = 32
-export const STATS_FILL_BOTTOM_PCT = 30
-// Icon cell bounds — generously oversized so the icons read big against
-// the bar. Negative top/left lets the icon overflow the painted cream
-// cell and sit visually larger than the cell itself.
-export const STATS_ICON_LEFT_PCT = 0
-export const STATS_ICON_TOP_PCT = 0
-export const STATS_ICON_WIDTH_PCT = 26 * 0.8
-export const STATS_ICON_HEIGHT_PCT = 120 * 0.8
-// No inset — icons are tight crops, so let them fill the icon cell.
-export const STATS_ICON_INSET_PCT = 0
-export const STAT_ICON_TEXTURES: Record<StatKind, string> = {
-  life: 'images/hud/icons/life.png',
-  hunger: 'images/hud/icons/hungry.png',
-  thirst: 'images/hud/icons/thirst.png'
+// --- Stats orbs (top-center anchor, circular) -----------------------------
+// Each vital is a wood-framed circular orb. The `bar_container.png` art
+// is the shared empty state — a brown wooden ring with a dark inner
+// track and cream center. On top of that, a colored RING (per-stat art:
+// life_ring / hungry_ring / thirsty_ring) reveals clockwise from the 12
+// o'clock position as the stat fills, occupying the dark track. At 100%
+// the ring is fully drawn over the track; at 0% it's invisible.
+export const STATS_ORB_CONTAINER_TEXTURE = 'images/hud/icons/bar_container.png'
+export const STATS_ORB_SIZE = 130
+export const STATS_ORB_GAP = 14
+// Top inset clears the mobile chat / compass pill row and gives the orbs
+// breathing room from the safe-area top edge on desktop.
+export const STATS_ORB_TOP = 20
+// Per-stat full-ring textures. Same 324×324 footprint as the container
+// art so they overlay 1:1 with no per-stat offset math.
+export const STAT_RING_TEXTURES: Record<StatKind, string> = {
+  life: 'images/hud/icons/life_ring.png',
+  hunger: 'images/hud/icons/hungry_ring.png',
+  thirst: 'images/hud/icons/thirsty_ring.png'
 }
-// Tints for each stat — kept in the warm/saturated range so they read
-// against the brown frame.
-export const STAT_FILL_COLORS: Record<StatKind, ReturnType<typeof Color4.create>> = {
-  life: Color4.create(0.85, 0.18, 0.18, 1),
-  hunger: Color4.create(1.0, 0.6, 0.18, 1),
-  thirst: Color4.create(0.25, 0.65, 1.0, 1)
-}
+// Order drives the visual row left → right.
 export const STATS_ORDER: readonly StatKind[] = ['life', 'hunger', 'thirst']

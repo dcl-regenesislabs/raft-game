@@ -16,7 +16,6 @@ const HUD_PRELOAD_ASSETS: readonly string[] = [
 
   // HUD chrome
   'images/hud/backpack.png',
-  'images/hud/bar.png',
   'images/hud/bottom-bar.png',
   'images/hud/button.png',
   'images/hud/close_button.png',
@@ -28,10 +27,11 @@ const HUD_PRELOAD_ASSETS: readonly string[] = [
   'images/hud/selected-button.png',
 
   // HUD icons
-  'images/hud/icons/hungry.png',
-  'images/hud/icons/life.png',
+  'images/hud/icons/bar_container.png',
+  'images/hud/icons/hungry_ring.png',
+  'images/hud/icons/life_ring.png',
   'images/hud/icons/settings.png',
-  'images/hud/icons/thirst.png',
+  'images/hud/icons/thirsty_ring.png',
 
   // Inventory items
   'images/hud/items/cup.png',
