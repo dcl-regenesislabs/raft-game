@@ -47,7 +47,7 @@ export const HELD_ITEMS: Record<HeldItemKind, HeldItemConfig> = {
   },
   fishingRod: {
     src: 'assets/scene/items/fishing_rod.glb',
-    offset: Vector3.create(0.35, -0.25, 0.6),
+    offset: Vector3.create(0.35, -0.18, 0.6),
     rotation: Quaternion.fromEulerDegrees(60, 200, 0),
     scale: Vector3.create(0.35, 0.35, 0.35)
   },

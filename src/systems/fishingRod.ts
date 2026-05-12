@@ -73,7 +73,9 @@ const ROD_ITEM_ID = 'fishingRod'
 const FISH_POOL = ['sardines', 'squid', 'crab'] as const
 
 const CAMERA_FORWARD = Vector3.create(0, 0, 1)
-const HAND_OFFSET_LOCAL = Vector3.create(0.25, -0.45, 0.4)
+const HAND_OFFSET_LOCAL = Vector3.create(0.25, 0.25, 0.4)
+// Anchor while reeling: centered on screen, slightly below crosshair
+const HAND_OFFSET_REEL = Vector3.create(0.18, -0.15, 0.75)
 
 let lineEntity: Entity | null = null
 let ropeEntity: Entity | null = null
@@ -102,6 +104,11 @@ export function getFishingChargeT(): number {
 
 export function isFishingLineActive(): boolean {
   return lineEntity !== null
+}
+
+export function isFishingLineReeling(): boolean {
+  if (lineEntity === null) return false
+  return FishingLine.get(lineEntity).phase === FishingPhase.Reeling
 }
 
 // Drops every cached entity reference without removing the entities —
@@ -136,7 +143,6 @@ export function isFishingBiting(): boolean {
 
 export function fishingRodSystem(dt: number): void {
   const locked = isInventoryActionLocked()
-  const handPos = computeHandPos()
 
   // Force-retract the moment the player switches off the rod slot —
   // we don't want an orphaned line floating while the hammer / spear
@@ -153,6 +159,9 @@ export function fishingRodSystem(dt: number): void {
 
   if (lineEntity !== null) {
     cancelCharge()
+    const phase = FishingLine.get(lineEntity).phase
+    const offset = phase === FishingPhase.Reeling ? HAND_OFFSET_REEL : HAND_OFFSET_LOCAL
+    const handPos = computeHandPos(offset)
     if (handPos === null) return
     advanceLine(dt, handPos)
     return
@@ -177,6 +186,7 @@ export function fishingRodSystem(dt: number): void {
     return
   }
 
+  const handPos = computeHandPos(HAND_OFFSET_LOCAL)
   if (handPos === null) return
   tickCharge(dt, handPos)
 }
@@ -490,10 +500,10 @@ function computeAimDir(): Vector3 | null {
   return Vector3.create(aim.x * scale, MAX_UP_Y, aim.z * scale)
 }
 
-function computeHandPos(): Vector3 | null {
+function computeHandPos(offset: Vector3): Vector3 | null {
   const cam = Transform.getOrNull(engine.CameraEntity)
   if (cam === null) return null
-  const localOffset = Vector3.rotate(HAND_OFFSET_LOCAL, cam.rotation as Quaternion)
+  const localOffset = Vector3.rotate(offset, cam.rotation as Quaternion)
   return Vector3.create(
     cam.position.x + localOffset.x,
     cam.position.y + localOffset.y,

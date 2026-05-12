@@ -1,7 +1,7 @@
 import { Entity, Material, MeshRenderer, Transform, engine } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
-const ROPE_COLOR = Color4.create(0.35, 0.22, 0.1, 1)
+const ROPE_COLOR = Color4.create(0.55, 0.45, 0.15, 1)
 const ROPE_THICKNESS = 0.03
 export const LINE_THICKNESS = 0.008
 const RAD_TO_DEG = 180 / Math.PI
