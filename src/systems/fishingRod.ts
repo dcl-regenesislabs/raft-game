@@ -28,7 +28,6 @@ import {
 import { FishingLine, FishingPhase } from '../components'
 import {
   HOOK_FORWARD_ROTATION,
-  LINE_THICKNESS,
   createFishingCatchSprite,
   createFishingWarningSprite,
   createHookEntity,
@@ -72,6 +71,7 @@ import { computeWobble } from '../utils/wobble'
 const ROD_ITEM_ID = 'fishingRod'
 const FISH_POOL = ['sardines', 'squid', 'crab'] as const
 
+const LINE_THICKNESS = 0.008
 const CAMERA_FORWARD = Vector3.create(0, 0, 1)
 const HAND_OFFSET_LOCAL = Vector3.create(0.25, 0.25, 0.4)
 // Anchor while reeling: centered on screen, slightly below crosshair
