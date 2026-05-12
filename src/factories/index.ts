@@ -54,7 +54,7 @@ export {
   createHookEntity,
   createReferenceHook
 } from './hook'
-export { createRopeEntity, hideRope, updateRopeBetween } from './rope'
+export { createRopeEntity, hideRope, LINE_THICKNESS, updateRopeBetween } from './rope'
 export {
   createFishingWarningSprite,
   destroyFishingWarningSprite,
