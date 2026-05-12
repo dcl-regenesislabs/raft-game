@@ -89,7 +89,18 @@ export function cupFillSystem(_dt: number): void {
 }
 
 function findWaterEntity(): Entity | null {
-  if (waterEntityCached !== null) return waterEntityCached
+  // Validate the cache: the lobby builds its own WaterScroll entity, and
+  // `teardownLobby` destroys it before `buildGameWorld` creates the real
+  // y=4 game water. A stale cache from the lobby pass leaves this system
+  // attaching FILL CUP pointer events to a destroyed entity, which the
+  // SDK silently ignores.
+  if (
+    waterEntityCached !== null &&
+    WaterScroll.getOrNull(waterEntityCached) !== null
+  ) {
+    return waterEntityCached
+  }
+  waterEntityCached = null
   for (const [entity] of engine.getEntitiesWith(WaterScroll)) {
     waterEntityCached = entity
     return entity

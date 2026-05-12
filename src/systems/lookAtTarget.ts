@@ -90,7 +90,18 @@ export function lookAtTargetSystem(_dt: number): void {
 }
 
 function findWaterEntity(): Entity | null {
-  if (waterEntityCached !== null) return waterEntityCached
+  // Validate the cache against the live ECS state — the lobby's water
+  // entity gets cached on the lobby pass, then destroyed by
+  // `teardownLobby` when the player picks a portal. Without this check,
+  // every classifyHit() compares the camera ray against a dead entity ID
+  // and the cup-fill / action-button routing never sees `target = 'water'`.
+  if (
+    waterEntityCached !== null &&
+    WaterScroll.getOrNull(waterEntityCached) !== null
+  ) {
+    return waterEntityCached
+  }
+  waterEntityCached = null
   for (const [entity] of engine.getEntitiesWith(WaterScroll)) {
     waterEntityCached = entity
     return entity
