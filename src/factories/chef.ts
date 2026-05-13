@@ -32,36 +32,46 @@ import { ChefAnimDebug, ChefNpc } from '../components'
 // whole NPC) without leaking that concern into the factory itself.
 
 export const CHEF_GLB = 'assets/scene/items/italian_chef.glb'
-// Standing idle used by the lobby greeter. Renamed in the GLB from the
-// original `Idle_8` to a descriptive label after a walk-test revealed
-// that the Mixamo clip-name labels didn't match the actual motions.
-export const CHEF_IDLE_CLIP = 'idle_curiosity'
-// Visually-correct seated idle. The original Mixamo `Chair_Sit_Idle_M`
-// label was on a clip that turned out to be a "thanks" gesture, so we
-// remapped the names in the GLB (see `docs/chef.md`).
-export const CHEF_SITTING_IDLE_CLIP = 'sitting_idle'
-export const CHEF_BIG_WAVE_HELLO_CLIP = 'big_wave_hello'
-export const CHEF_HOVER_LABEL = 'Talk to the chef'
 
 // Every animation clip baked into `italian_chef.glb` (post-rename).
+// All exported individually so callers can reference clips by symbol
+// instead of stringly-typed names. The original Mixamo labels didn't
+// match the visible motions, so the GLB was re-labeled — see
+// `docs/chef.md` for the rename table.
+export const CHEF_SITTING_IDLE_CLIP = 'sitting_idle'
+export const CHEF_CELEBRATING_CLIP = 'celebrating'
+export const CHEF_THANKS_CLIP = 'thanks'
+export const CHEF_IDLE1_CLIP = 'idle1'
+export const CHEF_RUNNING_CLIP = 'running'
+export const CHEF_SITTING_HELLO_CLIP = 'sitting_hello'
+export const CHEF_THINKING_CLIP = 'thinking'
+export const CHEF_IDLE2_CLIP = 'idle2'
+export const CHEF_IDLE_CURIOSITY_CLIP = 'idle_curiosity'
+export const CHEF_IFEELYOUBRO_CLIP = 'ifeelyoubro'
+export const CHEF_WALKING_CLIP = 'walking'
+export const CHEF_CONGRATS_CLIP = 'congrats'
+export const CHEF_BIG_WAVE_HELLO_CLIP = 'big_wave_hello'
+
+// Default idle used by the lobby greeter when no clip is passed.
+export const CHEF_IDLE_CLIP = CHEF_IDLE_CURIOSITY_CLIP
+export const CHEF_HOVER_LABEL = 'Talk to the chef'
+
 // Surfaced for the debug cycler (`chefAnimDebugSystem`) so it can
-// iterate them by name. Order matches the GLB's animation array.
-// See `docs/chef.md` for the full table including original Mixamo
-// labels and a description of what each clip visually does.
+// iterate every clip by name. Order matches the GLB's animation array.
 export const CHEF_ALL_CLIPS: ReadonlyArray<string> = [
-  'sitting_idle',
-  'celebrating',
-  'thanks',
-  'idle1',
-  'running',
-  'sitting_hello',
-  'thinking',
-  'idle2',
-  'idle_curiosity',
-  'ifeelyoubro',
-  'walking',
-  'congrats',
-  'big_wave_hello'
+  CHEF_SITTING_IDLE_CLIP,
+  CHEF_CELEBRATING_CLIP,
+  CHEF_THANKS_CLIP,
+  CHEF_IDLE1_CLIP,
+  CHEF_RUNNING_CLIP,
+  CHEF_SITTING_HELLO_CLIP,
+  CHEF_THINKING_CLIP,
+  CHEF_IDLE2_CLIP,
+  CHEF_IDLE_CURIOSITY_CLIP,
+  CHEF_IFEELYOUBRO_CLIP,
+  CHEF_WALKING_CLIP,
+  CHEF_CONGRATS_CLIP,
+  CHEF_BIG_WAVE_HELLO_CLIP
 ]
 
 // Seconds each clip plays in debug-cycle mode before advancing.
@@ -109,6 +119,13 @@ export interface CreateChefParams {
   // (overwriting the dialog bubble with the current clip name each
   // step). Use to identify which animation maps to which name visually.
   debugCycleAllClips?: boolean
+  // Optional pre-registration of additional clips so a later system can
+  // call `Animator.playSingleAnimation(chef, clipName, true)` to swap
+  // among them at runtime. The Animator only plays clips listed in its
+  // `states` array — without this, a runtime swap would silently no-op.
+  // `idleClip` is forced into the list (added if missing) and is the
+  // initial playing state.
+  availableClips?: ReadonlyArray<string>
   // Click-box collision layers. Lobby chef uses POINTER+PHYSICS so the
   // box doubles as a body collider; the boat chef can opt into pointer
   // only since the deck already has its own footing.
@@ -136,6 +153,7 @@ export function createChef(params: CreateChefParams): ChefHandles {
     hoverLabel = CHEF_HOVER_LABEL,
     idleClip = CHEF_IDLE_CLIP,
     debugCycleAllClips = false,
+    availableClips,
     clickColliderLayers = [ColliderLayer.CL_POINTER, ColliderLayer.CL_PHYSICS],
     tag
   } = params
@@ -154,17 +172,37 @@ export function createChef(params: CreateChefParams): ChefHandles {
   // the GLB so `chefAnimDebugSystem` can toggle `playing` flags across
   // them.
   const initialClip = debugCycleAllClips ? CHEF_ALL_CLIPS[0] : idleClip
-  const animatorStates = debugCycleAllClips
-    ? CHEF_ALL_CLIPS.map((clip) => ({
-        clip,
-        playing: clip === initialClip,
-        loop: true,
-        weight: 1,
-        speed: 1
-      }))
-    : [
-        { clip: idleClip, playing: true, loop: true, weight: 1, speed: 1 }
-      ]
+  // Three Animator shapes:
+  //   - debugCycleAllClips: every GLB clip as a state, only the initial playing.
+  //   - availableClips provided: those clips (+ idleClip if missing) as states,
+  //     so a later system can swap among them via playSingleAnimation.
+  //   - default: a single state listing only idleClip — keeps the original
+  //     "avoid renderer fallback" behaviour for the lobby greeter.
+  let animatorStates: Array<{ clip: string; playing: boolean; loop: boolean; weight: number; speed: number }>
+  if (debugCycleAllClips) {
+    animatorStates = CHEF_ALL_CLIPS.map((clip) => ({
+      clip,
+      playing: clip === initialClip,
+      loop: true,
+      weight: 1,
+      speed: 1
+    }))
+  } else if (availableClips !== undefined && availableClips.length > 0) {
+    const clips = availableClips.includes(idleClip)
+      ? availableClips
+      : [idleClip, ...availableClips]
+    animatorStates = clips.map((clip) => ({
+      clip,
+      playing: clip === idleClip,
+      loop: true,
+      weight: 1,
+      speed: 1
+    }))
+  } else {
+    animatorStates = [
+      { clip: idleClip, playing: true, loop: true, weight: 1, speed: 1 }
+    ]
+  }
   Animator.create(chef, { states: animatorStates })
 
   const clickEntity = engine.addEntity()

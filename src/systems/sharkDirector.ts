@@ -90,6 +90,19 @@ const attackCache = new Map<Entity, AttackCache>()
 // Time since the last attack started (or since system load).
 let timeSinceLastAttack = 0
 
+// External freeze on starting NEW attacks. Set by the boat-chef director
+// while the visitor event is in progress so the cinematic moment isn't
+// undercut by a bite. We deliberately do NOT zero `timeSinceLastAttack`
+// while suppressed — the schedule clock keeps accumulating so an attack
+// can fire as soon as suppression lifts (mirrors the user-facing intent
+// "don't reset the timer, just ignore"). Mid-attack sharks are not
+// interrupted; only the trigger that begins new bites checks this flag.
+let attacksSuppressed = false
+
+export function setSharkAttacksSuppressed(value: boolean): void {
+  attacksSuppressed = value
+}
+
 export function sharkDirectorSystem(dt: number): void {
   // Lobby is up — there's no game world for the director to grow a
   // shark population around. Without this gate the director sees the
@@ -124,7 +137,11 @@ export function sharkDirectorSystem(dt: number): void {
   } else {
     timeSinceLastAttack = 0
   }
-  if (timeSinceLastAttack >= SHARK_ATTACK_INTERVAL_S && !anySharkAttacking()) {
+  if (
+    timeSinceLastAttack >= SHARK_ATTACK_INTERVAL_S &&
+    !anySharkAttacking() &&
+    !attacksSuppressed
+  ) {
     const choice = selectAttack()
     if (choice !== null) {
       beginAttack(choice.attacker, choice.target)

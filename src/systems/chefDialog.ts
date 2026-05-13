@@ -71,13 +71,38 @@ export const LOBBY_CHEF_DIALOG_LINES: ReadonlyArray<string> = [
   ].join('\n')
 ]
 
-// In-game boat-chef script. Placeholder until the gameplay around the
-// boat passenger is designed — keeps the click → bubble loop alive so
-// the NPC reads as interactive while the rest is iterated on.
+// In-game boat-chef script. The single-line welcome is what shows in
+// the bubble the moment the boat parks (visible from the horizon). The
+// boat-chef director swaps the chef's `dialogLines` to one of the two
+// scripts below the first time the player clicks the chef — picked by
+// whether the player is currently carrying a tier-4 hero plate.
 export const BOAT_CHEF_DIALOG_LINES: ReadonlyArray<string> = ['HELLO']
+
+// Played when the player has at least one tier-4 hero plate in their
+// inventory (spaghetti alle vongole or fettuccine sea hunter). No win
+// effect yet — just the dialog hinting that the chef would sail with
+// the player. Future iterations can branch into the actual win flow
+// from here.
+export const BOAT_CHEF_TIER4_DIALOG_LINES: ReadonlyArray<string> = [
+  ['Mamma mia! That plate...', 'you cooked it, my friend?'].join('\n'),
+  ['A hero plate, fresh and bold.', 'The sea would salute you.'].join('\n'),
+  ['Come aboard. I will sail us', 'home. Pack the wine. Andiamo!'].join('\n')
+]
+
+// Played when the player has no tier-4 plate yet. Leaves the door
+// open — the chef teases the recipes and asks the player to come back.
+// New inventory-dependent branches plug in here as the design grows.
+export const BOAT_CHEF_NO_TIER4_DIALOG_LINES: ReadonlyArray<string> = [
+  ['No hero plate yet, amico?', 'Click to hear more...'].join('\n'),
+  ['The sea is patient, friend.', 'Cook the great Sicilian plate.'].join('\n'),
+  ['Spaghetti alle vongole — clams,', 'fettuccine sea hunter, too.'].join('\n'),
+  ['Return when the plate is hot.', 'I will sail this boat for you.'].join('\n')
+]
 
 assertDialogShape(LOBBY_CHEF_DIALOG_LINES)
 assertDialogShape(BOAT_CHEF_DIALOG_LINES)
+assertDialogShape(BOAT_CHEF_TIER4_DIALOG_LINES)
+assertDialogShape(BOAT_CHEF_NO_TIER4_DIALOG_LINES)
 
 function assertDialogShape(lines: ReadonlyArray<string>): void {
   for (const entry of lines) {

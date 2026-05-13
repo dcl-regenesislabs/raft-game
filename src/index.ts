@@ -33,7 +33,9 @@ import { grillFireSystem } from './systems/grillFire'
 import { hammerSwingSystem } from './systems/hammerSwing'
 import { hookThrowAnimSystem } from './systems/hookThrowAnim'
 import { hookThrowerSystem } from './systems/hookThrower'
+import { rodHookSwingSystem } from './systems/rodHookSwing'
 import { inventoryInputSystem } from './systems/inventoryInput'
+import { boatChefDirectorSystem } from './systems/boatChefDirector'
 import { chefAnimDebugSystem } from './systems/chefAnimDebug'
 import { chefDialogSystem } from './systems/chefDialog'
 import { lobbyButtonHoverSystem } from './systems/lobbyButtonHover'
@@ -114,6 +116,7 @@ export async function main(): Promise<void> {
   engine.addSystem(cupFillSystem)
   engine.addSystem(foodEatSystem)
   engine.addSystem(hookThrowAnimSystem)
+  engine.addSystem(rodHookSwingSystem)
   // Game-world geometry (seabed, the y=4 water plane, the main raft,
   // and the sharks) is intentionally deferred to `buildGameWorld`
   // below — only the lobby exists at boot. Systems below stay
@@ -127,6 +130,11 @@ export async function main(): Promise<void> {
   engine.addSystem(portalPulseSystem)
   engine.addSystem(portalUvSwirlSystem)
   engine.addSystem(lobbyButtonHoverSystem)
+  // Director MUST run before chefDialogSystem — on the WAITING → INTERACTING
+  // click frame it swaps the chef's dialog script and resets
+  // `dialogLineIndex = -1`, so the dialog system's `(idx + 1) % stateCount`
+  // on the same frame lands on 0 and shows the new script's first line.
+  engine.addSystem(boatChefDirectorSystem)
   engine.addSystem(chefDialogSystem)
   engine.addSystem(chefAnimDebugSystem)
   engine.addSystem(garbageSpawnerSystem)
