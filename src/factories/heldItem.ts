@@ -47,9 +47,9 @@ export const HELD_ITEMS: Record<HeldItemKind, HeldItemConfig> = {
   },
   fishingRod: {
     src: 'assets/scene/items/fishing_rod.glb',
-    offset: Vector3.create(0.35, -0.25, 0.6),
-    rotation: Quaternion.fromEulerDegrees(60, 200, 0),
-    scale: Vector3.create(0.35, 0.35, 0.35)
+    offset: Vector3.create(0.35, -0.1, 0.6),
+    rotation: Quaternion.fromEulerDegrees(10, 0, -90),
+    scale: Vector3.create(0.245, 0.245, 0.245)
   },
   food: {
     src: '',
@@ -75,6 +75,19 @@ export const HELD_ITEMS: Record<HeldItemKind, HeldItemConfig> = {
   }
 }
 
+// Rest pose for tier-4 hero plates that ship a GLB instead of a flat
+// sprite. The GLB rides the same camera-parented tool entity used by
+// regular tools, so heldKind stays 'food' but the visibility/sway code
+// routes to the tool child (see `heldFoodIsGlb`). Tuned to sit a touch
+// further from the camera than flat-sprite food so the model has room
+// to read in 3D; rotation 0 leaves the model's authored up axis intact.
+const HELD_FOOD_GLB: HeldItemConfig = {
+  src: '',
+  offset: Vector3.create(0.3, -0.27, 0.6),
+  rotation: Quaternion.fromEulerDegrees(0, 180, 0),
+  scale: Vector3.create(0.25, 0.25, 0.25)
+}
+
 // The held viewmodel is two camera-parented child entities under a shared
 // root: one carries the GLB tools, the other carries the food sprite. Only
 // one is visible at a time (toggled via VisibilityComponent), so swapping
@@ -85,6 +98,10 @@ let heldKind: HeldItemKind = 'hook'
 // Active food id while heldKind === 'food'. Used by the eat system so it
 // knows which food to consume from the inventory. Null otherwise.
 let heldFoodId: string | null = null
+// True while heldKind === 'food' but the food shipped a GLB — the model
+// rides the tool child instead of the sprite child, and visibility/sway
+// route accordingly. Reset to false on every non-GLB food / cup equip.
+let heldFoodIsGlb = false
 // Global hide flag. While true, both viewmodel children stay invisible
 // regardless of which kind is "equipped" — the lobby uses this so the
 // startup HOOK doesn't render under the title overlay. Item-swap calls
@@ -138,6 +155,7 @@ export function setHeldItem(kind: HeldItemKind): void {
   applyRestPose(toolEntity, cfg)
   heldKind = kind
   heldFoodId = null
+  heldFoodIsGlb = false
   applyKindVisibility()
 }
 
@@ -146,11 +164,21 @@ export function setHeldItem(kind: HeldItemKind): void {
 // texture on an unlit basic material so scene lighting doesn't darken it.
 // The eat system reads `heldFoodId` to know which food to consume when the
 // player fires.
-export function setHeldFood(foodId: string, texture: string): void {
+export function setHeldFood(foodId: string, texture: string, glb?: string | null): void {
   if (toolEntity === null || spriteEntity === null) return
-  applySpriteTexture(spriteEntity, texture)
-  applyRestPose(spriteEntity, HELD_ITEMS.food)
-  clearToolGlb(toolEntity)
+  if (glb !== null && glb !== undefined && glb !== '') {
+    // Tier-4 hero plates: mount the GLB on the tool child. The sprite
+    // child stays hidden via `applyKindVisibility` (it reads
+    // `heldFoodIsGlb`), so the flat plane never leaks through.
+    GltfContainer.createOrReplace(toolEntity, { src: glb })
+    applyRestPose(toolEntity, HELD_FOOD_GLB)
+    heldFoodIsGlb = true
+  } else {
+    applySpriteTexture(spriteEntity, texture)
+    applyRestPose(spriteEntity, HELD_ITEMS.food)
+    clearToolGlb(toolEntity)
+    heldFoodIsGlb = false
+  }
   heldKind = 'food'
   heldFoodId = foodId
   applyKindVisibility()
@@ -169,6 +197,7 @@ export function setHeldCup(containerId: string, texture: string): void {
   clearToolGlb(toolEntity)
   heldKind = 'cup'
   heldFoodId = containerId
+  heldFoodIsGlb = false
   applyKindVisibility()
 }
 
@@ -192,7 +221,8 @@ function applyKindVisibility(): void {
     setVisible(spriteEntity, false)
     return
   }
-  const isSprite = heldKind === 'food' || heldKind === 'cup'
+  // GLB-backed food rides the tool child, even though heldKind is 'food'.
+  const isSprite = (heldKind === 'food' && !heldFoodIsGlb) || heldKind === 'cup'
   setVisible(toolEntity, !isSprite)
   setVisible(spriteEntity, isSprite)
 }
@@ -205,7 +235,8 @@ function applyKindVisibility(): void {
 // GLB's pose instead, and the stale GLB visibly leaked through under
 // some lighting/visibility conditions.
 export function getHeldItemEntity(): Entity | null {
-  if (heldKind === 'food' || heldKind === 'cup') return spriteEntity
+  if (heldKind === 'cup') return spriteEntity
+  if (heldKind === 'food') return heldFoodIsGlb ? toolEntity : spriteEntity
   return toolEntity
 }
 
@@ -227,6 +258,7 @@ export function getHeldFoodId(): string | null {
 }
 
 export function getHeldItemRest(): HeldItemConfig {
+  if (heldKind === 'food' && heldFoodIsGlb) return HELD_FOOD_GLB
   return HELD_ITEMS[heldKind]
 }
 

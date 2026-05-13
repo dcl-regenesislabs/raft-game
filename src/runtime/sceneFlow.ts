@@ -29,6 +29,7 @@ import {
   createWaterFloorV2,
   spawnRingShark
 } from '../factories'
+import { spawnBoatChef } from '../factories/boat'
 import { getFirstPersonAreaEntity } from '../factories/firstPersonArea'
 import {
   getHeldItemViewmodelEntities,
@@ -135,6 +136,10 @@ function buildGameWorld(parcelGrid: number): void {
   // not in the keep-set are removed, taking the modifier area with them.
   createAvatarHideArea(parcelGrid)
   spawnSharks()
+  // Chef in a wooden rowboat lapping the raft on top of the water —
+  // mirrors the shark ring beneath, but as a friendly NPC. Click to
+  // open his dialog bubble (placeholder "HELLO" for now).
+  spawnBoatChef(GRID_ORIGIN)
 }
 
 function spawnSharks(): void {

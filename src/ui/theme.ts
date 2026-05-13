@@ -340,15 +340,13 @@ export const ITEM_NOTIF_BADGE_FONT_SIZE = 16
 // o'clock position as the stat fills, occupying the dark track. At 100%
 // the ring is fully drawn over the track; at 0% it's invisible.
 export const STATS_ORB_CONTAINER_TEXTURE = 'images/hud/icons/bar_container.png'
-export const STATS_ORB_SIZE = 65
+export const STATS_ORB_SIZE = 72
 export const STATS_ORB_GAP = 8
-// Top-left anchor. The top inset clears the mobile chat / compass pill
-// row and gives the orbs breathing room from the safe-area top edge on
-// desktop; the left anchor sits at 20% of the safe-area width so the
-// trio reads as a left-of-center HUD cluster rather than hugging the
-// edge.
-export const STATS_ORB_TOP = 20
-export const STATS_ORB_LEFT = '20%'
+// Top-left anchor in fixed pixels so the cluster sits at the same
+// on-screen spot on both mobile and desktop. Percentage offsets drift
+// with viewport width and broke parity between platforms.
+export const STATS_ORB_TOP = 24
+export const STATS_ORB_LEFT = 360
 // Per-stat ring-reveal SPRITESHEETS. Each is a 4×4 grid of 16 frames at
 // 64×64 per cell, total 256×256 — the mobile texture-optimizer caps all
 // HUD textures at 256×256, so we ship at that exact size to avoid lossy

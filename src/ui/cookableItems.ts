@@ -29,6 +29,12 @@ export interface CookableItem {
   // Optional per-recipe cook duration in seconds. Falls back to the cook
   // session default when omitted.
   cookSec?: number
+  // Optional 3D model for the finished plate. When present the grill
+  // spawns a GLB instead of a flat sprite at the Cooking → Ready
+  // transition, and the held viewmodel uses the GLB in the player's
+  // hand. Only the tier-4 hero plates set this; everything else falls
+  // back to the `texture`-based sprite.
+  glb?: string
 }
 
 const WOOD: CookIngredient = { itemId: 'wood', amount: 1 }
@@ -36,7 +42,7 @@ const WOOD: CookIngredient = { itemId: 'wood', amount: 1 }
 // Cook-time tiers — ladders complexity with ingredient count without
 // ever exceeding 8 seconds. With pasta no longer a separate axis,
 // pasta plates fall into whichever ingredient-count tier they belong
-// to (e.g. spaghetti_pomodoro at 2-ing → SEC_2).
+// to (e.g. spaghetti_alle_vongole at 2-ing → SEC_2).
 const SEC_1 = 4
 const SEC_2 = 5
 const SEC_3 = 6
@@ -224,11 +230,11 @@ export const COOKABLE_ITEMS: readonly CookableItem[] = [
     cookSec: SEC_2
   },
   {
-    id: 'spaghetti_pomodoro',
-    name: 'SPAGHETTI POMODORO',
-    description: 'Spaghetti in a fresh tomato sauce. Classic.',
-    texture: 'images/cooking/spaghetti_pomodoro.png',
-    ingredients: [ING('spaghetti'), ING('tomatoes')],
+    id: 'spaghetti_alle_vongole',
+    name: 'SPAGHETTI ALLE VONGOLE',
+    description: 'Spaghetti with clams. Simple and briny.',
+    texture: 'images/cooking/spaghetti_alle_vongole.png',
+    ingredients: [ING('spaghetti'), ING('clams')],
     fuel: WOOD,
     cookSec: SEC_2
   },
@@ -309,19 +315,21 @@ export const COOKABLE_ITEMS: readonly CookableItem[] = [
 
   // ─── 4-ingredient hero plates (2) ───────────────────────────────────
   {
-    id: 'spaghetti_alle_vongole',
-    name: 'SPAGHETTI ALLE VONGOLE',
-    description: 'Spaghetti with clams, garlic, and olive oil.',
-    texture: 'images/cooking/spaghetti_alle_vongole.png',
-    ingredients: [ING('spaghetti'), ING('clams'), ING('garlic'), ING('olive_oil')],
+    id: 'spaghetti_shark_pomodoro',
+    name: 'SPAGHETTI SHARK POMODORO',
+    description: 'Spaghetti with shark meat in a rich tomato sauce, finished with olive oil.',
+    texture: 'images/cooking/spaghetti_shark_pomodoro.png',
+    glb: 'assets/scene/items/spaghetti_shark_pomodoro.glb',
+    ingredients: [ING('spaghetti'), ING('shark_meat'), ING('tomatoes'), ING('olive_oil')],
     fuel: WOOD,
     cookSec: SEC_4
   },
   {
-    id: 'fettuccine_sea_hunter',
-    name: 'FETTUCCINE SEA HUNTER',
-    description: 'A hunter\'s feast: fettuccine with shark, squid, and crab.',
-    texture: 'images/cooking/fettuccine_sea_hunter.png',
+    id: 'fettuccine_sea_food',
+    name: 'FETTUCCINE SEA FOOD',
+    description: 'A seafood feast: fettuccine with shark, squid, and crab.',
+    texture: 'images/cooking/fettuccine_sea_food.png',
+    glb: 'assets/scene/items/fettuccine_sea_food.glb',
     ingredients: [ING('fettuccine'), ING('shark_meat'), ING('squid'), ING('crab')],
     fuel: WOOD,
     cookSec: SEC_4

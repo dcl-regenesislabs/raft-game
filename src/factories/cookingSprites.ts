@@ -2,6 +2,7 @@ import {
   Billboard,
   BillboardMode,
   Entity,
+  GltfContainer,
   Material,
   MaterialTransparencyMode,
   MeshRenderer,
@@ -181,6 +182,29 @@ export function createPlateSprite(
   )
 }
 
+// Same slot above the grill, but spawns a GLB instead of a flat sprite.
+// Used by the tier-4 hero plates that ship with a 3D model — the model
+// stays upright (yawed to face the grill direction) so the food bob in
+// `grillCookSystem` still reads. Scale is tuned to match the sprite's
+// visual footprint so the swap doesn't jolt the silhouette.
+const PLATE_GLB_SCALE_M = 0.2
+
+export function createPlateGlb(
+  platform: Entity,
+  yawDeg: number,
+  glb: string
+): Entity {
+  const platformPos = Transform.get(platform).position
+  const entity = engine.addEntity()
+  Transform.create(entity, {
+    position: Vector3.create(platformPos.x, platformPos.y + FOOD_Y_OFFSET, platformPos.z),
+    rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
+    scale: Vector3.create(PLATE_GLB_SCALE_M, PLATE_GLB_SCALE_M, PLATE_GLB_SCALE_M)
+  })
+  GltfContainer.create(entity, { src: glb })
+  return entity
+}
+
 // Replaces the material on an existing flat sprite — used to swap the
 // plate texture to coal at the burn transition without rebuilding the
 // entity.
@@ -207,6 +231,14 @@ export function setSpriteTexture(entity: Entity, texture: string): void {
 export function getRecipeOutputTexture(recipeId: string): string {
   const recipe = getCookableById(recipeId)
   return recipe?.texture ?? ''
+}
+
+// Optional GLB path for the cooked-recipe output. Only the tier-4 hero
+// plates set this; everything else returns null and the grill falls
+// back to a flat sprite via `createPlateSprite`.
+export function getRecipeOutputGlb(recipeId: string): string | null {
+  const recipe = getCookableById(recipeId)
+  return recipe?.glb ?? null
 }
 
 // --- internals ---
