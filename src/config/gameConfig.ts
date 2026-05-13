@@ -26,7 +26,7 @@ export const DEBUG_MODE = true
 // straight into the DEBUG-seeded game world. Force-disabled in production
 // builds so a stray `true` can't ship — flip the raw constant below to
 // re-enable locally.
-const SKIP_LOBBY_RAW = true
+const SKIP_LOBBY_RAW = false
 export const SKIP_LOBBY: boolean = !IS_PRODUCTION && SKIP_LOBBY_RAW
 
 // --- Shark director --------------------------------------------------------

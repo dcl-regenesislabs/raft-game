@@ -35,6 +35,7 @@ import { hookThrowAnimSystem } from './systems/hookThrowAnim'
 import { hookThrowerSystem } from './systems/hookThrower'
 import { inventoryInputSystem } from './systems/inventoryInput'
 import { lobbyButtonHoverSystem } from './systems/lobbyButtonHover'
+import { lobbyChefAnimSystem } from './systems/lobbyChef'
 import { lobbyPortalSystem } from './systems/lobbyPortalSystem'
 import { portalPulseSystem } from './systems/portalPulse'
 import { portalUvSwirlSystem } from './systems/portalUvSwirl'
@@ -125,6 +126,7 @@ export async function main(): Promise<void> {
   engine.addSystem(portalPulseSystem)
   engine.addSystem(portalUvSwirlSystem)
   engine.addSystem(lobbyButtonHoverSystem)
+  engine.addSystem(lobbyChefAnimSystem)
   engine.addSystem(garbageSpawnerSystem)
   engine.addSystem(floatingGarbageSystem)
   engine.addSystem(grillFireSystem)

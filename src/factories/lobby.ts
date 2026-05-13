@@ -1,4 +1,5 @@
 import {
+  Animator,
   Billboard,
   BillboardMode,
   ColliderLayer,
@@ -24,11 +25,17 @@ import { DEBUG_MODE } from '../config/gameConfig'
 import {
   LobbyButton,
   LobbyButtonHover,
+  LobbyChef,
   LobbyTag,
   LobbyTeleport,
   PortalPulse,
   PortalUvSwirl
 } from '../components'
+import {
+  CHEF_HOVER_LABEL,
+  CHEF_IDLE_CLIP,
+  getChefFirstDialogLine
+} from '../systems/lobbyChef'
 import { SceneMode } from '../runtime/sceneMode'
 import {
   GRID_ORIGIN,
@@ -128,6 +135,8 @@ const BUTTON_TEXTURE = 'images/hud/red_button.png'
 // Decoration GLBs reused from the survival-game pack.
 const BARREL_GLB = 'assets/scene/items/barrel.glb'
 const WOOD_GLB = 'assets/scene/items/wood.glb'
+const CHEF_GLB = 'assets/scene/items/italian_chef.glb'
+const CHEF_DIALOG_TEXTURE = 'images/hud/dialog_box.png'
 // Pre-baked grayscale copy of red_button.png — swapped in when a button
 // is in its inert state (LOAD World pre-probe / no-save). Keeps the
 // chipped-corner alpha intact so the button silhouette doesn't shift
@@ -178,6 +187,13 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
   buildCampfireZone(cx - 10.5, cz, mode)
   buildFishingCorner(cx + 10.5, cz, mode)
   buildPerimeterProps(cx, cz)
+  // Lobby chef stands a couple of metres east-and-south of the
+  // information kiosk so the welcome animations read as the kiosk's
+  // greeter without blocking the click rays into the NEW/LOAD/DEBUG
+  // buttons. Yaw 200° = south-facing rotated 20° toward his own right
+  // (toward the centre of the deck) so he reads as "talking toward
+  // the kiosk" rather than staring straight at the bridge.
+  buildLobbyChef(cx + PANEL_OFFSET_X + 2, cz + PANEL_OFFSET_Z - 2.5, 185)
 }
 
 // World-space position the player teleports to on lobby entry: the
@@ -689,8 +705,8 @@ function buildSideWingRafts(cx: number, cz: number): void {
   }
 }
 
-// West wing — three barrels arranged in a circle. Reads as the lobby's
-// gathering nook.
+// West wing — three barrels arranged in a circle. Reads as the
+// lobby's gathering nook.
 function buildCampfireZone(wingX: number, wingZ: number, _mode: SceneMode): void {
   const barrelOffsets: Array<{ dx: number; dz: number; yawDeg: number }> = [
     { dx: 1.3, dz: 0, yawDeg: 30 },
@@ -710,6 +726,137 @@ function buildCampfireZone(wingX: number, wingZ: number, _mode: SceneMode): void
     })
     LobbyTag.create(barrel)
   }
+}
+
+// Stands the chef NPC at the south-east corner of the information
+// panel so he reads as the kiosk's greeter. The model's pivot sits at
+// the foot (accessor 0 min y ≈ 0, max y ≈ 1.7), so we drop him
+// directly on the deck with no Y lift. Caller picks the yaw — 180°
+// is straight-south (facing the bridge); higher values turn him
+// toward his own right (west of south) so he reads as conversing
+// with the panel rather than ignoring it.
+//
+// Click handling sits on a CHILD box collider rather than the GLB's
+// own visible meshes — see the `LobbyChef.clickEntity` doc in
+// `components.ts`. The box is sized to wrap the chef's silhouette
+// (0.8 × 1.8 × 0.6 m, centred at mid-torso) so the click target lines
+// up with the visible body even when arms flail during animations.
+function buildLobbyChef(worldX: number, worldZ: number, yawDeg: number): void {
+  const chef = engine.addEntity()
+  Transform.create(chef, {
+    position: Vector3.create(worldX, LOBBY_DECK_Y, worldZ),
+    rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
+    scale: Vector3.create(1, 1, 1)
+  })
+  GltfContainer.create(chef, { src: CHEF_GLB })
+  // Single-clip animator: the chef loops his idle pose forever. The
+  // click-to-cycle animation system was removed in favour of a static
+  // pose + speech bubble narrative, so there's no reason to register
+  // the other clips on the Animator at all.
+  Animator.create(chef, {
+    states: [
+      { clip: CHEF_IDLE_CLIP, playing: true, loop: true, weight: 1, speed: 1 }
+    ]
+  })
+
+  const clickBox = engine.addEntity()
+  Transform.create(clickBox, {
+    parent: chef,
+    position: Vector3.create(0, 0.9, 0),
+    scale: Vector3.create(0.8, 1.8, 0.6)
+  })
+  MeshCollider.setBox(clickBox, [ColliderLayer.CL_POINTER, ColliderLayer.CL_PHYSICS])
+  PointerEvents.create(clickBox, {
+    pointerEvents: [
+      {
+        eventType: PointerEventType.PET_DOWN,
+        eventInfo: {
+          button: InputAction.IA_POINTER,
+          hoverText: CHEF_HOVER_LABEL,
+          maxDistance: 8
+        }
+      }
+    ]
+  })
+  LobbyTag.create(clickBox)
+
+  const dialog = buildChefDialogBubble(chef)
+
+  LobbyChef.create(chef, {
+    clickEntity: clickBox,
+    dialogBubbleEntity: dialog.bubble,
+    dialogTextEntity: dialog.text,
+    dialogLineIndex: 0
+  })
+  LobbyTag.create(chef)
+}
+
+// Speech bubble floating above the chef's head. The PNG (1100x700) is
+// applied to a billboarded plane so the player can read it from any
+// angle on the deck. The TextShape sits as a child of the bubble,
+// inverse-scaled so glyphs render at their natural aspect despite the
+// parent's non-uniform stretch — same pattern as the lobby kiosk's
+// FULL GAME label. Local +Z is the plane's back face; TextShape's
+// default front face is -Z, so the text reads correctly toward the
+// camera once the parent Billboard rotates it.
+const CHEF_DIALOG_WIDTH = 2.6
+const CHEF_DIALOG_HEIGHT = CHEF_DIALOG_WIDTH * (700 / 1100)
+const CHEF_DIALOG_LIFT = 1.75
+function buildChefDialogBubble(chef: Entity): { bubble: Entity; text: Entity } {
+  const bubble = engine.addEntity()
+  Transform.create(bubble, {
+    // Chef yaw is 185°, so chef-local +X points ~world -X — i.e. the
+    // player's left when approaching from the south bridge. The 0.5
+    // offset slides the whole bubble off the chef's head toward that
+    // side so it doesn't sit dead-centre over him.
+    parent: chef,
+    position: Vector3.create(0.25, CHEF_DIALOG_LIFT + CHEF_DIALOG_HEIGHT / 2, 0),
+    scale: Vector3.create(CHEF_DIALOG_WIDTH, CHEF_DIALOG_HEIGHT, 1)
+  })
+  MeshRenderer.setPlane(bubble)
+  Billboard.create(bubble, { billboardMode: BillboardMode.BM_Y })
+  // Truly unlit: basic material renders the texture 1:1 without any
+  // scene lighting, shadows, or specular passes — same family as the
+  // red_button plates on the kiosk. `alphaTest` gives a hard cut at the
+  // PNG's anti-aliased edge, which reads as a clean parchment outline
+  // rather than a soft halo.
+  Material.setBasicMaterial(bubble, {
+    texture: Material.Texture.Common({
+      src: CHEF_DIALOG_TEXTURE,
+      filterMode: TextureFilterMode.TFM_BILINEAR,
+      wrapMode: TextureWrapMode.TWM_CLAMP
+    }),
+    diffuseColor: Color4.create(1, 1, 1, 1),
+    alphaTest: 0.5,
+    castShadows: false
+  })
+  LobbyTag.create(bubble)
+
+  // Child text inverse-scaled to undo the bubble's stretch so glyphs
+  // render square. Positioned just in front of the bubble plane (local
+  // -Z, since +Z is the back face after Billboard rotation). fontSize
+  // is tuned so a five-line script fits comfortably inside the
+  // parchment area without bleeding past the rounded edges of the PNG.
+  const text = engine.addEntity()
+  Transform.create(text, {
+    // Small downward bias inside the bubble so the lines land closer
+    // to the centre of the parchment area. Value is in pre-scale units;
+    // world offset = -0.05 * CHEF_DIALOG_HEIGHT.
+    parent: bubble,
+    position: Vector3.create(0, 0.05, -0.02),
+    scale: Vector3.create(1 / CHEF_DIALOG_WIDTH, 1 / CHEF_DIALOG_HEIGHT, 1)
+  })
+  TextShape.create(text, {
+    text: getChefFirstDialogLine(),
+    fontSize: 1.6,
+    lineSpacing: 1.1,
+    textColor: Color4.create(0, 0, 0, 1),
+    outlineColor: Color3.create(0.85, 0.05, 0.08),
+    outlineWidth: 2,
+    textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+  })
+  LobbyTag.create(text)
+  return { bubble, text }
 }
 
 // East wing — a small bucket (re-scaled barrel) on the deck. The rod

@@ -327,6 +327,31 @@ export const LobbyButtonHover = engine.defineComponent('mystic-pond:lobby-button
   currentMul: Schemas.Number
 })
 
+// Per-instance state for the lobby's clickable chef NPC. The Animator
+// on the same entity holds every clip; this component is the bookkeeping
+// the click-cycle system needs: which clip is currently playing, how
+// long is left on it, and which one to launch on the next click.
+//
+// `clickEntity` is the CHILD entity carrying the box collider +
+// PointerEvents. The GLB itself ships with thousands of triangles per
+// frame — using `visibleMeshesCollisionMask` to receive clicks would
+// burn a per-triangle raycast on every pointer event. The box child is
+// a single MeshCollider so click resolution is O(1).
+//
+// `dialogBubbleEntity` is the speech-bubble plane and `dialogTextEntity`
+// its TextShape child. The bubble opens on the welcome question
+// (index 0) and only advances when the player clicks the chef. The
+// cycle is (CHEF_DIALOG_LINES.length + 1) states: indices 0..N-1 show
+// the matching story line, the final state hides both entities via
+// VisibilityComponent. The next click after the hidden state wraps
+// back to the welcome question.
+export const LobbyChef = engine.defineComponent('mystic-pond:lobby-chef', {
+  clickEntity: Schemas.Entity,
+  dialogBubbleEntity: Schemas.Entity,
+  dialogTextEntity: Schemas.Entity,
+  dialogLineIndex: Schemas.Int
+})
+
 // Drives circular motion around a fixed point on the XZ plane. Used by sharks
 // patrolling the platform. Consumed by `systems/sharkOrbit.ts`.
 export const SharkOrbit = engine.defineComponent('shark-orbit', {
