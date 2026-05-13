@@ -1,11 +1,12 @@
 import { SkyboxTime, engine } from '@dcl/sdk/ecs'
-import { isServer } from '@dcl/sdk/network'
+import { sfxTickSystem } from './audio/sfx'
+// import { isServer } from '@dcl/sdk/network'
 
-import {
-  initSaveClient,
-  saveClientTickSystem
-} from './client/saveClient'
-import { runServer } from './server/server'
+// import {
+//   initSaveClient,
+//   saveClientTickSystem
+// } from './client/saveClient'
+// import { runServer } from './server/server'
 
 import {
   GRID_ORIGIN,
@@ -65,14 +66,11 @@ import { purifySessionTickSystem } from './ui/purifySession'
 import { worldClickGateResetSystem } from './ui/worldClickGate'
 
 export async function main(): Promise<void> {
-  // Authoritative server runs the same entry point headlessly. It only
-  // needs the save/load message handlers — none of the visual / input /
-  // simulation systems below should run server-side, so we bail out
-  // immediately after wiring the room.
-  if (isServer()) {
-    runServer()
-    return
-  }
+  // TODO: re-enable server once @dcl/sdk/server is available
+  // if (isServer()) {
+  //   runServer()
+  //   return
+  // }
   // Detect which deployment we're running in. raft.dcl.eth is the FULL
   // 50x50 game; everything else (italy2026 demo, local preview) gets the
   // 5x5 demo layout. configureGridOrigin must run before any factory below
@@ -97,6 +95,7 @@ export async function main(): Promise<void> {
   // lobby renders the startup overlay over the HUD and shouldn't show
   // any equipped tool through it.
   setHeldViewmodelHidden(true)
+  engine.addSystem(sfxTickSystem)
   engine.addSystem(firstPersonItemSwaySystem)
   engine.addSystem(spearAttackSystem)
   engine.addSystem(hammerSwingSystem)
@@ -159,8 +158,9 @@ export async function main(): Promise<void> {
   // tick system that watches for state-sync and auto-loads on the rising
   // edge. Must come after the gameplay state modules above because the
   // auto-load mutates them on first sync.
-  initSaveClient()
-  engine.addSystem(saveClientTickSystem)
+  // TODO: re-enable once @dcl/sdk/network is available
+  // initSaveClient()
+  // engine.addSystem(saveClientTickSystem)
 
   // Build the lobby world (water at y=0, raft island, bridges, portals)
   // and arm the portal-trigger handler via the scene-flow runtime. The

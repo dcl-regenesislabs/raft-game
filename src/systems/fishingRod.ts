@@ -9,6 +9,7 @@ import {
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
+import { playSfx, stopSfx, startLoop, stopLoop } from '../audio/sfx'
 import {
   FISH_BITE_DELAY_MAX_S,
   FISH_BITE_DELAY_MIN_S,
@@ -144,6 +145,7 @@ export function fishingRodSystem(dt: number): void {
       const state = FishingLine.getMutable(lineEntity)
       state.phase = FishingPhase.Reeling
       biteIntensity = 0
+      startLoop('reelPulling')
     }
   }
 
@@ -213,6 +215,7 @@ function cancelCharge(): void {
 function spawnAndThrow(handPos: Vector3, strength: number): void {
   const aim = computeAimDir()
   if (aim === null) return
+  playSfx('rodCast')
   const speed =
     HOOK_MIN_THROW_SPEED + (HOOK_MAX_THROW_SPEED - HOOK_MIN_THROW_SPEED) * strength
   lineEntity = createHookEntity()
@@ -271,6 +274,8 @@ function advanceLine(dt: number, handPos: Vector3): void {
       state.phase = FishingPhase.Idle
       state.idleElapsed = 0
       state.reactElapsed = 0
+      stopSfx()
+      playSfx('waterSplash')
     } else {
       const nextX = pos.x + state.velocity.x * dt
       const nextZ = pos.z + state.velocity.z * dt
@@ -309,6 +314,7 @@ function advanceLine(dt: number, handPos: Vector3): void {
     } else if (firePressedThisFrame()) {
       // Player retracts before any bite — no catch, just go home.
       state.phase = FishingPhase.Reeling
+      startLoop('reelPulling')
     }
   } else if (state.phase === FishingPhase.Biting) {
     state.reactElapsed += dt
@@ -331,6 +337,7 @@ function advanceLine(dt: number, handPos: Vector3): void {
       catchFish()
       state.phase = FishingPhase.Reeling
       biteIntensity = 0
+      startLoop('reelPulling')
     } else if (state.reactElapsed >= FISH_REACT_WINDOW_S) {
       // Fish escaped — return to Idle and roll a fresh delay so the
       // player can keep waiting on the same cast.
@@ -442,6 +449,7 @@ function rollBiteDelay(): number {
 }
 
 function despawnLine(): void {
+  stopLoop()
   if (lineEntity !== null) {
     engine.removeEntity(lineEntity)
     lineEntity = null

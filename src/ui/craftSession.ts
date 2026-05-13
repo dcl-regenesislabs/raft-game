@@ -4,6 +4,7 @@
 // debited up-front when the craft starts (so the player can't drop them
 // mid-craft) and the result is granted on completion.
 
+import { playSfx } from '../audio/sfx'
 import { type CraftableItem, getCraftableById } from './craftableItems'
 import { addCollected } from './inventoryState'
 import { notifyItemReceived } from './itemReceivedNotification'
@@ -62,6 +63,7 @@ export function startCraft(id: string): boolean {
   activeId = id
   activeDurationSec = duration
   elapsedSec = 0
+  playSfx('craftStart')
   return true
 }
 
