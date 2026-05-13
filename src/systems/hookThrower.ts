@@ -37,6 +37,7 @@ import {
   isActionButtonPressed
 } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
+import { isFishingLineActive } from './fishingRod'
 import {
   addCollected,
   getSelectedSlot,
@@ -141,6 +142,11 @@ export function hookThrowerSystem(dt: number): void {
     return
   }
 
+  if (isFishingLineActive()) {
+    cancelCharge()
+    return
+  }
+
   if (handPos === null) return
   tickCharge(dt, handPos)
 }
@@ -176,10 +182,6 @@ function tickCharge(dt: number, handPos: Vector3): void {
   }
 
   chargeT = Math.min(1, chargeT + dt / HOOK_CHARGE_DURATION_S)
-  if (chargeT >= 1) {
-    spawnAndThrow(handPos, 1)
-    cancelCharge()
-  }
 }
 
 function cancelCharge(): void {
@@ -387,21 +389,31 @@ function despawnHook(): void {
 // projectile aloft long enough for even a small XZ velocity to travel far.
 // Capping at 45° elevation locks the launch angle at the natural max-range
 // sweet spot regardless of how high the camera is pitched.
+// Extra elevation added to the launch direction so the hook visibly
+// arcs above the crosshair before gravity brings it down, selling the
+// parabolic feel. ~10° expressed as a sine for the Y bias.
+const AIM_ELEVATION_BIAS = Math.sin(30 * Math.PI / 180) // ~0.5
+
 function computeAimDir(): Vector3 | null {
   const cam = Transform.getOrNull(engine.CameraEntity)
   if (cam === null) return null
   const forward = Vector3.rotate(CAMERA_FORWARD, cam.rotation as Quaternion)
+  // Tilt the aim upward by AIM_ELEVATION_BIAS then re-normalise so
+  // speed stays consistent regardless of pitch.
+  const biased = Vector3.create(forward.x, forward.y + AIM_ELEVATION_BIAS, forward.z)
+  const len = Math.sqrt(biased.x * biased.x + biased.y * biased.y + biased.z * biased.z)
+  const aim = Vector3.create(biased.x / len, biased.y / len, biased.z / len)
   const MAX_UP_Y = Math.SQRT1_2 // sin(45°)
-  if (forward.y <= MAX_UP_Y) return forward
-  const horiz = Math.sqrt(forward.x * forward.x + forward.z * forward.z)
+  if (aim.y <= MAX_UP_Y) return aim
+  const horiz = Math.sqrt(aim.x * aim.x + aim.z * aim.z)
   if (horiz < 0.0001) {
     const player = Transform.getOrNull(engine.PlayerEntity)
     if (player === null) return null
     const playerFwd = Vector3.rotate(CAMERA_FORWARD, player.rotation as Quaternion)
     return Vector3.create(playerFwd.x * MAX_UP_Y, MAX_UP_Y, playerFwd.z * MAX_UP_Y)
   }
-  const scale = MAX_UP_Y / horiz // remap horizontal magnitude to cos(45°)
-  return Vector3.create(forward.x * scale, MAX_UP_Y, forward.z * scale)
+  const scale = MAX_UP_Y / horiz
+  return Vector3.create(aim.x * scale, MAX_UP_Y, aim.z * scale)
 }
 
 function computeHandPos(): Vector3 | null {
