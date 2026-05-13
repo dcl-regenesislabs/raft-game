@@ -28,10 +28,13 @@ const HUD_PRELOAD_ASSETS: readonly string[] = [
 
   // HUD icons
   'images/hud/icons/bar_container.png',
-  'images/hud/icons/hungry_ring.png',
-  'images/hud/icons/life_ring.png',
+  'images/hud/icons/hungry.png',
+  'images/hud/icons/hungry_sweep.png',
+  'images/hud/icons/life.png',
+  'images/hud/icons/life_sweep.png',
   'images/hud/icons/settings.png',
-  'images/hud/icons/thirsty_ring.png',
+  'images/hud/icons/thirst.png',
+  'images/hud/icons/thirsty_sweep.png',
 
   // Inventory items
   'images/hud/items/cup.png',
