@@ -8,6 +8,7 @@ import {
 } from '../factories/floatingGarbage'
 import { GRID_ORIGIN } from '../factories/platform'
 import { aabbHalfExtentAlong, getPlatformExtent } from '../factories/platformExtent'
+import { isAnchored } from './anchorState'
 import { isStartupGateActive } from '../ui/startupGate'
 import {
   SEA_FLOW_DIR_X,
@@ -18,8 +19,10 @@ import {
 // --- tunables ---
 // Seconds between groups.
 const SPAWN_INTERVAL_S = 12
+const SPAWN_INTERVAL_ANCHORED_S = 30
 // Items per group.
 const GROUP_SIZE = 3
+const GROUP_SIZE_ANCHORED = 1
 // Desired upstream spawn distance from the platform's flow-axis footprint.
 // The system clamps this down per-spawn if the scene bounds don't allow it
 // (5x5 demo has tight upstream/downstream room on the corners).
@@ -54,13 +57,15 @@ export function garbageSpawnerSystem(dt: number): void {
   // Suppress while the lobby is up — debris spawned at WATER_LEVEL=4
   // would float in the sky above the lobby raft (which sits at y=0).
   if (isStartupGateActive()) return
+  const anchored = isAnchored()
+  const interval = anchored ? SPAWN_INTERVAL_ANCHORED_S : SPAWN_INTERVAL_S
   elapsed += dt
-  if (elapsed < SPAWN_INTERVAL_S) return
+  if (elapsed < interval) return
   elapsed = 0
-  spawnGroup()
+  spawnGroup(anchored ? GROUP_SIZE_ANCHORED : GROUP_SIZE)
 }
 
-function spawnGroup(): void {
+function spawnGroup(count: number = GROUP_SIZE): void {
   const extent = getPlatformExtent()
   // Spawn anchor is the geometric centre of the platform AABB so an
   // asymmetric raft (e.g. 4x2 or L-shape) doesn't bias spawns toward its
@@ -89,7 +94,7 @@ function spawnGroup(): void {
   // current 30-second cycle.
   let barrelSpawned = false
 
-  for (let i = 0; i < GROUP_SIZE; i++) {
+  for (let i = 0; i < count; i++) {
     let side = Math.random() < 0.5 ? -1 : 1
     let lateral = side * (bypassMin + Math.random() * (bypassMax - bypassMin))
     let lateralX = anchorX + perpX * lateral

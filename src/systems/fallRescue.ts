@@ -4,6 +4,7 @@ import { movePlayerTo } from '~system/RestrictedActions'
 
 import { FALL_LIFE_DAMAGE_PCT } from '../config/gameConfig'
 import { WATER_LEVEL } from '../factories/sceneLevels'
+import { isOnFloatingIsland } from './floatingIsland'
 import { isGameOver } from '../ui/gameOver'
 import { isStartupGateActive } from '../ui/startupGate'
 import { adjustStat } from '../ui/statsBars'
@@ -64,6 +65,7 @@ export function createFallRescueSystem(platformCenter: Vector3) {
     const player = Transform.getOrNull(engine.PlayerEntity)
     if (player === null) return
     if (player.position.y >= FALL_THRESHOLD) return
+    if (isOnFloatingIsland(player.position.x, player.position.z)) return
     if (inFlight) return
     if (cooldownRemaining > 0) return
     // Skip rescue + damage while the death screen is up. The player

@@ -1,9 +1,14 @@
 import { Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion } from '@dcl/sdk/math'
 
-import { FloatingGarbage } from '../components'
+import { FloatingGarbage, FloatingIsland } from '../components'
 import { GRID_ORIGIN } from '../factories/platform'
 import { RAD_TO_DEG } from '../utils/math'
+
+// Island avoidance — nudge garbage sideways when it gets too close
+const ISLAND_AVOID_RADIUS = 12 // island radius + buffer
+const ISLAND_AVOID_RADIUS_SQ = ISLAND_AVOID_RADIUS * ISLAND_AVOID_RADIUS
+const AVOID_STRENGTH = 3.0 // lateral nudge speed in m/s
 
 // Vertical bob frequency in radians/second. ~0.2 Hz feels like a slow
 // ocean swell rather than a video-game wobble.
@@ -40,6 +45,28 @@ export function floatingGarbageSystem(dt: number): void {
     pos.x += garbage.velocityX * dt
     pos.z += garbage.velocityZ * dt
     pos.y = garbage.baseY + Math.sin(garbage.bobPhase) * garbage.bobAmplitude
+
+    // Steer around floating islands — pick the side closest to the
+    // garbage's current velocity so the detour is minimal.
+    for (const [isle] of engine.getEntitiesWith(FloatingIsland, Transform)) {
+      const ip = Transform.get(isle).position
+      const dx = pos.x - ip.x
+      const dz = pos.z - ip.z
+      const distSq = dx * dx + dz * dz
+      if (distSq >= ISLAND_AVOID_RADIUS_SQ || distSq < 0.001) continue
+      const dist = Math.sqrt(distSq)
+      // Perpendicular to velocity — choose the sign that aligns with
+      // the current offset from the island center (push outward).
+      const perpX = -garbage.velocityZ
+      const perpZ = garbage.velocityX
+      const dot = perpX * dx + perpZ * dz
+      const sign = dot >= 0 ? 1 : -1
+      const pLen = Math.sqrt(perpX * perpX + perpZ * perpZ)
+      if (pLen < 0.001) continue
+      const strength = AVOID_STRENGTH * (1 - dist / ISLAND_AVOID_RADIUS) * dt
+      pos.x += (sign * perpX / pLen) * strength
+      pos.z += (sign * perpZ / pLen) * strength
+    }
 
     // Despawn the moment the item leaves the parcel footprint — DCL hides
     // entities outside scene bounds anyway, so keeping them around is waste.
