@@ -1,8 +1,9 @@
 import { Entity, Material, MeshRenderer, Transform, engine } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
-const ROPE_COLOR = Color4.create(0.35, 0.22, 0.1, 1)
+const ROPE_COLOR = Color4.create(0.55, 0.45, 0.15, 1)
 const ROPE_THICKNESS = 0.03
+
 const RAD_TO_DEG = 180 / Math.PI
 
 export function createRopeEntity(): Entity {
@@ -25,7 +26,7 @@ export function createRopeEntity(): Entity {
 // along each axis; we scale Z to the segment length and rotate so +Z aligns
 // with the direction vector. Yaw + pitch (no roll) are sufficient for a
 // straight rod; no dependency on Quaternion.lookRotation availability.
-export function updateRopeBetween(entity: Entity, from: Vector3, to: Vector3): void {
+export function updateRopeBetween(entity: Entity, from: Vector3, to: Vector3, thickness: number = ROPE_THICKNESS): void {
   const dx = to.x - from.x
   const dy = to.y - from.y
   const dz = to.z - from.z
@@ -43,7 +44,7 @@ export function updateRopeBetween(entity: Entity, from: Vector3, to: Vector3): v
     (from.y + to.y) / 2,
     (from.z + to.z) / 2
   )
-  transform.scale = Vector3.create(ROPE_THICKNESS, ROPE_THICKNESS, distance)
+  transform.scale = Vector3.create(thickness, thickness, distance)
   transform.rotation = Quaternion.fromEulerDegrees(pitchDeg, yawDeg, 0)
 }
 
