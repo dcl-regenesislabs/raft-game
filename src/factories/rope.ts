@@ -1,19 +1,21 @@
 import { Entity, Material, MeshRenderer, Transform, engine } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
-const ROPE_COLOR = Color4.create(0.35, 0.22, 0.1, 1)
+const ROPE_COLOR = Color4.create(0.55, 0.45, 0.15, 1)
 const ROPE_THICKNESS = 0.03
+
 const RAD_TO_DEG = 180 / Math.PI
 
-export function createRopeEntity(): Entity {
+export function createRopeEntity(color: Color4 = ROPE_COLOR, parent?: Entity): Entity {
   const entity = engine.addEntity()
   Transform.create(entity, {
+    parent,
     position: Vector3.create(0, 0, 0),
     scale: Vector3.create(0, 0, 0)
   })
-  MeshRenderer.setBox(entity)
+  MeshRenderer.setCylinder(entity)
   Material.setPbrMaterial(entity, {
-    albedoColor: ROPE_COLOR,
+    albedoColor: color,
     metallic: 0,
     roughness: 1,
     castShadows: false
@@ -21,11 +23,12 @@ export function createRopeEntity(): Entity {
   return entity
 }
 
-// Stretches a thin box between `from` and `to`. Box default extent is 1m
-// along each axis; we scale Z to the segment length and rotate so +Z aligns
-// with the direction vector. Yaw + pitch (no roll) are sufficient for a
-// straight rod; no dependency on Quaternion.lookRotation availability.
-export function updateRopeBetween(entity: Entity, from: Vector3, to: Vector3): void {
+// Stretches a thin cylinder between `from` and `to`. The default cylinder's
+// long axis is local +Y, so we scale Y to the segment length and compose two
+// rotations: a +90° pitch around X to remap local +Y onto the old +Z, then
+// the same yaw+pitch the box version used to align +Z with the direction.
+const Y_TO_Z = Quaternion.fromEulerDegrees(90, 0, 0)
+export function updateRopeBetween(entity: Entity, from: Vector3, to: Vector3, thickness: number = ROPE_THICKNESS): void {
   const dx = to.x - from.x
   const dy = to.y - from.y
   const dz = to.z - from.z
@@ -43,8 +46,9 @@ export function updateRopeBetween(entity: Entity, from: Vector3, to: Vector3): v
     (from.y + to.y) / 2,
     (from.z + to.z) / 2
   )
-  transform.scale = Vector3.create(ROPE_THICKNESS, ROPE_THICKNESS, distance)
-  transform.rotation = Quaternion.fromEulerDegrees(pitchDeg, yawDeg, 0)
+  transform.scale = Vector3.create(thickness, distance, thickness)
+  const aim = Quaternion.fromEulerDegrees(pitchDeg, yawDeg, 0)
+  transform.rotation = Quaternion.multiply(aim, Y_TO_Z)
 }
 
 export function hideRope(entity: Entity): void {

@@ -1,6 +1,4 @@
 import {
-  Billboard,
-  BillboardMode,
   ColliderLayer,
   Entity,
   GltfContainer,
@@ -29,6 +27,8 @@ import {
   PortalPulse,
   PortalUvSwirl
 } from '../components'
+import { createChef } from './chef'
+import { LOBBY_CHEF_DIALOG_LINES } from '../systems/chefDialog'
 import { SceneMode } from '../runtime/sceneMode'
 import {
   GRID_ORIGIN,
@@ -178,6 +178,13 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
   buildCampfireZone(cx - 10.5, cz, mode)
   buildFishingCorner(cx + 10.5, cz, mode)
   buildPerimeterProps(cx, cz)
+  // Lobby chef stands a couple of metres east-and-south of the
+  // information kiosk so the welcome animations read as the kiosk's
+  // greeter without blocking the click rays into the NEW/LOAD/DEBUG
+  // buttons. Yaw 200° = south-facing rotated 20° toward his own right
+  // (toward the centre of the deck) so he reads as "talking toward
+  // the kiosk" rather than staring straight at the bridge.
+  buildLobbyChef(cx + PANEL_OFFSET_X + 2, cz + PANEL_OFFSET_Z - 2.5, 185)
 }
 
 // World-space position the player teleports to on lobby entry: the
@@ -689,8 +696,8 @@ function buildSideWingRafts(cx: number, cz: number): void {
   }
 }
 
-// West wing — three barrels arranged in a circle. Reads as the lobby's
-// gathering nook.
+// West wing — three barrels arranged in a circle. Reads as the
+// lobby's gathering nook.
 function buildCampfireZone(wingX: number, wingZ: number, _mode: SceneMode): void {
   const barrelOffsets: Array<{ dx: number; dz: number; yawDeg: number }> = [
     { dx: 1.3, dz: 0, yawDeg: 30 },
@@ -710,6 +717,27 @@ function buildCampfireZone(wingX: number, wingZ: number, _mode: SceneMode): void
     })
     LobbyTag.create(barrel)
   }
+}
+
+// Stands the chef NPC at the south-east corner of the information
+// panel so he reads as the kiosk's greeter. The model's pivot sits at
+// the foot (accessor 0 min y ≈ 0, max y ≈ 1.7), so we drop him
+// directly on the deck with no Y lift. Caller picks the yaw — 180°
+// is straight-south (facing the bridge); higher values turn him
+// toward his own right (west of south) so he reads as conversing
+// with the panel rather than ignoring it.
+//
+// All chef internals (GLB, animator, click box, speech bubble) live in
+// the shared `createChef` factory so the in-game boat passenger reuses
+// the exact same construction. The lobby just passes its dialog script
+// and the LobbyTag callback so teardown sweeps the whole NPC at once.
+function buildLobbyChef(worldX: number, worldZ: number, yawDeg: number): void {
+  createChef({
+    position: Vector3.create(worldX, LOBBY_DECK_Y - 0.05, worldZ),
+    rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
+    dialogLines: LOBBY_CHEF_DIALOG_LINES,
+    tag: (entity: Entity) => LobbyTag.create(entity)
+  })
 }
 
 // East wing — a small bucket (re-scaled barrel) on the deck. The rod

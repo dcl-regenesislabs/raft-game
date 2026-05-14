@@ -7,6 +7,7 @@
 import { InputModifier, engine } from '@dcl/sdk/ecs'
 
 import { playSfx } from '../audio/sfx'
+import { isFishingLineActive } from '../systems/fishingRod'
 import { isCookOpen, setCookOpen } from './cookToggle'
 import { isCraftOpen, setCraftOpen } from './craftToggle'
 import { isCrafting } from './craftSession'
@@ -90,7 +91,8 @@ export function toggleInventory(): void {
 // Runs every frame: advances the press-pulse clock, and on any change to
 // the lock state writes an InputModifier to the player. Movement locks
 // when the inventory or craft panel is up OR while a craft / purify
-// session is running.
+// session is running OR while a fishing line is out (the player needs to
+// hold position while waiting for a bite).
 export function inventoryToggleResetSystem(dt: number): void {
   if (pressElapsedSec <= PRESS_DURATION_S) pressElapsedSec += dt
   if (postCloseLockoutSec > 0) {
@@ -103,7 +105,8 @@ export function inventoryToggleResetSystem(dt: number): void {
     isStorageOpen() ||
     isSystemMenuOpen() ||
     isCrafting() ||
-    isPurifying()
+    isPurifying() ||
+    isFishingLineActive()
   if (lock === lastModifierApplied) return
   lastModifierApplied = lock
   InputModifier.createOrReplace(engine.PlayerEntity, {

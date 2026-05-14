@@ -43,6 +43,10 @@ import {
 import { DEMO_PARCEL_GRID } from '../factories/sceneLevels'
 import { setLobbyExitHandler } from '../systems/lobbyPortalSystem'
 import {
+  armBoatChefEvent,
+  resetBoatChefEventState
+} from '../systems/boatChefDirector'
+import {
   resetConstructionPlacementState
 } from '../systems/constructionPlacement'
 import { resetFishingRodState } from '../systems/fishingRod'
@@ -84,7 +88,7 @@ function armLobbyExit(): void {
       // Restore the held viewmodel — gameplay starts now, so the
       // seeded tool (hook by default) should appear in hand.
       setHeldViewmodelHidden(false)
-      buildGameWorld(cachedParcelGrid)
+      buildGameWorld(cachedParcelGrid, { debug: kind === 'DEBUG' })
       // Drop the player onto the freshly-built main raft. Game spawn
       // mirrors the parcel-centre coords used in the demo's scene.json
       // spawn point; using movePlayerTo (not Transform mutation) is
@@ -109,7 +113,7 @@ function armLobbyExit(): void {
 export function skipLobbyToDebug(parcelGrid: number): void {
   dismissStartupGate()
   setHeldViewmodelHidden(false)
-  buildGameWorld(parcelGrid)
+  buildGameWorld(parcelGrid, { debug: true })
   void movePlayerTo({
     newRelativePosition: {
       x: GRID_ORIGIN.x,
@@ -124,7 +128,7 @@ export function skipLobbyToDebug(parcelGrid: number): void {
 // WATER_LEVEL, the origin raft, sharks). Idempotency-guarded so a stray
 // re-entry can't double-spawn — `returnToLobby` flips the flag back to
 // false so the next portal entry rebuilds cleanly.
-function buildGameWorld(parcelGrid: number): void {
+function buildGameWorld(parcelGrid: number, opts: { debug: boolean }): void {
   if (gameWorldBuilt) return
   gameWorldBuilt = true
   createSeabed(parcelGrid)
@@ -135,6 +139,12 @@ function buildGameWorld(parcelGrid: number): void {
   // not in the keep-set are removed, taking the modifier area with them.
   createAvatarHideArea(parcelGrid)
   spawnSharks()
+  // Recurring boat-chef visitor event. DEBUG fires it immediately so
+  // the encounter is testable from any session start; non-debug paths
+  // (NEW / LOAD via the lobby portal) start the 10 min visit timer
+  // and the boat sails in on its own. The director is also responsible
+  // for re-arming after each visit.
+  armBoatChefEvent({ immediate: opts.debug })
 }
 
 function spawnSharks(): void {
@@ -211,6 +221,7 @@ export function returnToLobby(): void {
   resetFishingRodState()
   resetRaftBuilderState()
   resetConstructionPlacementState()
+  resetBoatChefEventState()
 
   gameWorldBuilt = false
   reopenStartupGate()

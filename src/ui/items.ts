@@ -40,6 +40,11 @@ export interface ItemDef {
   // `addCollected`; storage chests use their own larger cap so they
   // remain a strict capacity upgrade over the pocket.
   maxStackSize?: number
+  // Optional 3D model. When present, food items render as a GLB in
+  // hand and above the grill instead of a flat textured plane. Used
+  // for the tier-4 hero plates so they read as proper meals; the
+  // `texture` field still drives the inventory icon either way.
+  glb?: string
 }
 
 // Default per-slot cap for everything stackable in the player's pocket.
@@ -106,7 +111,7 @@ const MATERIAL = (
 const FOOD = (
   id: string,
   texture: string,
-  opts: { ingredient?: boolean } = {}
+  opts: { ingredient?: boolean; glb?: string } = {}
 ): ItemDef => ({
   id,
   texture,
@@ -116,7 +121,8 @@ const FOOD = (
   hasAction: true,
   consumable: true,
   ingredient: opts.ingredient ?? false,
-  maxStackSize: PLAYER_STACK_CAP
+  maxStackSize: PLAYER_STACK_CAP,
+  glb: opts.glb
 })
 
 // Items the player gets from crafting. Stackable entries collapse into
@@ -296,7 +302,7 @@ const PLATE_CATALOG: Record<string, ItemDef> = {
   shark_with_tomato:       FOOD('shark_with_tomato',       'images/cooking/shark_with_tomato.png'),
   sardines_in_oil:         FOOD('sardines_in_oil',         'images/cooking/sardines_in_oil.png'),
   mussels_and_clams:       FOOD('mussels_and_clams',       'images/cooking/mussels_and_clams.png'),
-  spaghetti_pomodoro:      FOOD('spaghetti_pomodoro',      'images/cooking/spaghetti_pomodoro.png'),
+  spaghetti_alle_vongole:  FOOD('spaghetti_alle_vongole',  'images/cooking/spaghetti_alle_vongole.png'),
   // 3-ingredient plates (8)
   spaghetti_with_sardines: FOOD('spaghetti_with_sardines', 'images/cooking/spaghetti_with_sardines.png'),
   fettuccine_with_shark:   FOOD('fettuccine_with_shark',   'images/cooking/fettuccine_with_shark.png'),
@@ -306,9 +312,16 @@ const PLATE_CATALOG: Record<string, ItemDef> = {
   spaghetti_squid_seaweed: FOOD('spaghetti_squid_seaweed', 'images/cooking/spaghetti_squid_seaweed.png'),
   fettuccine_crab_potato:  FOOD('fettuccine_crab_potato',  'images/cooking/fettuccine_crab_potato.png'),
   seafood_stew:            FOOD('seafood_stew',            'images/cooking/seafood_stew.png'),
-  // 4-ingredient hero plates (2)
-  spaghetti_alle_vongole:  FOOD('spaghetti_alle_vongole',  'images/cooking/spaghetti_alle_vongole.png'),
-  fettuccine_sea_hunter:   FOOD('fettuccine_sea_hunter',   'images/cooking/fettuccine_sea_hunter.png')
+  // 4-ingredient hero plates (2). These render as 3D models in hand
+  // and above the grill — the texture path still drives the inventory
+  // icon, but the `glb` field swaps the world-space visual to a proper
+  // GLB. See `factories/heldItem.ts` and `factories/cookingSprites.ts`.
+  spaghetti_shark_pomodoro: FOOD('spaghetti_shark_pomodoro', 'images/cooking/spaghetti_shark_pomodoro.png', {
+    glb: 'assets/scene/items/spaghetti_shark_pomodoro.glb'
+  }),
+  fettuccine_sea_food: FOOD('fettuccine_sea_food', 'images/cooking/fettuccine_sea_food.png', {
+    glb: 'assets/scene/items/fettuccine_sea_food.glb'
+  })
 }
 
 const ITEMS_BY_ID: Record<string, ItemDef> = Object.fromEntries(

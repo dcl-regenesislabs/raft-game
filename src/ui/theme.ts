@@ -340,17 +340,44 @@ export const ITEM_NOTIF_BADGE_FONT_SIZE = 16
 // o'clock position as the stat fills, occupying the dark track. At 100%
 // the ring is fully drawn over the track; at 0% it's invisible.
 export const STATS_ORB_CONTAINER_TEXTURE = 'images/hud/icons/bar_container.png'
-export const STATS_ORB_SIZE = 130
-export const STATS_ORB_GAP = 14
-// Top inset clears the mobile chat / compass pill row and gives the orbs
-// breathing room from the safe-area top edge on desktop.
-export const STATS_ORB_TOP = 20
-// Per-stat full-ring textures. Same 324×324 footprint as the container
-// art so they overlay 1:1 with no per-stat offset math.
-export const STAT_RING_TEXTURES: Record<StatKind, string> = {
-  life: 'images/hud/icons/life_ring.png',
-  hunger: 'images/hud/icons/hungry_ring.png',
-  thirst: 'images/hud/icons/thirsty_ring.png'
+export const STATS_ORB_SIZE = 72
+export const STATS_ORB_GAP = 8
+// Top-left anchor in fixed pixels so the cluster sits at the same
+// on-screen spot on both mobile and desktop. Percentage offsets drift
+// with viewport width and broke parity between platforms.
+export const STATS_ORB_TOP = 24
+export const STATS_ORB_LEFT = 360
+// Per-stat ring-reveal SPRITESHEETS. Each is a 4×4 grid of 16 frames at
+// 64×64 per cell, total 256×256 — the mobile texture-optimizer caps all
+// HUD textures at 256×256, so we ship at that exact size to avoid lossy
+// resampling on device. Frame i shows the ring revealed clockwise from
+// 12 o'clock through (i+1)/16 of the full circle. The mask is computed
+// in real polar coordinates (Python pre-process step), so the cut edge
+// in every frame is a true radius — not an axis-aligned approximation.
+// At runtime we pick the frame matching the current stat percentage and
+// sample it with UVs; no quadrant/octant decomposition needed.
+export const STAT_SWEEP_TEXTURES: Record<StatKind, string> = {
+  life: 'images/hud/icons/life_sweep.png',
+  hunger: 'images/hud/icons/hungry_sweep.png',
+  thirst: 'images/hud/icons/thirsty_sweep.png'
 }
+export const STATS_ORB_SWEEP_FRAMES = 16
+export const STATS_ORB_SWEEP_COLS = 4
+export const STATS_ORB_SWEEP_ROWS = 4
+// Inner stat-symbol icons rendered inside the cream center of each orb.
+// Sit on top of bar_container and below the sweeping ring overlay, but
+// since the ring sits on the outer wood/track band the icon stays
+// readable regardless of fill state.
+export const STAT_ICON_TEXTURES: Record<StatKind, string> = {
+  life: 'images/hud/icons/life.png',
+  hunger: 'images/hud/icons/hungry.png',
+  thirst: 'images/hud/icons/thirst.png'
+}
+// Inset (each side, %) of the icon inside the orb. At 14% the icon
+// fills 72% of the orb (~2× larger than the 36% it occupied at the
+// earlier 32% inset). It now overflows the cream center and sits on
+// top of the dark track, but the icon textures have transparent
+// backgrounds so only the symbol pixels overlay the track.
+export const STATS_ORB_ICON_INSET_PCT = 14
 // Order drives the visual row left → right.
 export const STATS_ORDER: readonly StatKind[] = ['life', 'hunger', 'thirst']

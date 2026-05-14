@@ -118,41 +118,48 @@ function ui(): ReactEcs.JSX.Element {
   }
 
   return (
-    <SafeArea>
-      <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
-        {/* No conditional fullscreen onMouseDown here. We used to attach
-            `pressBackground` while a swap was pending so a click outside
-            slots would cancel the swap, but the SDK latches the
-            "UI captures pointer input" state when that handler goes
-            active and doesn't fully release it when the prop swings back
-            to `undefined` next frame. The result: after starting a swap
-            (clicking the first slot), the canvas could no longer
-            re-acquire pointer lock on desktop, so PointerEvents on
-            placed grills / purifiers stopped firing entirely (no hover
-            prompt, no click). Cancel paths that still work: click the
-            same slot to deselect, click another slot to swap, or close
-            the inventory (which runs cancelSelection internally). */}
-        <DestroyBanner />
-        {/* Standalone hot-bar hides while a panel is up — the inventory
-            panel and the craft menu both render their own bar attached
-            under the inventory grid via <InventoryWithBar/>. */}
-        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <BottomBar />}
-        {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <StatsBars />}
-        {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ActionButton />}
-        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ModeToggleButton />}
-        {!isCookOpen() && !isStorageOpen() && <InventoryButton />}
-        {!isCookOpen() && !isStorageOpen() && <CraftButton />}
-        {!isCookOpen() && !isStorageOpen() && <SystemButton />}
-        <InventoryPanel />
-        <CraftDoubleMenu />
-        <CookMenu />
-        <StorageMenu />
-        <SystemMenu />
-        {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <RotateButtons />}
-        <ChargeReticle />
-        <NotificationOverlay />
-        <ItemReceivedOverlay />
-      </UiEntity>
-    </SafeArea>
+    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
+      <SafeArea>
+        <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
+          {/* No conditional fullscreen onMouseDown here. We used to attach
+              `pressBackground` while a swap was pending so a click outside
+              slots would cancel the swap, but the SDK latches the
+              "UI captures pointer input" state when that handler goes
+              active and doesn't fully release it when the prop swings back
+              to `undefined` next frame. The result: after starting a swap
+              (clicking the first slot), the canvas could no longer
+              re-acquire pointer lock on desktop, so PointerEvents on
+              placed grills / purifiers stopped firing entirely (no hover
+              prompt, no click). Cancel paths that still work: click the
+              same slot to deselect, click another slot to swap, or close
+              the inventory (which runs cancelSelection internally). */}
+          <DestroyBanner />
+          {/* Standalone hot-bar hides while a panel is up — the inventory
+              panel and the craft menu both render their own bar attached
+              under the inventory grid via <InventoryWithBar/>. */}
+          {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <BottomBar />}
+          {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <StatsBars />}
+          {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ActionButton />}
+          {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ModeToggleButton />}
+          {!isCookOpen() && !isStorageOpen() && <InventoryButton />}
+          {!isCookOpen() && !isStorageOpen() && <CraftButton />}
+          {!isCookOpen() && !isStorageOpen() && <SystemButton />}
+          <InventoryPanel />
+          <CraftDoubleMenu />
+          <CookMenu />
+          <StorageMenu />
+          {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <RotateButtons />}
+          <ChargeReticle />
+          <NotificationOverlay />
+          <ItemReceivedOverlay />
+        </UiEntity>
+      </SafeArea>
+      {/* System (settings) menu sits OUTSIDE SafeArea so its dark backdrop
+          covers the full viewport — on mobile the notch / home-indicator
+          strips would otherwise show the live scene through the gaps. The
+          modal's own contents are centered, so they stay clear of the
+          insets regardless of platform. */}
+      <SystemMenu />
+    </UiEntity>
   )
 }

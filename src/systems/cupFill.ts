@@ -3,9 +3,11 @@ import {
   InputAction,
   PointerEventType,
   PointerEvents,
+  Transform,
   engine,
   inputSystem
 } from '@dcl/sdk/ecs'
+import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { WaterScroll } from '../components'
@@ -78,7 +80,10 @@ export function cupFillSystem(_dt: number): void {
     water
   )
   const actionButtonFire =
-    isMobile() && actionButtonJustPressed() && getLookAtTarget() === 'water'
+    isMobile() &&
+    actionButtonJustPressed() &&
+    getLookAtTarget() === 'water' &&
+    isPlayerWithinFillRange(water)
   if (!tappedWater && !actionButtonFire) return
 
   const slot = getSelectedSlot()
@@ -86,6 +91,39 @@ export function cupFillSystem(_dt: number): void {
     showNotification('Cup filled with salt water.')
   }
   consumeWorldClick()
+}
+
+// Mirror the SDK's PointerEvents.maxDistance check (which the FILL CUP
+// hover uses on the water plane) for the mobile action button fire
+// path. Without this, the button fires whenever `getLookAtTarget()`
+// classifies the look as 'water' — but that classification uses a
+// camera-origin raycast, and in third-person view the camera sits a
+// few metres behind the avatar. The player can be standing too far
+// from the water to see the FILL CUP prompt while the camera ray
+// still lands on water within 8 m, so the button would "work" from
+// out of reach. Gating on the player-to-water-hit distance (camera
+// ray projected onto the water plane, measured from the player
+// position) keeps the two paths consistent.
+function isPlayerWithinFillRange(water: Entity): boolean {
+  const player = Transform.getOrNull(engine.PlayerEntity)
+  const camera = Transform.getOrNull(engine.CameraEntity)
+  const waterTransform = Transform.getOrNull(water)
+  if (player === null || camera === null || waterTransform === null) return false
+  const forward = Vector3.rotate(
+    Vector3.create(0, 0, 1),
+    camera.rotation as Quaternion
+  )
+  // Need a downward-facing ray to hit the horizontal water plane.
+  if (forward.y >= -0.01) return false
+  const waterY = waterTransform.position.y
+  const t = (waterY - camera.position.y) / forward.y
+  if (t <= 0) return false
+  const hit = Vector3.create(
+    camera.position.x + forward.x * t,
+    waterY,
+    camera.position.z + forward.z * t
+  )
+  return Vector3.distance(player.position, hit) <= HOVER_MAX_DISTANCE
 }
 
 function findWaterEntity(): Entity | null {

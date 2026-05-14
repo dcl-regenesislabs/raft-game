@@ -28,10 +28,13 @@ const HUD_PRELOAD_ASSETS: readonly string[] = [
 
   // HUD icons
   'images/hud/icons/bar_container.png',
-  'images/hud/icons/hungry_ring.png',
-  'images/hud/icons/life_ring.png',
+  'images/hud/icons/hungry.png',
+  'images/hud/icons/hungry_sweep.png',
+  'images/hud/icons/life.png',
+  'images/hud/icons/life_sweep.png',
   'images/hud/icons/settings.png',
-  'images/hud/icons/thirsty_ring.png',
+  'images/hud/icons/thirst.png',
+  'images/hud/icons/thirsty_sweep.png',
 
   // Inventory items
   'images/hud/items/cup.png',
@@ -63,7 +66,7 @@ const HUD_PRELOAD_ASSETS: readonly string[] = [
   'images/cooking/fettuccine.png',
   'images/cooking/fettuccine_crab_potato.png',
   'images/cooking/fettuccine_pomodoro.png',
-  'images/cooking/fettuccine_sea_hunter.png',
+  'images/cooking/fettuccine_sea_food.png',
   'images/cooking/fettuccine_squid.png',
   'images/cooking/fettuccine_with_shark.png',
   'images/cooking/garlic.png',
@@ -90,13 +93,19 @@ const HUD_PRELOAD_ASSETS: readonly string[] = [
   'images/cooking/spaghetti.png',
   'images/cooking/spaghetti_alle_vongole.png',
   'images/cooking/spaghetti_mussels.png',
-  'images/cooking/spaghetti_pomodoro.png',
+  'images/cooking/spaghetti_shark_pomodoro.png',
   'images/cooking/spaghetti_squid_seaweed.png',
   'images/cooking/spaghetti_with_sardines.png',
   'images/cooking/squid.png',
   'images/cooking/squid_with_seaweed.png',
   'images/cooking/squid_with_tomato.png',
-  'images/cooking/tomatoes.png'
+  'images/cooking/tomatoes.png',
+
+  // Tier-4 hero plates render as GLBs (not flat sprites) both above
+  // the grill and in the player's hand. Preload them so the first
+  // tier-4 cook doesn't pop in.
+  'assets/scene/items/spaghetti_shark_pomodoro.glb',
+  'assets/scene/items/fettuccine_sea_food.glb'
 ]
 
 export function preloadHudAssets(): void {
