@@ -6,6 +6,7 @@
 
 import { InputModifier, engine } from '@dcl/sdk/ecs'
 
+import { playSfx } from '../audio/sfx'
 import { isFishingLineActive } from '../systems/fishingRod'
 import { isCookOpen, setCookOpen } from './cookToggle'
 import { isCraftOpen, setCraftOpen } from './craftToggle'
@@ -75,6 +76,7 @@ export function setInventoryOpen(target: boolean): void {
 export function toggleInventory(): void {
   const next = !open
   setInventoryOpen(next)
+  playSfx(next ? 'inventoryOpen' : 'inventoryClose')
   // Press feedback fires here because it represents the user clicking
   // the inventory button — not the state change itself.
   pressElapsedSec = 0

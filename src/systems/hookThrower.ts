@@ -9,6 +9,8 @@ import {
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
+import { playSfx } from '../audio/sfx'
+
 import {
   HOOK_CHARGE_DURATION_S,
   HOOK_COLLECT_RADIUS_XZ,
@@ -192,6 +194,7 @@ function cancelCharge(): void {
 function spawnAndThrow(handPos: Vector3, strength: number): void {
   const aim = computeAimDir()
   if (aim === null) return
+  playSfx('hookThrow')
   const speed =
     HOOK_MIN_THROW_SPEED + (HOOK_MAX_THROW_SPEED - HOOK_MIN_THROW_SPEED) * strength
   hookEntity = createHookEntity()
