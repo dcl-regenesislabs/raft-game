@@ -51,7 +51,8 @@ export function getAnchorHookPos(): { x: number; z: number } | null {
 }
 
 export function beginAnchor(islandEntity: Entity, anchorX: number, anchorZ: number): void {
-  if (phase !== 'idle') return
+  // Reset any stale state before starting a new anchor
+  if (phase !== 'idle') resetAnchorState()
   anchoredIsland = islandEntity
 
   // Store hook's relative position on the island

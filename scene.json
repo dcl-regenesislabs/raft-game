@@ -83,7 +83,14 @@
   ],
   "featureToggles": {
     "voiceChat": "enabled",
-    "portableExperiences": "enabled"
+    "portableExperiences": "enabled",
+    "nearbyVoiceChat": "enabled"
   },
-  "authoritativeMultiplayer": true
+  "authoritativeMultiplayer": true,
+  "creator": "",
+  "skyboxConfig": {},
+  "source": {
+    "origin": "creator-hub",
+    "projectId": "f3ae60f6-c11d-4022-9123-1cebf6a07027"
+  }
 }

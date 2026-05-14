@@ -27,7 +27,8 @@ import {
   beginAnchor,
   getAnchorHookPos,
   isAnchored,
-  releaseAnchor
+  releaseAnchor,
+  resetAnchorState
 } from './anchorState'
 import {
   HOOK_FORWARD_ROTATION,
@@ -50,6 +51,7 @@ import {
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
 import { notifyItemReceived } from '../ui/itemReceivedNotification'
+import { showNotification } from '../ui/notification'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import { RAD_TO_DEG, randInt } from '../utils/math'
 import { computeWobble } from '../utils/wobble'
@@ -280,6 +282,19 @@ function advanceHook(dt: number, handPos: Vector3): void {
       const nextX = pos.x + state.velocity.x * dt
       const nextZ = pos.z + state.velocity.z * dt
       transform.position = Vector3.create(nextX, nextY, nextZ)
+      // Mid-flight island check: if the hook is descending and near
+      // water level, test for island collision so high-arc throws that
+      // pass over an island still register a hit.
+      if (state.velocity.y < 0 && nextY < WATER_LEVEL + 3) {
+        const hitIsland = findIslandNearPoint(nextX, nextZ)
+        if (hitIsland !== null) {
+          transform.position = Vector3.create(nextX, WATER_LEVEL, nextZ)
+          state.phase = HookPhase.Anchored
+          state.velocity = Vector3.create(0, 0, 0)
+          beginAnchor(hitIsland, nextX, nextZ)
+          return
+        }
+      }
       // Always face the player (eye toward player, tip trailing away). With
       // the same heading used during reeling, the hook stays oriented
       // consistently from throw release through splash through retrieval.
@@ -402,6 +417,8 @@ function bankGrabbedItem(kind: string): void {
 }
 
 function despawnHook(): void {
+  // If we were anchored, release before cleaning up
+  if (isAnchored()) resetAnchorState()
   // Hook reached the player (or the throw was cancelled) — bank everything
   // it was dragging and remove the entities. Done before the hook itself
   // is removed so we don't leave orphaned children behind for one frame.
@@ -510,9 +527,9 @@ function computeGrabOffset(index: number): { x: number; y: number; z: number } {
   }
 }
 
-// Island hit radius — the hook must land ON the island mesh to anchor.
-// Tight radius so near-misses fall through to normal garbage collection.
-const ISLAND_HIT_RADIUS = 8
+// Island hit radius — checked on splashdown AND during flight when
+// the hook is descending near water level.
+const ISLAND_HIT_RADIUS = 18
 const ISLAND_HIT_RADIUS_SQ = ISLAND_HIT_RADIUS * ISLAND_HIT_RADIUS
 
 function findIslandNearPoint(x: number, z: number): Entity | null {
@@ -520,7 +537,10 @@ function findIslandNearPoint(x: number, z: number): Entity | null {
     const pos = Transform.get(entity).position
     const dx = x - pos.x
     const dz = z - pos.z
-    if (dx * dx + dz * dz <= ISLAND_HIT_RADIUS_SQ) return entity
+    const distSq = dx * dx + dz * dz
+    const dist = Math.sqrt(distSq)
+    showNotification(`d=${dist.toFixed(1)} r=${ISLAND_HIT_RADIUS} ix=${pos.x.toFixed(0)} iz=${pos.z.toFixed(0)} hx=${x.toFixed(0)} hz=${z.toFixed(0)}`)
+    if (distSq <= ISLAND_HIT_RADIUS_SQ) return entity
   }
   return null
 }

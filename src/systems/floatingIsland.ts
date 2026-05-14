@@ -2,15 +2,12 @@ import { Transform, engine } from '@dcl/sdk/ecs'
 
 import { FloatingIsland } from '../components'
 import { GRID_ORIGIN } from '../factories/platform'
-import { getPlatformExtent } from '../factories/platformExtent'
 import { getAnchorPhase } from './anchorState'
 
 // Margin inside scene bounds before despawning
 const SCENE_MARGIN = 3
 // Approximate radius of the island collider in world units (scaled)
 const ISLAND_RADIUS = 10
-// Extra clearance between island edge and raft edge
-const RAFT_CLEARANCE = 3
 
 // Returns true if the given XZ position is within any floating island's bounds.
 export function isOnFloatingIsland(wx: number, wz: number): boolean {
@@ -33,13 +30,6 @@ export function floatingIslandSystem(dt: number): void {
   const sceneSize = GRID_ORIGIN.x * 2
   const lo = SCENE_MARGIN
   const hi = sceneSize - SCENE_MARGIN
-  const extent = getPlatformExtent()
-  const safeMargin = ISLAND_RADIUS + RAFT_CLEARANCE
-  const raftLoX = extent.minX - safeMargin
-  const raftHiX = extent.maxX + safeMargin
-  const raftLoZ = extent.minZ - safeMargin
-  const raftHiZ = extent.maxZ + safeMargin
-
   for (const [entity] of engine.getEntitiesWith(FloatingIsland, Transform)) {
     const island = FloatingIsland.getMutable(entity)
 
@@ -58,11 +48,8 @@ export function floatingIslandSystem(dt: number): void {
       pos.z += island.velocityZ * dt
     }
 
-    // Despawn if outside scene bounds (even while anchored, in case shift pushed it out)
+    // Despawn if outside scene bounds
     if (pos.x < lo || pos.x > hi || pos.z < lo || pos.z > hi) {
-      engine.removeEntity(entity)
-    } else if (!frozen && pos.x > raftLoX && pos.x < raftHiX && pos.z > raftLoZ && pos.z < raftHiZ) {
-      // Only despawn for raft proximity when NOT anchored (anchor shifts islands toward raft intentionally)
       engine.removeEntity(entity)
     }
   }

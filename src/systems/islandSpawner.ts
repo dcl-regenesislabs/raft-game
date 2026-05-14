@@ -14,17 +14,15 @@ import {
 } from '../factories/sceneLevels'
 
 // --- tunables ---
-const SPAWN_INTERVAL_S = 45
+const SPAWN_INTERVAL_S = 15
 // Much slower than debris so the player has time to jump on
-const DRIFT_SPEED = 0.3
-const DRIFT_SPEED_JITTER = 0.1
+const DRIFT_SPEED = 1.2
+const DRIFT_SPEED_JITTER = 0.3
 // How far upstream from the raft islands spawn
 const SPAWN_DISTANCE_MARGIN = 35
-// Island approximate half-width in world units
-const ISLAND_HALF_WIDTH = 10
-// Lateral offset band — close enough to hook from the raft deck
-const BYPASS_MIN_MARGIN = ISLAND_HALF_WIDTH + 2
-const BYPASS_MAX_MARGIN = ISLAND_HALF_WIDTH + 6
+// Lateral offset from raft edge
+const BYPASS_MIN_MARGIN = 8
+const BYPASS_MAX_MARGIN = 11
 const MAP_EDGE_SPAWN_MARGIN = 5
 const MIN_UPSTREAM_GAP = 8
 const MAX_ISLANDS = 1
