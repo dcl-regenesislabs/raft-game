@@ -40,6 +40,8 @@ import {
   updateFishingWarningSprite,
   updateRopeBetween
 } from '../factories'
+import { Platform } from '../components'
+import { GRID_ORIGIN, RAFT_SIZE } from '../factories'
 import { getItem } from '../ui/items'
 import { WATER_LEVEL } from '../factories/sceneLevels'
 import {
@@ -54,6 +56,7 @@ import {
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
+import { isHookInFlight } from './hookThrower'
 import { notifyItemReceived } from '../ui/itemReceivedNotification'
 import { RAD_TO_DEG } from '../utils/math'
 import { computeWobble } from '../utils/wobble'
@@ -68,8 +71,11 @@ import { computeWobble } from '../utils/wobble'
 const ROD_ITEM_ID = 'fishingRod'
 const FISH_POOL = ['sardines', 'squid', 'crab'] as const
 
+const LINE_THICKNESS = 0.008
 const CAMERA_FORWARD = Vector3.create(0, 0, 1)
-const HAND_OFFSET_LOCAL = Vector3.create(0.25, -0.45, 0.4)
+const HAND_OFFSET_LOCAL = Vector3.create(0.25, 0.25, 0.4)
+// Anchor while reeling: centered on screen, slightly below crosshair
+const HAND_OFFSET_REEL = Vector3.create(0.18, -0.15, 0.75)
 
 let lineEntity: Entity | null = null
 let ropeEntity: Entity | null = null
@@ -98,6 +104,11 @@ export function getFishingChargeT(): number {
 
 export function isFishingLineActive(): boolean {
   return lineEntity !== null
+}
+
+export function isFishingLineReeling(): boolean {
+  if (lineEntity === null) return false
+  return FishingLine.get(lineEntity).phase === FishingPhase.Reeling
 }
 
 // Drops every cached entity reference without removing the entities —
@@ -132,7 +143,6 @@ export function isFishingBiting(): boolean {
 
 export function fishingRodSystem(dt: number): void {
   const locked = isInventoryActionLocked()
-  const handPos = computeHandPos()
 
   // Force-retract the moment the player switches off the rod slot —
   // we don't want an orphaned line floating while the hammer / spear
@@ -149,6 +159,9 @@ export function fishingRodSystem(dt: number): void {
 
   if (lineEntity !== null) {
     cancelCharge()
+    const phase = FishingLine.get(lineEntity).phase
+    const offset = phase === FishingPhase.Reeling ? HAND_OFFSET_REEL : HAND_OFFSET_LOCAL
+    const handPos = computeHandPos(offset)
     if (handPos === null) return
     advanceLine(dt, handPos)
     return
@@ -167,6 +180,13 @@ export function fishingRodSystem(dt: number): void {
     cancelCharge()
     return
   }
+
+  if (isHookInFlight()) {
+    cancelCharge()
+    return
+  }
+
+  const handPos = computeHandPos(HAND_OFFSET_LOCAL)
   if (handPos === null) return
   tickCharge(dt, handPos)
 }
@@ -199,10 +219,6 @@ function tickCharge(dt: number, handPos: Vector3): void {
   }
 
   chargeT = Math.min(1, chargeT + dt / HOOK_CHARGE_DURATION_S)
-  if (chargeT >= 1) {
-    spawnAndThrow(handPos, 1)
-    cancelCharge()
-  }
 }
 
 function cancelCharge(): void {
@@ -229,7 +245,7 @@ function spawnAndThrow(handPos: Vector3, strength: number): void {
   const transform = Transform.getMutable(lineEntity)
   transform.position = Vector3.create(handPos.x, handPos.y, handPos.z)
   transform.rotation = composeHeading(-aim.x, 0, -aim.z, 0, 0, 0)
-  updateRopeBetween(ropeEntity, handPos, handPos)
+  updateRopeBetween(ropeEntity, handPos, handPos, LINE_THICKNESS)
 }
 
 function composeHeading(
@@ -268,9 +284,13 @@ function advanceLine(dt: number, handPos: Vector3): void {
       const nextX = pos.x + state.velocity.x * dt
       const nextZ = pos.z + state.velocity.z * dt
       transform.position = Vector3.create(nextX, WATER_LEVEL, nextZ)
-      state.phase = FishingPhase.Idle
-      state.idleElapsed = 0
-      state.reactElapsed = 0
+      if (isOnRaft(nextX, nextZ)) {
+        state.phase = FishingPhase.Reeling
+      } else {
+        state.phase = FishingPhase.Idle
+        state.idleElapsed = 0
+        state.reactElapsed = 0
+      }
     } else {
       const nextX = pos.x + state.velocity.x * dt
       const nextZ = pos.z + state.velocity.z * dt
@@ -365,7 +385,7 @@ function advanceLine(dt: number, handPos: Vector3): void {
 
   if (ropeEntity !== null) {
     const linePos = Transform.get(lineEntity).position
-    updateRopeBetween(ropeEntity, handPos, linePos)
+    updateRopeBetween(ropeEntity, handPos, linePos, LINE_THICKNESS)
   }
 
   // Catch sprites ride along with the hook. They only exist after a
@@ -456,13 +476,20 @@ function despawnLine(): void {
   biteIntensity = 0
 }
 
+// Higher arc than the hook (~45°) so the rod cast reads as an overhead
+// lob rather than a flat throw.
+const AIM_ELEVATION_BIAS = Math.sin(45 * Math.PI / 180) // ~0.707
+
 function computeAimDir(): Vector3 | null {
   const cam = Transform.getOrNull(engine.CameraEntity)
   if (cam === null) return null
   const forward = Vector3.rotate(CAMERA_FORWARD, cam.rotation as Quaternion)
+  const biased = Vector3.create(forward.x, forward.y + AIM_ELEVATION_BIAS, forward.z)
+  const len = Math.sqrt(biased.x * biased.x + biased.y * biased.y + biased.z * biased.z)
+  const aim = Vector3.create(biased.x / len, biased.y / len, biased.z / len)
   const MAX_UP_Y = Math.SQRT1_2
-  if (forward.y <= MAX_UP_Y) return forward
-  const horiz = Math.sqrt(forward.x * forward.x + forward.z * forward.z)
+  if (aim.y <= MAX_UP_Y) return aim
+  const horiz = Math.sqrt(aim.x * aim.x + aim.z * aim.z)
   if (horiz < 0.0001) {
     const player = Transform.getOrNull(engine.PlayerEntity)
     if (player === null) return null
@@ -470,16 +497,30 @@ function computeAimDir(): Vector3 | null {
     return Vector3.create(playerFwd.x * MAX_UP_Y, MAX_UP_Y, playerFwd.z * MAX_UP_Y)
   }
   const scale = MAX_UP_Y / horiz
-  return Vector3.create(forward.x * scale, MAX_UP_Y, forward.z * scale)
+  return Vector3.create(aim.x * scale, MAX_UP_Y, aim.z * scale)
 }
 
-function computeHandPos(): Vector3 | null {
+function computeHandPos(offset: Vector3): Vector3 | null {
   const cam = Transform.getOrNull(engine.CameraEntity)
   if (cam === null) return null
-  const localOffset = Vector3.rotate(HAND_OFFSET_LOCAL, cam.rotation as Quaternion)
+  const localOffset = Vector3.rotate(offset, cam.rotation as Quaternion)
   return Vector3.create(
     cam.position.x + localOffset.x,
     cam.position.y + localOffset.y,
     cam.position.z + localOffset.z
   )
+}
+
+// Returns true when the world XZ position falls inside any placed raft cell.
+function isOnRaft(wx: number, wz: number): boolean {
+  const half = RAFT_SIZE / 2
+  for (const [entity] of engine.getEntitiesWith(Platform)) {
+    const p = Platform.get(entity)
+    const cx = GRID_ORIGIN.x + p.gridX * RAFT_SIZE
+    const cz = GRID_ORIGIN.z + p.gridZ * RAFT_SIZE
+    if (wx >= cx - half && wx <= cx + half && wz >= cz - half && wz <= cz + half) {
+      return true
+    }
+  }
+  return false
 }

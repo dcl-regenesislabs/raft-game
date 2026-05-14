@@ -8,6 +8,7 @@ import {
   isHeldViewmodelHidden
 } from '../factories/heldItem'
 import { getThrowChargeT, isHookInFlight } from './hookThrower'
+import { getFishingChargeT, isFishingLineActive, isFishingLineReeling } from './fishingRod'
 
 // Wind-up offset relative to the rest pose, expressed in camera-local space.
 // At full charge the hook is pulled up-back-right (over the shoulder) and
@@ -16,6 +17,14 @@ const SHOULDER_OFFSET = Vector3.create(0.11, 0.18, -0.18)
 const SHOULDER_ROT_PITCH_DEG = -18
 const SHOULDER_ROT_YAW_DEG = 25
 const SHOULDER_ROT_ROLL_DEG = 0
+
+// Fishing rod wind-up: the rod rotates far back over the shoulder until
+// it disappears from view, mimicking a real casting windup. On release
+// it snaps forward to rest (handled by charge dropping to 0 instantly).
+const ROD_BACK_OFFSET = Vector3.create(0.15, 0.4, -0.5)
+const ROD_ROT_PITCH_DEG = -120
+const ROD_ROT_YAW_DEG = 30
+const ROD_ROT_ROLL_DEG = 0
 
 // Easing for the wind-up motion. Quadratic ease-out so the hook snaps toward
 // the shoulder fast at the start and settles into position as the charge bar
@@ -32,34 +41,54 @@ export function hookThrowAnimSystem(_dt: number): void {
   // alone — we'd otherwise re-show the hidden hook every frame.
   if (isHeldViewmodelHidden()) return
 
-  const isHookHeld = getHeldItemKind() === 'hook'
-  const inFlight = isHookInFlight()
+  const kind = getHeldItemKind()
+  const isHookHeld = kind === 'hook'
+  const isRodHeld = kind === 'fishingRod'
+  const hookFlight = isHookInFlight()
+  const lineFlight = isFishingLineActive()
 
-  // Hide the viewmodel while the hook projectile is out — the player threw
-  // it. Visible again once the projectile despawns (reeled back in).
-  const shouldHide = isHookHeld && inFlight
+  // Hide the viewmodel while the projectile is out. The rod only
+  // reappears once reeling starts (player pulls it back).
+  const shouldHide = (isHookHeld && hookFlight) || (isRodHeld && lineFlight && !isFishingLineReeling())
   setVisible(entity, !shouldHide)
 
-  if (!isHookHeld || inFlight) return
+  // Hook charge wind-up
+  if (isHookHeld && !hookFlight) {
+    const charge = getThrowChargeT()
+    if (charge > 0) {
+      applyWindup(entity, charge, SHOULDER_OFFSET, SHOULDER_ROT_PITCH_DEG, SHOULDER_ROT_YAW_DEG, SHOULDER_ROT_ROLL_DEG)
+    }
+    return
+  }
 
-  const charge = getThrowChargeT()
-  if (charge === 0) return
+  // Rod charge wind-up — larger rotation to send it behind the player
+  if (isRodHeld && !lineFlight) {
+    const charge = getFishingChargeT()
+    if (charge > 0) {
+      applyWindup(entity, charge, ROD_BACK_OFFSET, ROD_ROT_PITCH_DEG, ROD_ROT_YAW_DEG, ROD_ROT_ROLL_DEG)
+    }
+    return
+  }
+}
 
+function applyWindup(
+  entity: NonNullable<ReturnType<typeof getHeldItemEntity>>,
+  charge: number,
+  offset: Vector3,
+  pitchDeg: number,
+  yawDeg: number,
+  rollDeg: number
+): void {
   const t = easeOutQuad(charge)
   const rest = getHeldItemRest()
-
   const m = Transform.getMutable(entity)
   m.position = Vector3.create(
-    rest.offset.x + SHOULDER_OFFSET.x * t,
-    rest.offset.y + SHOULDER_OFFSET.y * t,
-    rest.offset.z + SHOULDER_OFFSET.z * t
+    rest.offset.x + offset.x * t,
+    rest.offset.y + offset.y * t,
+    rest.offset.z + offset.z * t
   )
   m.rotation = Quaternion.multiply(
-    Quaternion.fromEulerDegrees(
-      SHOULDER_ROT_PITCH_DEG * t,
-      SHOULDER_ROT_YAW_DEG * t,
-      SHOULDER_ROT_ROLL_DEG * t
-    ),
+    Quaternion.fromEulerDegrees(pitchDeg * t, yawDeg * t, rollDeg * t),
     rest.rotation
   )
 }
