@@ -10,6 +10,7 @@
 
 import { Entity } from '@dcl/sdk/ecs'
 
+import { playSfx } from '../audio/sfx'
 import { setCookOpen } from './cookToggle'
 import { setCraftOpen } from './craftToggle'
 import { setInventoryOpen } from './inventoryToggle'
@@ -40,6 +41,7 @@ export function openStorageMenu(entity: Entity): void {
   activeStorage = entity
   if (open) return
   open = true
+  playSfx('storageOpen')
   setInventoryOpen(false)
   setCraftOpen(false)
   setCookOpen(false)
@@ -49,6 +51,7 @@ export function openStorageMenu(entity: Entity): void {
 export function closeStorageMenu(): void {
   if (!open) return
   open = false
+  playSfx('storageClose')
   postCloseLockoutSec = POST_CLOSE_LOCKOUT_S
   clearStoragePick()
   activeStorage = null

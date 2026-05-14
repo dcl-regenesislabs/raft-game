@@ -114,7 +114,7 @@ export function selectSlot(i: number): void {
   // camera. The actual eating is deferred to `systems/foodEat.ts`,
   // which watches for the fire input and runs the consume animation.
   if (def.consumable) {
-    setHeldFood(def.id, def.texture)
+    setHeldFood(def.id, def.texture, def.glb)
     return
   }
   // Containers (cup / salt-water cup / fresh-water cup) ride the same

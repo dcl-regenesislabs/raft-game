@@ -55,7 +55,7 @@ rather than its own category.
 | Shark with Tomato  | Shark Meat + Tomatoes     |     2 | shark_with_tomato.png  |
 | Sardines in Oil    | Sardines + Olive Oil      |     2 | sardines_in_oil.png    |
 | Mussels and Clams  | Mussels + Clams           |     2 | mussels_and_clams.png  |
-| Spaghetti Pomodoro | Spaghetti + Tomatoes      |     2 | spaghetti_pomodoro.png |
+| Spaghetti alle Vongole | Spaghetti + Clams     |     2 | spaghetti_alle_vongole.png |
 
 ---
 
@@ -78,8 +78,8 @@ rather than its own category.
 
 | Plate                  | Required Ingredients                      | Count | File Name                  |
 | ---------------------- | ----------------------------------------- | ----: | -------------------------- |
-| Spaghetti alle Vongole | Spaghetti + Clams + Garlic + Olive Oil    |     4 | spaghetti_alle_vongole.png |
-| Fettuccine Sea Hunter  | Fettuccine + Shark Meat + Squid + Crab    |     4 | fettuccine_sea_hunter.png  |
+| Spaghetti Shark Pomodoro | Spaghetti + Shark Meat + Tomatoes + Olive Oil | 4 | spaghetti_shark_pomodoro.png |
+| Fettuccine Sea Food    | Fettuccine + Shark Meat + Squid + Crab    |     4 | fettuccine_sea_food.png    |
 
 ---
 

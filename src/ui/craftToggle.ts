@@ -3,6 +3,7 @@
 // inventory behave as a mutually-exclusive toggle group — opening one
 // closes the other so only a single panel is on screen at a time.
 
+import { playSfx } from '../audio/sfx'
 import { setCookOpen } from './cookToggle'
 import { setInventoryOpen } from './inventoryToggle'
 import { closeStorageMenu, isStorageOpen } from './storageToggle'
@@ -32,6 +33,7 @@ export function setCraftOpen(target: boolean): void {
 export function toggleCraft(): void {
   const next = !open
   setCraftOpen(next)
+  playSfx(next ? 'craftOpen' : 'craftClose')
   // Press feedback fires here because it represents the user clicking
   // the craft button — not the state change itself.
   pressElapsedSec = 0

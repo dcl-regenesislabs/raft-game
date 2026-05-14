@@ -6,9 +6,10 @@ import {
   engine,
   inputSystem
 } from '@dcl/sdk/ecs'
-import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
+import { playSfx, stopSfx, startLoop, stopLoop } from '../audio/sfx'
 import {
   FISH_BITE_DELAY_MAX_S,
   FISH_BITE_DELAY_MIN_S,
@@ -40,6 +41,7 @@ import {
   updateFishingWarningSprite,
   updateRopeBetween
 } from '../factories'
+import { getHeldItemEntity, getHeldItemKind, setRodIdleLineSuppressed } from '../factories/heldItem'
 import { Platform } from '../components'
 import { GRID_ORIGIN, RAFT_SIZE } from '../factories'
 import { getItem } from '../ui/items'
@@ -72,10 +74,17 @@ const ROD_ITEM_ID = 'fishingRod'
 const FISH_POOL = ['sardines', 'squid', 'crab'] as const
 
 const LINE_THICKNESS = 0.008
+// #8a5a0d — darker amber fishing line, distinct from the hook thrower's brown rope.
+const LINE_COLOR = Color4.create(0.541, 0.353, 0.051, 1)
 const CAMERA_FORWARD = Vector3.create(0, 0, 1)
-const HAND_OFFSET_LOCAL = Vector3.create(0.25, 0.25, 0.4)
-// Anchor while reeling: centered on screen, slightly below crosshair
-const HAND_OFFSET_REEL = Vector3.create(0.18, -0.15, 0.75)
+// Fallback anchor used only when the rod entity isn't available (e.g. before
+// the held viewmodel has been created). Live casts read the rod tip directly
+// from the held entity's transform via `computeRodTipWorldPos`.
+const HAND_OFFSET_LOCAL = Vector3.create(0.35, 0.2, 0.6)
+// Tip position in the rod's own model space. Identity-orientation screenshots
+// show the rod lying along world X with the tip on the -X side; the model
+// origin sits at roughly the rod's midpoint, so this is the half-length.
+const ROD_TIP_MODEL = Vector3.create(-0.75, 0, 0.1)
 
 let lineEntity: Entity | null = null
 let ropeEntity: Entity | null = null
@@ -124,6 +133,7 @@ export function resetFishingRodState(): void {
   chargeT = 0
   charging = false
   biteIntensity = 0
+  setRodIdleLineSuppressed(false)
 }
 
 // 0..1 sine pulse exposed to the UI. Non-zero only while a fish is
@@ -154,14 +164,13 @@ export function fishingRodSystem(dt: number): void {
       const state = FishingLine.getMutable(lineEntity)
       state.phase = FishingPhase.Reeling
       biteIntensity = 0
+      startLoop('reelPulling')
     }
   }
 
   if (lineEntity !== null) {
     cancelCharge()
-    const phase = FishingLine.get(lineEntity).phase
-    const offset = phase === FishingPhase.Reeling ? HAND_OFFSET_REEL : HAND_OFFSET_LOCAL
-    const handPos = computeHandPos(offset)
+    const handPos = computeRodTipWorldPos() ?? computeHandPos(HAND_OFFSET_LOCAL)
     if (handPos === null) return
     advanceLine(dt, handPos)
     return
@@ -186,7 +195,7 @@ export function fishingRodSystem(dt: number): void {
     return
   }
 
-  const handPos = computeHandPos(HAND_OFFSET_LOCAL)
+  const handPos = computeRodTipWorldPos() ?? computeHandPos(HAND_OFFSET_LOCAL)
   if (handPos === null) return
   tickCharge(dt, handPos)
 }
@@ -229,10 +238,12 @@ function cancelCharge(): void {
 function spawnAndThrow(handPos: Vector3, strength: number): void {
   const aim = computeAimDir()
   if (aim === null) return
+  playSfx('rodCast')
   const speed =
     HOOK_MIN_THROW_SPEED + (HOOK_MAX_THROW_SPEED - HOOK_MIN_THROW_SPEED) * strength
+  setRodIdleLineSuppressed(true)
   lineEntity = createHookEntity()
-  if (ropeEntity === null) ropeEntity = createRopeEntity()
+  if (ropeEntity === null) ropeEntity = createRopeEntity(LINE_COLOR)
   if (warningEntity === null) warningEntity = createFishingWarningSprite()
   FishingLine.create(lineEntity, {
     phase: FishingPhase.Flying,
@@ -284,6 +295,8 @@ function advanceLine(dt: number, handPos: Vector3): void {
       const nextX = pos.x + state.velocity.x * dt
       const nextZ = pos.z + state.velocity.z * dt
       transform.position = Vector3.create(nextX, WATER_LEVEL, nextZ)
+      stopSfx()
+      playSfx('waterSplash')
       if (isOnRaft(nextX, nextZ)) {
         state.phase = FishingPhase.Reeling
       } else {
@@ -329,6 +342,7 @@ function advanceLine(dt: number, handPos: Vector3): void {
     } else if (firePressedThisFrame()) {
       // Player retracts before any bite — no catch, just go home.
       state.phase = FishingPhase.Reeling
+      startLoop('reelPulling')
     }
   } else if (state.phase === FishingPhase.Biting) {
     state.reactElapsed += dt
@@ -351,6 +365,7 @@ function advanceLine(dt: number, handPos: Vector3): void {
       catchFish()
       state.phase = FishingPhase.Reeling
       biteIntensity = 0
+      startLoop('reelPulling')
     } else if (state.reactElapsed >= FISH_REACT_WINDOW_S) {
       // Fish escaped — return to Idle and roll a fresh delay so the
       // player can keep waiting on the same cast.
@@ -462,6 +477,7 @@ function rollBiteDelay(): number {
 }
 
 function despawnLine(): void {
+  stopLoop()
   if (lineEntity !== null) {
     engine.removeEntity(lineEntity)
     lineEntity = null
@@ -474,6 +490,7 @@ function despawnLine(): void {
   clearCatchSprites()
   warningBlinkT = 0
   biteIntensity = 0
+  setRodIdleLineSuppressed(false)
 }
 
 // Higher arc than the hook (~45°) so the rod cast reads as an overhead
@@ -508,6 +525,37 @@ function computeHandPos(offset: Vector3): Vector3 | null {
     cam.position.x + localOffset.x,
     cam.position.y + localOffset.y,
     cam.position.z + localOffset.z
+  )
+}
+
+// Reads the rod entity's live transform and returns the world-space position
+// of the rod tip. Used so the rope visibly attaches to the rod's GLTF rather
+// than to a fixed camera-relative offset that drifts off-screen at certain
+// FOVs. Returns null if the rod isn't equipped or the camera isn't ready.
+function computeRodTipWorldPos(): Vector3 | null {
+  if (getHeldItemKind() !== 'fishingRod') return null
+  const heldEntity = getHeldItemEntity()
+  if (heldEntity === null) return null
+  const cam = Transform.getOrNull(engine.CameraEntity)
+  if (cam === null) return null
+  const heldT = Transform.getOrNull(heldEntity)
+  if (heldT === null) return null
+  const tipScaled = Vector3.create(
+    ROD_TIP_MODEL.x * heldT.scale.x,
+    ROD_TIP_MODEL.y * heldT.scale.y,
+    ROD_TIP_MODEL.z * heldT.scale.z
+  )
+  const tipRotated = Vector3.rotate(tipScaled, heldT.rotation as Quaternion)
+  const tipCamLocal = Vector3.create(
+    heldT.position.x + tipRotated.x,
+    heldT.position.y + tipRotated.y,
+    heldT.position.z + tipRotated.z
+  )
+  const tipWorldOffset = Vector3.rotate(tipCamLocal, cam.rotation as Quaternion)
+  return Vector3.create(
+    cam.position.x + tipWorldOffset.x,
+    cam.position.y + tipWorldOffset.y,
+    cam.position.z + tipWorldOffset.z
   )
 }
 

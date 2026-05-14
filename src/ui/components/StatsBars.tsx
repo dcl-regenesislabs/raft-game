@@ -3,39 +3,43 @@ import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { isCraftOpen } from '../craftToggle'
 import { type StatKind, getStat } from '../statsBars'
 import {
-  STAT_RING_TEXTURES,
+  STAT_ICON_TEXTURES,
+  STAT_SWEEP_TEXTURES,
   STATS_ORB_CONTAINER_TEXTURE,
   STATS_ORB_GAP,
+  STATS_ORB_ICON_INSET_PCT,
+  STATS_ORB_LEFT,
   STATS_ORB_SIZE,
+  STATS_ORB_SWEEP_COLS,
+  STATS_ORB_SWEEP_FRAMES,
+  STATS_ORB_SWEEP_ROWS,
   STATS_ORB_TOP,
   STATS_ORDER
 } from '../theme'
 
 // Top-center row of three circular orbs (life / hunger / thirst). The
-// shared `bar_container.png` art is the empty state — brown wood ring +
-// dark inner track + cream center. The colored RING texture for each
-// stat is drawn on top of the dark track and revealed CLOCKWISE from 12
-// o'clock as the stat fills 0 → 100%.
+// shared `bar_container.png` is the empty state; the colored ring on
+// top reveals CLOCKWISE from 12 o'clock as the stat fills 0 → 100%.
 //
-// Clockwise reveal is built from four quadrant slices because the React
-// ECS UI surface has no native radial mask. Each quadrant samples the
-// matching quarter of the source ring texture via `uiBackground.uvs`,
-// sized and positioned so the visible portion of the quadrant exactly
-// corresponds to the sweep angle inside that quadrant. UV corner order
-// is [BL, TL, TR, BR] clockwise with v=0 at the bottom of the source.
+// React-ECS UI has no radial mask, so the clockwise reveal is baked
+// into a 32-frame spritesheet per stat (`<kind>_sweep.png`, 8 cols × 4
+// rows of 162×162 frames). Frame i shows the ring with only pixels
+// inside the [0°, (i+1)/32 × 360°] arc kept opaque — the mask is
+// computed in true polar coordinates, so the cut edge in every frame
+// is an exact radius rather than an axis-aligned approximation.
+//
+// At runtime each orb renders ONE frame via `uiBackground.uvs`,
+// selected by the stat's percentage. UV order is [BL, TL, TR, BR]
+// clockwise with v=0 at bottom of source.
 export function StatsBars(): ReactEcs.JSX.Element | null {
-  // Hide while the craft menu is open — the orbs sit at top-center,
-  // where the craft panel header lives, and would crowd the modal.
   if (isCraftOpen()) return null
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: STATS_ORB_TOP, left: 0, right: 0 },
-        width: '100%',
+        position: { top: STATS_ORB_TOP, left: STATS_ORB_LEFT },
         height: STATS_ORB_SIZE,
         flexDirection: 'row',
-        justifyContent: 'center',
         alignItems: 'center'
       }}
     >
@@ -55,11 +59,24 @@ function StatOrb(props: {
   marginLeft: number
   key?: string
 }): ReactEcs.JSX.Element {
-  // Snap the displayed value to 1% steps so the clockwise sweep only
-  // advances when the underlying stat crosses a percent boundary.
   const raw = Math.max(0, Math.min(1, getStat(props.kind)))
-  const t = Math.floor(raw * 100) / 100
-  const ringTexture = STAT_RING_TEXTURES[props.kind]
+  // Quantise to the 32 spritesheet steps. Frame 0 = first 1/32 filled,
+  // frame 31 = full ring. At raw=0 nothing renders.
+  const frameIdx = Math.min(
+    STATS_ORB_SWEEP_FRAMES - 1,
+    Math.floor(raw * STATS_ORB_SWEEP_FRAMES)
+  )
+  const showRing = raw > 0
+  const col = frameIdx % STATS_ORB_SWEEP_COLS
+  // Spritesheet rows count top-down in the PNG, but DCL UVs have v=0 at
+  // the bottom — so the FIRST PNG row (row index 0) corresponds to the
+  // highest v range. The frame at sheet-row r occupies
+  // v ∈ [(R - r - 1) / R, (R - r) / R].
+  const sheetRow = Math.floor(frameIdx / STATS_ORB_SWEEP_COLS)
+  const uMin = col / STATS_ORB_SWEEP_COLS
+  const uMax = (col + 1) / STATS_ORB_SWEEP_COLS
+  const vMin = (STATS_ORB_SWEEP_ROWS - sheetRow - 1) / STATS_ORB_SWEEP_ROWS
+  const vMax = (STATS_ORB_SWEEP_ROWS - sheetRow) / STATS_ORB_SWEEP_ROWS
   return (
     <UiEntity
       uiTransform={{
@@ -72,116 +89,39 @@ function StatOrb(props: {
         texture: { src: STATS_ORB_CONTAINER_TEXTURE }
       }}
     >
-      <RingQuadrantTR t={t} texture={ringTexture} />
-      <RingQuadrantBR t={t} texture={ringTexture} />
-      <RingQuadrantBL t={t} texture={ringTexture} />
-      <RingQuadrantTL t={t} texture={ringTexture} />
+      {showRing && (
+        <UiEntity
+          uiTransform={{
+            positionType: 'absolute',
+            position: { top: 0, left: 0 },
+            width: '100%',
+            height: '100%'
+          }}
+          uiBackground={{
+            textureMode: 'stretch',
+            texture: { src: STAT_SWEEP_TEXTURES[props.kind] },
+            uvs: [uMin, vMin, uMin, vMax, uMax, vMax, uMax, vMin]
+          }}
+        />
+      )}
+      {/* Stat symbol inside the cream center. Rendered last so it sits
+          on top of both the container and the ring, but the ring lives
+          on the outer track so they never visually collide. */}
+      <UiEntity
+        uiTransform={{
+          positionType: 'absolute',
+          position: {
+            top: `${STATS_ORB_ICON_INSET_PCT}%`,
+            bottom: `${STATS_ORB_ICON_INSET_PCT}%`,
+            left: `${STATS_ORB_ICON_INSET_PCT}%`,
+            right: `${STATS_ORB_ICON_INSET_PCT}%`
+          }
+        }}
+        uiBackground={{
+          textureMode: 'stretch',
+          texture: { src: STAT_ICON_TEXTURES[props.kind] }
+        }}
+      />
     </UiEntity>
-  )
-}
-
-// localFraction(t, start) maps the overall 0..1 stat into a 0..1
-// fraction inside one of the four 25% quadrants. Returns 0 below the
-// quadrant's start and 1 above its end.
-function localFraction(t: number, start: number): number {
-  const local = (t - start) / 0.25
-  if (local <= 0) return 0
-  if (local >= 1) return 1
-  return local
-}
-
-// Q1 — TOP-RIGHT of orb. Sweep: 12 o'clock → 3 o'clock. Fill grows
-// horizontally left → right. UV samples the LEFT `p` strip of the
-// source's top-right quadrant (u ∈ [0.5, 0.5 + 0.5p], v ∈ [0.5, 1]).
-function RingQuadrantTR(props: { t: number; texture: string }): ReactEcs.JSX.Element | null {
-  const p = localFraction(props.t, 0)
-  if (p <= 0) return null
-  const uRight = 0.5 + 0.5 * p
-  return (
-    <UiEntity
-      uiTransform={{
-        positionType: 'absolute',
-        position: { top: 0, left: '50%' },
-        width: `${p * 50}%`,
-        height: '50%'
-      }}
-      uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: props.texture },
-        uvs: [0.5, 0.5, 0.5, 1.0, uRight, 1.0, uRight, 0.5]
-      }}
-    />
-  )
-}
-
-// Q2 — BOTTOM-RIGHT of orb. Sweep: 3 → 6. Fill grows vertically
-// top → bottom. UV samples the TOP `p` strip of the bottom-right
-// source quadrant (u ∈ [0.5, 1], v ∈ [0.5 - 0.5p, 0.5]).
-function RingQuadrantBR(props: { t: number; texture: string }): ReactEcs.JSX.Element | null {
-  const p = localFraction(props.t, 0.25)
-  if (p <= 0) return null
-  const vBottom = 0.5 - 0.5 * p
-  return (
-    <UiEntity
-      uiTransform={{
-        positionType: 'absolute',
-        position: { top: '50%', left: '50%' },
-        width: '50%',
-        height: `${p * 50}%`
-      }}
-      uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: props.texture },
-        uvs: [0.5, vBottom, 0.5, 0.5, 1.0, 0.5, 1.0, vBottom]
-      }}
-    />
-  )
-}
-
-// Q3 — BOTTOM-LEFT of orb. Sweep: 6 → 9. Fill grows horizontally
-// right → left (right-anchored). UV samples the RIGHT `p` strip of the
-// bottom-left source quadrant (u ∈ [0.5 - 0.5p, 0.5], v ∈ [0, 0.5]).
-function RingQuadrantBL(props: { t: number; texture: string }): ReactEcs.JSX.Element | null {
-  const p = localFraction(props.t, 0.5)
-  if (p <= 0) return null
-  const uLeft = 0.5 - 0.5 * p
-  return (
-    <UiEntity
-      uiTransform={{
-        positionType: 'absolute',
-        position: { top: '50%', right: '50%' },
-        width: `${p * 50}%`,
-        height: '50%'
-      }}
-      uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: props.texture },
-        uvs: [uLeft, 0, uLeft, 0.5, 0.5, 0.5, 0.5, 0]
-      }}
-    />
-  )
-}
-
-// Q4 — TOP-LEFT of orb. Sweep: 9 → 12. Fill grows vertically
-// bottom → top (bottom-anchored). UV samples the BOTTOM `p` strip of
-// the top-left source quadrant (u ∈ [0, 0.5], v ∈ [0.5, 0.5 + 0.5p]).
-function RingQuadrantTL(props: { t: number; texture: string }): ReactEcs.JSX.Element | null {
-  const p = localFraction(props.t, 0.75)
-  if (p <= 0) return null
-  const vTop = 0.5 + 0.5 * p
-  return (
-    <UiEntity
-      uiTransform={{
-        positionType: 'absolute',
-        position: { bottom: '50%', left: 0 },
-        width: '50%',
-        height: `${p * 50}%`
-      }}
-      uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: props.texture },
-        uvs: [0, 0.5, 0, vTop, 0.5, vTop, 0.5, 0.5]
-      }}
-    />
   )
 }

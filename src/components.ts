@@ -341,6 +341,65 @@ export const LobbyButtonHover = engine.defineComponent('mystic-pond:lobby-button
   currentMul: Schemas.Number
 })
 
+// Per-instance state for any clickable chef NPC (lobby greeter, in-game
+// boat passenger, future variants). The Animator on the same entity
+// loops the idle clip; this component is the bookkeeping the click-cycle
+// dialog system needs.
+//
+// `clickEntity` is the CHILD entity carrying the box collider +
+// PointerEvents. The GLB itself ships with thousands of triangles per
+// frame — using `visibleMeshesCollisionMask` to receive clicks would
+// burn a per-triangle raycast on every pointer event. The box child is
+// a single MeshCollider so click resolution is O(1).
+//
+// `dialogBubbleEntity` is the speech-bubble plane and `dialogTextEntity`
+// its TextShape child. The bubble opens on the welcome line (index 0)
+// and only advances when the player clicks the chef. The cycle is
+// (dialogLines.length + 1) states: indices 0..N-1 show the matching
+// line, the final state hides both entities via VisibilityComponent.
+// The next click after the hidden state wraps back to the welcome line.
+//
+// `dialogLines` is per-instance so each chef carries its own script —
+// the lobby greeter tells a multi-page story; the in-game boat chef
+// just says "HELLO" for now.
+export const ChefNpc = engine.defineComponent('mystic-pond:chef-npc', {
+  clickEntity: Schemas.Entity,
+  dialogBubbleEntity: Schemas.Entity,
+  dialogTextEntity: Schemas.Entity,
+  dialogLines: Schemas.Array(Schemas.String),
+  dialogLineIndex: Schemas.Int
+})
+
+// Debug marker — when attached to a chef, `chefAnimDebugSystem` cycles
+// through every clip baked into the chef GLB and overwrites the dialog
+// bubble with the current clip's name so the player can identify each
+// animation by sight. Used to diagnose name-resolution issues with
+// specific clips (e.g. the seated idle). Remove when not in use.
+export const ChefAnimDebug = engine.defineComponent('mystic-pond:chef-anim-debug', {
+  clipNames: Schemas.Array(Schemas.String),
+  clipIndex: Schemas.Int,
+  elapsed: Schemas.Number,
+  period: Schemas.Number
+})
+
+// Drives circular motion on the XZ plane for the chef's boat NPC.
+// Mirrors the math in `SharkOrbit` but lives in its own component +
+// system so a non-shark orbiter can't feed into the shark spacing
+// average (which would skew the formation around the raft).
+//
+// Single-orbiter behaviour — no spacing logic, just constant angular
+// velocity (derived from linear `speed / radius`) so the boat circles
+// at a steady apparent pace even if the radius is tuned later.
+export const BoatOrbit = engine.defineComponent('mystic-pond:boat-orbit', {
+  centerX: Schemas.Number,
+  centerZ: Schemas.Number,
+  y: Schemas.Number,
+  radius: Schemas.Number,
+  speed: Schemas.Number,
+  phase: Schemas.Number,
+  headingOffsetDeg: Schemas.Number
+})
+
 // Drives circular motion around a fixed point on the XZ plane. Used by sharks
 // patrolling the platform. Consumed by `systems/sharkOrbit.ts`.
 export const SharkOrbit = engine.defineComponent('shark-orbit', {

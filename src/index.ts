@@ -1,4 +1,5 @@
 import { SkyboxTime, engine } from '@dcl/sdk/ecs'
+import { sfxTickSystem } from './audio/sfx'
 // import { isServer } from '@dcl/sdk/network'
 
 // import {
@@ -26,17 +27,18 @@ import { createFallRescueSystem } from './systems/fallRescue'
 import { firstPersonItemSwaySystem } from './systems/firstPersonItemSway'
 import { fishingRodSystem } from './systems/fishingRod'
 import { floatingGarbageSystem } from './systems/floatingGarbage'
-import { floatingIslandSystem } from './systems/floatingIsland'
-import { anchorInterpolationSystem } from './systems/anchorState'
 import { foodEatSystem } from './systems/foodEat'
 import { garbageSpawnerSystem } from './systems/garbageSpawner'
-import { islandSpawnerSystem } from './systems/islandSpawner'
 import { grillCookSystem } from './systems/grillCook'
 import { grillFireSystem } from './systems/grillFire'
 import { hammerSwingSystem } from './systems/hammerSwing'
 import { hookThrowAnimSystem } from './systems/hookThrowAnim'
 import { hookThrowerSystem } from './systems/hookThrower'
+import { rodHookSwingSystem } from './systems/rodHookSwing'
 import { inventoryInputSystem } from './systems/inventoryInput'
+import { boatChefDirectorSystem } from './systems/boatChefDirector'
+import { chefAnimDebugSystem } from './systems/chefAnimDebug'
+import { chefDialogSystem } from './systems/chefDialog'
 import { lobbyButtonHoverSystem } from './systems/lobbyButtonHover'
 import { lobbyPortalSystem } from './systems/lobbyPortalSystem'
 import { portalPulseSystem } from './systems/portalPulse'
@@ -68,8 +70,6 @@ import { purifySessionTickSystem } from './ui/purifySession'
 import { worldClickGateResetSystem } from './ui/worldClickGate'
 
 export async function main(): Promise<void> {
-  // Authoritative server runs the same entry point headlessly. It only
-  // needs the save/load message handlers — none of the visual / input /
   // TODO: re-enable server once @dcl/sdk/server is available
   // if (isServer()) {
   //   runServer()
@@ -99,6 +99,7 @@ export async function main(): Promise<void> {
   // lobby renders the startup overlay over the HUD and shouldn't show
   // any equipped tool through it.
   setHeldViewmodelHidden(true)
+  engine.addSystem(sfxTickSystem)
   engine.addSystem(firstPersonItemSwaySystem)
   engine.addSystem(spearAttackSystem)
   engine.addSystem(hammerSwingSystem)
@@ -114,6 +115,7 @@ export async function main(): Promise<void> {
   engine.addSystem(cupFillSystem)
   engine.addSystem(foodEatSystem)
   engine.addSystem(hookThrowAnimSystem)
+  engine.addSystem(rodHookSwingSystem)
   // Game-world geometry (seabed, the y=4 water plane, the main raft,
   // and the sharks) is intentionally deferred to `buildGameWorld`
   // below — only the lobby exists at boot. Systems below stay
@@ -127,11 +129,15 @@ export async function main(): Promise<void> {
   engine.addSystem(portalPulseSystem)
   engine.addSystem(portalUvSwirlSystem)
   engine.addSystem(lobbyButtonHoverSystem)
+  // Director MUST run before chefDialogSystem — on the WAITING → INTERACTING
+  // click frame it swaps the chef's dialog script and resets
+  // `dialogLineIndex = -1`, so the dialog system's `(idx + 1) % stateCount`
+  // on the same frame lands on 0 and shows the new script's first line.
+  engine.addSystem(boatChefDirectorSystem)
+  engine.addSystem(chefDialogSystem)
+  engine.addSystem(chefAnimDebugSystem)
   engine.addSystem(garbageSpawnerSystem)
   engine.addSystem(floatingGarbageSystem)
-  engine.addSystem(anchorInterpolationSystem)
-  engine.addSystem(islandSpawnerSystem)
-  engine.addSystem(floatingIslandSystem)
   engine.addSystem(grillFireSystem)
   engine.addSystem(grillCookSystem)
   engine.addSystem(createFallRescueSystem(GRID_ORIGIN))

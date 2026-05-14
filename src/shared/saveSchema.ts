@@ -110,7 +110,7 @@ function refreshHeldItemFromSelection(selectedIndex: number): void {
     return
   }
   if (def.consumable) {
-    setHeldFood(def.id, def.texture)
+    setHeldFood(def.id, def.texture, def.glb)
     return
   }
   if (def.heldKind !== null) {

@@ -69,7 +69,7 @@ const FOOD_EFFECTS: Record<string, FoodEffect> = {
   shark_with_tomato:  { hunger: 25 },
   sardines_in_oil:    { hunger: 25, hungerBonus: 10 },             // +oil
   mussels_and_clams:  { hunger: 25 },
-  spaghetti_pomodoro: { hunger: 25, hungerBonus: 20 },             // +pasta
+  spaghetti_alle_vongole: { hunger: 25, hungerBonus: 20 },         // +pasta
 
   // ─── 3-ingredient plates (hunger 40) ──────────────────────────────
   spaghetti_with_sardines: { hunger: 40, hungerBonus: 20, thirst: -4 }, // +pasta +salt
@@ -82,8 +82,8 @@ const FOOD_EFFECTS: Record<string, FoodEffect> = {
   seafood_stew:            { hunger: 40, thirst: 10 },                  // +stew
 
   // ─── 4-ingredient hero plates (hunger 60) ─────────────────────────
-  spaghetti_alle_vongole: { hunger: 60, hungerBonus: 30 },              // +pasta +oil
-  fettuccine_sea_hunter:  { hunger: 60, hungerBonus: 20 }               // +pasta
+  spaghetti_shark_pomodoro: { hunger: 60, hungerBonus: 30 },            // +pasta +oil
+  fettuccine_sea_food:    { hunger: 60, hungerBonus: 20 }               // +pasta
 }
 
 export function getFoodEffect(id: string): FoodEffect | null {
