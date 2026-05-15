@@ -87,7 +87,7 @@ const CHEF_DIALOG_TEXTURE = 'images/hud/dialog_box.png'
 const CHEF_DIALOG_WIDTH = 2.6
 const CHEF_DIALOG_HEIGHT = CHEF_DIALOG_WIDTH * (700 / 1100)
 const CHEF_DIALOG_LIFT = 1.75
-const CHEF_DIALOG_FONT_SIZE = 1.6
+const CHEF_DIALOG_FONT_SIZE = 1.2
 const CHEF_DIALOG_MOBILE_TEXT_SCALE = 0.7
 
 // Default click-box footprint, tuned to wrap the chef's silhouette so

@@ -170,6 +170,10 @@ export const CRAFT_INVENTORY_SIZE = 400
 export const CRAFT_DETAILS_BASE_HEIGHT = 280
 export const CRAFT_DETAILS_ROW_HEIGHT = 44
 export const CRAFT_PANEL_GAP = 12
+// Nudges the whole centered craft row right. Applied as paddingLeft on a
+// `justifyContent: center` wrapper, so the visible shift is half this
+// value.
+export const CRAFT_PANEL_OFFSET_X = 160
 // Inset content past the painted bevel. Horizontal padding is bigger
 // than vertical so labels and counts don't crowd the painted left/right
 // frame; top padding is larger than bottom so the header sits visibly

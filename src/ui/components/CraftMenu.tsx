@@ -42,6 +42,7 @@ import {
   CRAFT_LIST_HEIGHT,
   CRAFT_LIST_WIDTH,
   CRAFT_PANEL_GAP,
+  CRAFT_PANEL_OFFSET_X,
   CRAFT_PANEL_PADDING_BOTTOM,
   CRAFT_PANEL_PADDING_TOP,
   CRAFT_PANEL_PADDING_X,
@@ -76,7 +77,8 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
         height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        flexDirection: 'row'
+        flexDirection: 'row',
+        padding: { left: CRAFT_PANEL_OFFSET_X }
       }}
     >
       <AggregatedInventoryGrid

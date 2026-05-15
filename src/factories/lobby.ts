@@ -561,14 +561,26 @@ function spawnButton(
 // a true neutral gray (a `diffuseColor` multiplier on the red texture
 // can only darken it toward maroon, never desaturate it).
 export function applyLobbyButtonMaterial(entity: Entity, enabled: boolean): void {
-  Material.setBasicMaterial(entity, {
-    texture: Material.Texture.Common({
-      src: enabled ? BUTTON_TEXTURE : BUTTON_TEXTURE_DISABLED,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_CLAMP
-    }),
-    diffuseColor: Color4.create(1, 1, 1, 1),
+  // PBR with emissive-only albedo preserves the basic-material unlit
+  // look and keeps alpha-test transparency working on the unity-desktop
+  // client (basic materials show a black background there). Same recipe
+  // as the chef dialog bubble.
+  const tex = Material.Texture.Common({
+    src: enabled ? BUTTON_TEXTURE : BUTTON_TEXTURE_DISABLED,
+    filterMode: TextureFilterMode.TFM_BILINEAR,
+    wrapMode: TextureWrapMode.TWM_CLAMP
+  })
+  Material.setPbrMaterial(entity, {
+    texture: tex,
+    emissiveTexture: tex,
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 1),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
     alphaTest: 0.5,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
     castShadows: false
   })
 }
