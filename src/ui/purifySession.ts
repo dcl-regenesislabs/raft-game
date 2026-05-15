@@ -10,7 +10,7 @@
 import { addCollected, transmuteContainerSlot } from './inventoryState'
 import { notifyItemReceived } from './itemReceivedNotification'
 
-const PURIFY_DURATION_S = 4
+const PURIFY_DURATION_S = 1
 
 let active = false
 let elapsedSec = 0

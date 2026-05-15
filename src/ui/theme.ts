@@ -157,21 +157,14 @@ export const CRAFT_BUTTON_RIGHT =
   INVENTORY_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
 
 // --- Craft double-menu -----------------------------------------------------
-// The list and details panels render centered using the nine-sliced
-// `panel.png` background. The mini inventory grid takes the top-left
-// corner — the stats bars normally there are hidden while the craft menu
-// is open, so the slot is free, and a corner anchor keeps the materials
-// reference visible without crowding the centered modal.
+// Mini inventory + list + details render as one centered row on every
+// client — every other HUD element hides while the craft menu is open
+// (see `ui/index.tsx`), so the row owns the whole canvas. Mirrors the
+// cook menu's layout.
 export const CRAFT_LIST_WIDTH = 340
 export const CRAFT_LIST_HEIGHT = 540
 export const CRAFT_DETAILS_WIDTH = 360
 export const CRAFT_INVENTORY_SIZE = 400
-export const CRAFT_INVENTORY_TOP = 85
-export const CRAFT_INVENTORY_LEFT = -20
-// Desktop anchors the mini craft inventory + list + details row to the
-// bottom-left, matching the stats bars' desktop anchor.
-export const CRAFT_INVENTORY_LEFT_DESKTOP = 40
-export const CRAFT_INVENTORY_BOTTOM_DESKTOP = 40
 // Craft details panel grows with the recipe — header + description + the
 // REQUIRES row + one row per material.
 export const CRAFT_DETAILS_BASE_HEIGHT = 280

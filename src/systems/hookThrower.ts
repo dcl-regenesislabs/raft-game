@@ -43,6 +43,7 @@ import { isFishingLineActive } from './fishingRod'
 import {
   addCollected,
   getSelectedSlot,
+  getSlotItem,
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
 import { notifyItemReceived } from '../ui/itemReceivedNotification'
@@ -50,7 +51,11 @@ import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import { RAD_TO_DEG, randInt } from '../utils/math'
 import { computeWobble } from '../utils/wobble'
 
-const HOOK_SLOT = 0
+const HOOK_ITEM_ID = 'hook'
+
+function isHookEquipped(): boolean {
+  return getSlotItem(getSelectedSlot())?.id === HOOK_ITEM_ID
+}
 
 const CAMERA_FORWARD = Vector3.create(0, 0, 1)
 // Player "hand" anchor in camera-local space: slightly below + forward of
@@ -139,7 +144,7 @@ export function hookThrowerSystem(dt: number): void {
     return
   }
 
-  if (getSelectedSlot() !== HOOK_SLOT) {
+  if (!isHookEquipped()) {
     cancelCharge()
     return
   }

@@ -138,12 +138,12 @@ function ui(): ReactEcs.JSX.Element {
               panel and the craft menu both render their own bar attached
               under the inventory grid via <InventoryWithBar/>. */}
           {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <BottomBar />}
-          {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <StatsBars />}
-          {!isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ActionButton />}
+          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <StatsBars />}
+          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ActionButton />}
           {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ModeToggleButton />}
-          {!isCookOpen() && !isStorageOpen() && <InventoryButton />}
-          {!isCookOpen() && !isStorageOpen() && <CraftButton />}
-          {!isCookOpen() && !isStorageOpen() && <SystemButton />}
+          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && <InventoryButton />}
+          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && <CraftButton />}
+          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && <SystemButton />}
           <InventoryPanel />
           <CraftDoubleMenu />
           <CookMenu />

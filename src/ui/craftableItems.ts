@@ -18,8 +18,9 @@ export interface CraftableItem {
   texture: string
   cost: readonly MaterialCost[]
   // Optional per-item craft duration in seconds. When omitted the craft
-  // session falls back to the default duration. Use 0 for raw materials
-  // (e.g. rope) so they craft instantly without locking the HUD.
+  // session falls back to the default (currently 0 — instant). Set a
+  // positive value to re-introduce a HUD-locking timer for a specific
+  // recipe.
   craftSec?: number
 }
 
@@ -32,8 +33,7 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     texture: 'images/hud/items/rope.png',
     cost: [
       { materialId: 'plants', amount: 2 }
-    ],
-    craftSec: 0
+    ]
   },
   {
     id: 'hammer',
@@ -42,8 +42,8 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
       'A sturdy building hammer for raising platforms and lashing your raft together.',
     texture: 'images/hud/items/hammer.png',
     cost: [
-      { materialId: 'wood', amount: 4 },
-      { materialId: 'rope', amount: 2 }
+      { materialId: 'wood', amount: 2 },
+      { materialId: 'rope', amount: 1 }
     ]
   },
   {
@@ -53,8 +53,8 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
       'A pointed wooden shaft for warding off circling sharks at close range.',
     texture: 'images/hud/items/spear.png',
     cost: [
-      { materialId: 'wood', amount: 8 },
-      { materialId: 'rope', amount: 3 }
+      { materialId: 'wood', amount: 4 },
+      { materialId: 'rope', amount: 2 }
     ]
   },
   {
@@ -64,10 +64,10 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
       'Boils sea water through layers of rope-woven mesh and salvaged plastic to make it drinkable.',
     texture: 'images/hud/items/water-purifier.png',
     cost: [
-      { materialId: 'wood', amount: 6 },
-      { materialId: 'rope', amount: 5 },
-      { materialId: 'plastic', amount: 4 },
-      { materialId: 'metal', amount: 2 }
+      { materialId: 'wood', amount: 3 },
+      { materialId: 'rope', amount: 2 },
+      { materialId: 'plastic', amount: 2 },
+      { materialId: 'metal', amount: 1 }
     ]
   },
   {
@@ -77,9 +77,9 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
       'A scrap-metal cooking station. Char fish and meat into proper meals.',
     texture: 'images/hud/items/grill.png',
     cost: [
-      { materialId: 'metal', amount: 3 },
-      { materialId: 'wood', amount: 6 },
-      { materialId: 'rope', amount: 3 }
+      { materialId: 'metal', amount: 2 },
+      { materialId: 'wood', amount: 3 },
+      { materialId: 'rope', amount: 2 }
     ]
   },
   {
@@ -89,8 +89,8 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
       'A real rod with a long line. Casts further than the throw hook and pulls in larger fish.',
     texture: 'images/hud/items/fishing-rod.png',
     cost: [
-      { materialId: 'wood', amount: 6 },
-      { materialId: 'rope', amount: 8 }
+      { materialId: 'wood', amount: 3 },
+      { materialId: 'rope', amount: 4 }
     ]
   },
   // KNIFE — not implemented yet; hide from the craft list until the
@@ -113,8 +113,8 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
       'A simple vessel carved from wood and lined with plastic. Holds water and other liquids.',
     texture: 'images/hud/items/cup.png',
     cost: [
-      { materialId: 'wood', amount: 2 },
-      { materialId: 'plastic', amount: 2 }
+      { materialId: 'wood', amount: 1 },
+      { materialId: 'plastic', amount: 1 }
     ]
   },
   {
@@ -124,9 +124,9 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
       'A scrap-and-iron chest. Stash supplies on board so your inventory stays clear for tools and food.',
     texture: 'images/hud/items/storage.png',
     cost: [
-      { materialId: 'wood', amount: 8 },
-      { materialId: 'metal', amount: 4 },
-      { materialId: 'rope', amount: 4 }
+      { materialId: 'wood', amount: 4 },
+      { materialId: 'metal', amount: 2 },
+      { materialId: 'rope', amount: 2 }
     ]
   }
 ]

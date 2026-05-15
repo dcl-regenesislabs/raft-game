@@ -110,6 +110,24 @@ export function selectSlot(i: number): void {
   if (def === null) return
   const warning = FOOD_WARNINGS[def.id]
   if (warning !== undefined) showNotification(warning)
+  applyHeldFromDef(def)
+}
+
+// Re-apply the held viewmodel based on whatever def currently occupies
+// the selected slot. Drag swaps don't go through `selectSlot` (the
+// selected index doesn't change), so without this the GLB lags one
+// swap behind — e.g. swapping a hook in slot 0 with a hammer in slot 1
+// would leave the hand holding the hook until the player clicked the
+// bar again. Bypasses the inventory-open gate `selectSlot` enforces,
+// since drag swaps happen while the panel is open.
+export function refreshHeldForSelectedSlot(): void {
+  const def = slotDef(selected)
+  if (def === null) return
+  if (!def.selectable) return
+  applyHeldFromDef(def)
+}
+
+function applyHeldFromDef(def: ItemDef): void {
   // Consumables (food) equip as a textured plane held in front of the
   // camera. The actual eating is deferred to `systems/foodEat.ts`,
   // which watches for the fire input and runs the consume animation.

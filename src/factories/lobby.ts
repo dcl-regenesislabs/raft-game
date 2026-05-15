@@ -39,8 +39,10 @@ import {
 import {
   LOBBY_RAFT_Y,
   LOBBY_SEABED_Y,
-  LOBBY_WATER_Y
+  LOBBY_WATER_Y,
+  WATER_LEVEL
 } from './sceneLevels'
+import { createAvatarHideArea } from './avatarHideArea'
 import { createSeabed } from './seabed'
 import { createWaterFloorV2 } from './water2'
 
@@ -165,6 +167,18 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
 
   const water = createWaterFloorV2(parcelGrid, LOBBY_WATER_Y)
   LobbyTag.create(water)
+
+  // Hide avatars standing above the game's WATER_LEVEL — i.e. anyone
+  // currently in-game on a raft. Lobby visitors stand on LOBBY_RAFT_Y
+  // platforms (~0.6 m), comfortably below the threshold, so they stay
+  // visible to each other while the players who already committed to a
+  // portal don't bleed through the sky over the lobby island. The full
+  // hide volume is rebuilt by `buildGameWorld` once the player enters.
+  const hideArea = createAvatarHideArea(parcelGrid, {
+    minY: WATER_LEVEL,
+    maxY: WATER_LEVEL + 1000
+  })
+  LobbyTag.create(hideArea)
 
   buildIslandRafts(cx, cz)
   buildSideWingRafts(cx, cz)

@@ -83,6 +83,10 @@ export const LIFE_DAMAGE_SINGLE_PCT_PER_S = 0.75
 // Life damage per second when BOTH hunger AND thirst are at 0% (replaces,
 // does not stack with, the single-empty rate).
 export const LIFE_DAMAGE_BOTH_PCT_PER_S = 1.5
+// Passive life regen per second while neither hunger nor thirst is empty.
+// Matches RAFT (0.25 HP/sec on a 0-100 scale → ~6.6 min from 1 to 100).
+// Suppressed entirely when hunger or thirst hits 0%.
+export const LIFE_REGEN_PCT_PER_S = 0.25
 
 // One-time life cost (percentage points) the player pays each time the
 // fall-rescue system bails them out of the water. Stacks with whatever
@@ -102,7 +106,7 @@ export const HOOK_CHARGE_DURATION_S = 0.5
 // reads as a "throw" rather than a slow lob.
 export const HOOK_GRAVITY = 18
 // Constant horizontal speed of the hook while floating back to the player.
-export const HOOK_REEL_SPEED = 7
+export const HOOK_REEL_SPEED = 14
 // Despawn radius on the XZ plane — the hook disappears when this close.
 export const HOOK_REEL_DESPAWN_RADIUS_XZ = 1.2
 // Safety: force-transition into floating after this much airtime.

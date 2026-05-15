@@ -197,11 +197,17 @@ function applyDestroyGhost(platform: Entity, color: Color4): void {
 // Strips the override so the raft pops back to its native wood textures
 // the moment the cursor leaves it (or destroy mode exits). Safe to call
 // when no override is present.
+//
+// We replace the modifiers array with `[]` instead of deleting the
+// component because some renderers don't re-evaluate the GLB material
+// when the modifier component disappears mid-flight — the platform
+// would stay tinted red even after the cursor moved away. Mirrors the
+// "mutate, don't replace" pattern documented in spectralPlatform.ts.
 function clearDestroyGhost(platform: Entity): void {
   const visual = getPlatformVisual(platform)
   if (visual === null) return
   if (GltfNodeModifiers.getOrNull(visual) === null) return
-  GltfNodeModifiers.deleteFrom(visual)
+  GltfNodeModifiers.getMutable(visual).modifiers = []
 }
 
 function lerpColor(a: Color4, b: Color4, t: number): Color4 {

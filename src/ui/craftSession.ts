@@ -10,10 +10,11 @@ import { addCollected } from './inventoryState'
 import { notifyItemReceived } from './itemReceivedNotification'
 import { getCombinedCount, subtractFromAll } from './storageSession'
 
-// Default craft duration. Individual recipes can override via
-// `CraftableItem.craftSec` — raw materials (e.g. rope) use 0 to craft
-// instantly without entering a session.
-const CRAFT_TIME = 2
+// Default craft duration. Currently 0 — every craft is instant and
+// skips the HUD-locking session. The per-item `CraftableItem.craftSec`
+// override is preserved so individual recipes can re-introduce a
+// duration later without touching the session machinery.
+const CRAFT_TIME = 0
 
 let activeId: string | null = null
 let activeDurationSec = CRAFT_TIME
