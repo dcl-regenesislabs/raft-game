@@ -51,6 +51,7 @@ import {
 } from '../systems/constructionPlacement'
 import { resetFishingRodState } from '../systems/fishingRod'
 import { resetAnchorState } from '../systems/anchorState'
+import { resetAnchorThrowerState } from '../systems/anchorThrower'
 import { resetHookThrowerState } from '../systems/hookThrower'
 import { resetRaftBuilderState } from '../systems/raftBuilder'
 import { setCookOpen } from '../ui/cookToggle'
@@ -219,6 +220,7 @@ export function returnToLobby(): void {
   // the swept entities they were pointing at are gone, and the next
   // game-world re-entry must lazy-create fresh ones.
   resetAnchorState()
+  resetAnchorThrowerState()
   resetHookThrowerState()
   resetFishingRodState()
   resetRaftBuilderState()

@@ -5,9 +5,9 @@ import { getPlatformExtent } from '../factories/platformExtent'
 
 // Interpolation duration for the pull / release shift
 const ANCHOR_INTERP_DURATION = 3.0
-// Distance between the island edge and the raft edge so the player can
-// jump across but the island doesn't overlap the raft geometry.
-const ANCHOR_GAP = 3
+// Distance between the island edge and the raft edge — small enough to
+// jump across without falling in the water.
+const ANCHOR_GAP = 1
 
 type AnchorPhase = 'idle' | 'pulling' | 'anchored' | 'releasing'
 
@@ -76,7 +76,7 @@ export function beginAnchor(islandEntity: Entity, anchorX: number, anchorZ: numb
     const nz = dz / dist
     // How far to move: close the gap minus raft half-extent, island
     // radius, and the desired air gap between them.
-    const islandRadius = 10
+    const islandRadius = 7
     const raftHalf = Math.max(
       (extent.maxX - extent.minX) / 2,
       (extent.maxZ - extent.minZ) / 2

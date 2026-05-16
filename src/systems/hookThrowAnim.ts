@@ -7,6 +7,7 @@ import {
   getHeldItemRest,
   isHeldViewmodelHidden
 } from '../factories/heldItem'
+import { getAnchorChargeT, isAnchorInFlight } from './anchorThrower'
 import { getThrowChargeT, isHookInFlight } from './hookThrower'
 import { getFishingChargeT, isFishingLineActive } from './fishingRod'
 
@@ -48,8 +49,10 @@ interface ReleaseAnim {
   elapsed: number
 }
 let hookRelease: ReleaseAnim | null = null
+let anchorRelease: ReleaseAnim | null = null
 let rodRelease: ReleaseAnim | null = null
 let lastHookCharge = 0
+let lastAnchorCharge = 0
 let lastRodCharge = 0
 
 export function hookThrowAnimSystem(dt: number): void {
@@ -62,19 +65,36 @@ export function hookThrowAnimSystem(dt: number): void {
 
   const kind = getHeldItemKind()
   const isHookHeld = kind === 'hook'
+  const isAnchorHeld = kind === 'anchor'
   const isRodHeld = kind === 'fishingRod'
   const hookFlight = isHookInFlight()
+  const anchorFlight = isAnchorInFlight()
   const lineFlight = isFishingLineActive()
 
-  // Hide the hook viewmodel while it's the projectile in flight. The rod
-  // stays visible during line flight — only the line/hook leaves the hand.
-  const shouldHide = isHookHeld && hookFlight
+  // Hide the viewmodel while it's the projectile in flight.
+  const shouldHide = (isHookHeld && hookFlight) || (isAnchorHeld && anchorFlight)
   setVisible(entity, !shouldHide)
 
-  // Hook charge wind-up + release tween. The hook becomes the projectile on
-  // release (hookFlight true), so the release tween only matters when the
-  // player aborts a charge mid-press; once the hook leaves the hand we hide
-  // the viewmodel anyway.
+  // Anchor charge wind-up — same motion as the hook.
+  if (isAnchorHeld && !anchorFlight) {
+    const charge = getAnchorChargeT()
+    if (charge === 0 && lastAnchorCharge > 0) {
+      anchorRelease = { capturedT: lastAnchorCharge, elapsed: 0 }
+    }
+    lastAnchorCharge = charge
+    if (charge > 0) {
+      anchorRelease = null
+      applyWindup(entity, charge, SHOULDER_OFFSET, SHOULDER_ROT_PITCH_DEG, SHOULDER_ROT_YAW_DEG, SHOULDER_ROT_ROLL_DEG)
+    } else if (anchorRelease !== null) {
+      anchorRelease.elapsed += dt
+      const k = 1 - Math.min(1, anchorRelease.elapsed / RELEASE_EASE_S)
+      applyWindup(entity, anchorRelease.capturedT * k, SHOULDER_OFFSET, SHOULDER_ROT_PITCH_DEG, SHOULDER_ROT_YAW_DEG, SHOULDER_ROT_ROLL_DEG)
+      if (k <= 0) anchorRelease = null
+    }
+    return
+  }
+
+  // Hook charge wind-up + release tween.
   if (isHookHeld && !hookFlight) {
     const charge = getThrowChargeT()
     if (charge === 0 && lastHookCharge > 0) {
@@ -116,10 +136,12 @@ export function hookThrowAnimSystem(dt: number): void {
   }
 
   // Held kind has no windup (e.g. hammer/spear) — clear any stale release
-  // state so a swap back to rod/hook starts clean.
+  // state so a swap back to rod/hook/anchor starts clean.
   hookRelease = null
+  anchorRelease = null
   rodRelease = null
   lastHookCharge = 0
+  lastAnchorCharge = 0
   lastRodCharge = 0
 }
 

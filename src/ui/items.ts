@@ -198,10 +198,7 @@ const STARTER_TOOL_CATALOG: Record<string, ItemDef> = {
 const layout: (ItemDef | null)[] = [
   // ----- Bottom bar (0–4) -----
   // The hook is the player's only starter tool — every other slot is
-  // empty until the player crafts/collects something. `ensureCollectibleSlot`
-  // allocates fresh slots on first pickup, so crafted hammers/spears and
-  // collected grills/purifiers find a home dynamically (leftmost empty
-  // slot, which means the bar fills up first).
+  // empty until the player crafts/collects something.
   STARTER_TOOL_CATALOG.hook
 ]
 
@@ -242,12 +239,12 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/grill.png'),
   storage: CRAFTED_PLACEABLE('storage', 'images/hud/items/storage.png'),
   fishingRod: TOOL('fishingRod', 'images/hud/items/fishing-rod.png', 'fishingRod'),
+  anchor: TOOL('anchor', 'images/hud/items/anchor-v3.png', 'anchor'),
   knife: CRAFTED_STACK('knife', 'images/hud/items/knife.png'),
+  // Container items — kept in the catalog so save/load and existing
+  // systems can still resolve them, but the cup crafting recipe can be
+  // removed from craftableItems.ts to disable crafting.
   cup: CRAFTED_CONTAINER('cup', 'images/hud/items/cup.png'),
-  // Liquids live in cups: empty cup, salt-water cup, fresh-water cup.
-  // Each is a non-stackable container variant — see CRAFTED_CONTAINER
-  // above for the mental model. Drinking them is handled by the
-  // container-action system, not the food-eat counter.
   saltWater: CRAFTED_CONTAINER('saltWater', 'images/hud/items/salt-water.png'),
   freshWater: CRAFTED_CONTAINER('freshWater', 'images/hud/items/fresh-water.png')
 }

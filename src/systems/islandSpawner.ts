@@ -3,6 +3,7 @@ import { Vector3 } from '@dcl/sdk/math'
 
 import { FloatingIsland } from '../components'
 import { isAnchored } from './anchorState'
+import { isBoatChefActive } from './boatChefDirector'
 import { createFloatingIsland } from '../factories/floatingIsland'
 import { GRID_ORIGIN } from '../factories/platform'
 import { aabbHalfExtentAlong, getPlatformExtent } from '../factories/platformExtent'
@@ -20,9 +21,10 @@ const DRIFT_SPEED = 1.2
 const DRIFT_SPEED_JITTER = 0.3
 // How far upstream from the raft islands spawn
 const SPAWN_DISTANCE_MARGIN = 35
-// Lateral offset from raft edge
-const BYPASS_MIN_MARGIN = 8
-const BYPASS_MAX_MARGIN = 11
+// Lateral offset from raft edge — large enough that the island (radius ~10m)
+// never overlaps the raft deck.
+const BYPASS_MIN_MARGIN = 14
+const BYPASS_MAX_MARGIN = 20
 const MAP_EDGE_SPAWN_MARGIN = 5
 const MIN_UPSTREAM_GAP = 8
 const MAX_ISLANDS = 1
@@ -32,6 +34,7 @@ let elapsed = SPAWN_INTERVAL_S
 export function islandSpawnerSystem(dt: number): void {
   if (isStartupGateActive()) return
   if (isAnchored()) return
+  if (isBoatChefActive()) return
   // Cap simultaneous islands
   let count = 0
   for (const _ of engine.getEntitiesWith(FloatingIsland)) {

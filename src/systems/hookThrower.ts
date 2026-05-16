@@ -24,14 +24,7 @@ import {
   HOOK_WOBBLE_AMPLITUDE_DEG,
   HOOK_WOBBLE_FREQ
 } from '../config/gameConfig'
-import { FloatingGarbage, FloatingIsland, Hook, HookPhase } from '../components'
-import {
-  beginAnchor,
-  getAnchorHookPos,
-  isAnchored,
-  releaseAnchor,
-  resetAnchorState
-} from './anchorState'
+import { FloatingGarbage, Hook, HookPhase } from '../components'
 import {
   HOOK_FORWARD_ROTATION,
   createHookEntity,
@@ -46,6 +39,7 @@ import {
   isActionButtonPressed
 } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
+import { isAnchorInFlight } from './anchorThrower'
 import { isFishingLineActive } from './fishingRod'
 import {
   addCollected,
@@ -53,7 +47,6 @@ import {
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
 import { notifyItemReceived } from '../ui/itemReceivedNotification'
-import { showNotification } from '../ui/notification'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import { RAD_TO_DEG, randInt } from '../utils/math'
 import { computeWobble } from '../utils/wobble'
@@ -155,7 +148,7 @@ export function hookThrowerSystem(dt: number): void {
     return
   }
 
-  if (isFishingLineActive()) {
+  if (isFishingLineActive() || isAnchorInFlight()) {
     cancelCharge()
     return
   }
@@ -267,17 +260,9 @@ function advanceHook(dt: number, handPos: Vector3): void {
       const nextX = pos.x + state.velocity.x * dt
       const nextZ = pos.z + state.velocity.z * dt
       transform.position = Vector3.create(nextX, WATER_LEVEL, nextZ)
-      // Check if we hit an island before falling back to water
-      const hitIsland = findIslandNearPoint(nextX, nextZ)
-      if (hitIsland !== null) {
-        state.phase = HookPhase.Anchored
-        state.velocity = Vector3.create(0, 0, 0)
-        beginAnchor(hitIsland, nextX, nextZ)
-      } else {
-        state.phase = HookPhase.Floating
-        // Splashdown — snag any floating garbage already within reach.
-        collectGarbageNearHook(nextX, nextZ)
-      }
+      state.phase = HookPhase.Floating
+      // Splashdown — snag any floating garbage already within reach.
+      collectGarbageNearHook(nextX, nextZ)
       // Keep `elapsed` ticking across the phase boundary so the wobble
       // sine waves carry on without a visual reset on splashdown.
       // (Rotation will be set by the FLOATING branch on the next frame.)
@@ -285,19 +270,6 @@ function advanceHook(dt: number, handPos: Vector3): void {
       const nextX = pos.x + state.velocity.x * dt
       const nextZ = pos.z + state.velocity.z * dt
       transform.position = Vector3.create(nextX, nextY, nextZ)
-      // Mid-flight island check: if the hook is descending and near
-      // water level, test for island collision so high-arc throws that
-      // pass over an island still register a hit.
-      if (state.velocity.y < 0 && nextY < WATER_LEVEL + 3) {
-        const hitIsland = findIslandNearPoint(nextX, nextZ)
-        if (hitIsland !== null) {
-          transform.position = Vector3.create(nextX, WATER_LEVEL, nextZ)
-          state.phase = HookPhase.Anchored
-          state.velocity = Vector3.create(0, 0, 0)
-          beginAnchor(hitIsland, nextX, nextZ)
-          return
-        }
-      }
       // Always face the player (eye toward player, tip trailing away). With
       // the same heading used during reeling, the hook stays oriented
       // consistently from throw release through splash through retrieval.
@@ -345,25 +317,6 @@ function advanceHook(dt: number, handPos: Vector3): void {
       HOOK_REEL_WOBBLE_SCALE
     )
     transform.rotation = composeHeading(dx, 0, dz, w.x, w.y, w.z)
-  } else if (state.phase === HookPhase.Anchored) {
-    // Hook follows the island as the world shifts
-    const anchorPos = getAnchorHookPos()
-    if (anchorPos === null) {
-      // Island was removed — release and reel back
-      releaseAnchor()
-      state.phase = HookPhase.Floating
-    } else {
-      transform.position = Vector3.create(anchorPos.x, WATER_LEVEL, anchorPos.z)
-      // Check for release input (same as throw input)
-      const mobile = isMobile()
-      const justPressed = mobile
-        ? actionButtonJustPressed()
-        : inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)
-      if (justPressed && isAnchored()) {
-        releaseAnchor()
-        state.phase = HookPhase.Floating
-      }
-    }
   }
 
   if (ropeEntity !== null) {
@@ -420,8 +373,6 @@ function bankGrabbedItem(kind: string): void {
 }
 
 function despawnHook(): void {
-  // If we were anchored, release before cleaning up
-  if (isAnchored()) resetAnchorState()
   // Hook reached the player (or the throw was cancelled) — bank everything
   // it was dragging and remove the entities. Done before the hook itself
   // is removed so we don't leave orphaned children behind for one frame.
@@ -530,23 +481,6 @@ function computeGrabOffset(index: number): { x: number; y: number; z: number } {
   }
 }
 
-// Island hit radius — checked on splashdown AND during flight when
-// the hook is descending near water level.
-const ISLAND_HIT_RADIUS = 18
-const ISLAND_HIT_RADIUS_SQ = ISLAND_HIT_RADIUS * ISLAND_HIT_RADIUS
-
-function findIslandNearPoint(x: number, z: number): Entity | null {
-  for (const [entity] of engine.getEntitiesWith(FloatingIsland, Transform)) {
-    const pos = Transform.get(entity).position
-    const dx = x - pos.x
-    const dz = z - pos.z
-    const distSq = dx * dx + dz * dz
-    const dist = Math.sqrt(distSq)
-    showNotification(`d=${dist.toFixed(1)} r=${ISLAND_HIT_RADIUS} ix=${pos.x.toFixed(0)} iz=${pos.z.toFixed(0)} hx=${x.toFixed(0)} hz=${z.toFixed(0)}`)
-    if (distSq <= ISLAND_HIT_RADIUS_SQ) return entity
-  }
-  return null
-}
 
 // Each frame: copy the hook's world position to every grabbed item, plus
 // the per-item cluster offset. Rotation and scale are left untouched, so
