@@ -1,4 +1,4 @@
-import { SkyboxTime, engine } from '@dcl/sdk/ecs'
+import { engine } from '@dcl/sdk/ecs'
 import { sfxTickSystem } from './audio/sfx'
 // import { isServer } from '@dcl/sdk/network'
 
@@ -87,11 +87,6 @@ export async function main(): Promise<void> {
   const mode = await getSceneMode()
   const parcelGrid = mode === 'full' ? FULL_PARCEL_GRID : DEMO_PARCEL_GRID
   configureGridOrigin(parcelGrid)
-
-  // Lock the world skybox to midday (12:00 = 43200 s into the day) so
-  // lighting stays consistent across long play sessions and screenshots.
-  // Works in both local preview and Worlds deployments.
-  SkyboxTime.create(engine.RootEntity, { fixedTime: 43200 })
 
   // Kick off HUD texture preload as early as possible so the renderer
   // warms its cache while the startup gate is up. Fire-and-forget — no

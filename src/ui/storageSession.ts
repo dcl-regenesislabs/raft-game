@@ -27,6 +27,8 @@ import {
 import {
   addCollected,
   getCollectedCount,
+  getSelectedSlot,
+  refreshHeldForSelectedSlot,
   subtractCollected
 } from './inventoryState'
 import {
@@ -201,6 +203,10 @@ export function pressStorageSlot(
   if (picked.side === side) {
     if (side === 'player') {
       swapInventorySlots(picked.index, index)
+      const equipped = getSelectedSlot()
+      if (equipped === picked.index || equipped === index) {
+        refreshHeldForSelectedSlot()
+      }
     } else {
       swapStorageSlots(storage, picked.index, index)
     }
@@ -334,6 +340,10 @@ function transferStorageToPlayer(
   }
   if (created !== playerIdx) {
     swapInventorySlots(created, playerIdx)
+    const equipped = getSelectedSlot()
+    if (equipped === created || equipped === playerIdx) {
+      refreshHeldForSelectedSlot()
+    }
   }
   const c = StorageContents.getMutable(entity)
   c.slots[storageIdx] = { id: '', count: 0 }

@@ -7,6 +7,7 @@ import {
   GltfContainer,
   InputAction,
   Material,
+  MaterialTransparencyMode,
   MeshCollider,
   MeshRenderer,
   PointerEventType,
@@ -18,7 +19,7 @@ import {
   Transform,
   engine
 } from '@dcl/sdk/ecs'
-import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { ChefAnimDebug, ChefNpc } from '../components'
@@ -86,7 +87,7 @@ const CHEF_DIALOG_TEXTURE = 'images/hud/dialog_box.png'
 const CHEF_DIALOG_WIDTH = 2.6
 const CHEF_DIALOG_HEIGHT = CHEF_DIALOG_WIDTH * (700 / 1100)
 const CHEF_DIALOG_LIFT = 1.75
-const CHEF_DIALOG_FONT_SIZE = 1.6
+const CHEF_DIALOG_FONT_SIZE = 1.2
 const CHEF_DIALOG_MOBILE_TEXT_SCALE = 0.7
 
 // Default click-box footprint, tuned to wrap the chef's silhouette so
@@ -273,13 +274,29 @@ function buildChefDialogBubble(
   })
   MeshRenderer.setPlane(bubble)
   Billboard.create(bubble, { billboardMode: BillboardMode.BM_Y })
-  Material.setBasicMaterial(bubble, {
+  // PBR with emissive-only albedo preserves the basic-material unlit look
+  // and keeps alpha-test transparency working on the unity-desktop client
+  // (basic materials show a black background there). Same recipe as
+  // `fishingWarning.ts`.
+  Material.setPbrMaterial(bubble, {
     texture: Material.Texture.Common({
       src: CHEF_DIALOG_TEXTURE,
       filterMode: TextureFilterMode.TFM_BILINEAR,
       wrapMode: TextureWrapMode.TWM_CLAMP
     }),
+    emissiveTexture: Material.Texture.Common({
+      src: CHEF_DIALOG_TEXTURE,
+      filterMode: TextureFilterMode.TFM_BILINEAR,
+      wrapMode: TextureWrapMode.TWM_CLAMP
+    }),
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 1),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
     alphaTest: 0.5,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
     castShadows: false
   })
 

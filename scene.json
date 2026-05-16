@@ -59,21 +59,21 @@
       "position": {
         "x": [
           38,
-          39
+          42
         ],
         "y": [
-          1,
-          1
+          5,
+          5
         ],
         "z": [
-          2,
-          3
+          38,
+          42
         ]
       },
       "cameraTarget": {
-        "x": 38.5,
-        "y": 1,
-        "z": 31
+        "x": 40,
+        "y": 5,
+        "z": 40
       }
     }
   ],
@@ -86,11 +86,5 @@
     "portableExperiences": "enabled",
     "nearbyVoiceChat": "enabled"
   },
-  "authoritativeMultiplayer": true,
-  "creator": "",
-  "skyboxConfig": {},
-  "source": {
-    "origin": "creator-hub",
-    "projectId": "f3ae60f6-c11d-4022-9123-1cebf6a07027"
-  }
+  "authoritativeMultiplayer": true
 }

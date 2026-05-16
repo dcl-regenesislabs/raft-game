@@ -378,11 +378,28 @@ function findSlotIndexById(id: string): number {
   return -1
 }
 
-function findFirstEmptySlot(): number {
-  for (let i = 0; i < layout.length; i++) {
+function findFirstEmptySlot(start: number, end: number): number {
+  for (let i = start; i < end; i++) {
     if (layout[i] === null) return i
   }
   return -1
+}
+
+// Pick the slot a new pickup lands in. Equippable items (selectable: true —
+// tools, foods, containers, placeables) prefer the bottom hot-bar so the
+// player can use them immediately, then spill into the grid when the bar
+// fills up. Non-selectable items (raw materials, knives, coal) skip the
+// hot-bar entirely — the bar is reserved for things the player can
+// actually equip, so wood from a sea pickup goes straight to the grid
+// (5–29) instead of clogging slot 0. Drag-and-drop can still place a
+// material in the hot-bar manually; this only governs auto-allocation.
+function findAutoAllocationSlot(def: ItemDef): number {
+  if (def.selectable) {
+    const barSlot = findFirstEmptySlot(0, BOTTOM_BAR_SLOT_COUNT)
+    if (barSlot !== -1) return barSlot
+    return findFirstEmptySlot(BOTTOM_BAR_SLOT_COUNT, layout.length)
+  }
+  return findFirstEmptySlot(BOTTOM_BAR_SLOT_COUNT, layout.length)
 }
 
 // Place an item from the material/crafted catalog into the inventory.
@@ -402,7 +419,7 @@ export function ensureCollectibleSlot(id: string): number {
     const existing = findSlotIndexById(id)
     if (existing !== -1) return existing
   }
-  const target = findFirstEmptySlot()
+  const target = findAutoAllocationSlot(def)
   if (target === -1) return -1
   layout[target] = def
   ITEMS_BY_ID[def.id] = def

@@ -2,6 +2,7 @@ import {
   HUNGER_DRAIN_PCT_PER_S,
   LIFE_DAMAGE_BOTH_PCT_PER_S,
   LIFE_DAMAGE_SINGLE_PCT_PER_S,
+  LIFE_REGEN_PCT_PER_S,
   THIRST_DRAIN_PCT_PER_S
 } from '../config/gameConfig'
 import { isGameOver, triggerGameOver } from '../ui/gameOver'
@@ -35,6 +36,12 @@ export function survivalDrainSystem(dt: number): void {
         ? LIFE_DAMAGE_BOTH_PCT_PER_S
         : LIFE_DAMAGE_SINGLE_PCT_PER_S
     adjustStat('life', -damagePct * PCT * dt)
+  } else if (getStat('life') < 1) {
+    // Passive RAFT-style regen. Gated on neither vital being empty so the
+    // player can't out-heal starvation/dehydration damage; gated on life<1
+    // so we don't fight adjustStat's [0,1] clamp when an over-cap value
+    // (currently impossible for life, but cheap to be safe) is in play.
+    adjustStat('life', LIFE_REGEN_PCT_PER_S * PCT * dt)
   }
 
   if (getStat('life') <= 0) triggerGameOver()

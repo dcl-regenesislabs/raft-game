@@ -31,16 +31,14 @@ export function applyDebugSeeds(): void {
 // way to exercise the storage flow without grinding pickups.
 function seedDebugInventory(): void {
   // Crafted tools the player keeps on-hand. Unique items — one of
-  // each, not a durability stack. hammer/spear are non-stackable and
-  // already reserved in the default bottom-bar layout, so seeding
-  // them here would just allocate duplicate slots.
+  // each, not a durability stack. The hook is already in the default
+  // starter layout, so we only seed the tools the player would
+  // otherwise have to craft.
+  addCollected('hammer', 1)
   addCollected('fishingRod', 1)
-  // Containers are non-stackable — each instance gets its own slot, so
-  // the seed only adds one of each variant. The cup goes in too so the
-  // player can test the empty-cup → fill flow without crafting first.
+  // One empty cup is enough — the player can fill it at the ocean and
+  // purify it at the debug purifier to exercise both water states.
   addCollected('cup', 1)
-  addCollected('saltWater', 1)
-  addCollected('freshWater', 1)
 }
 
 // Stuffs the pre-placed storage chest with everything the player would

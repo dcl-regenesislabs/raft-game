@@ -22,7 +22,7 @@ const KIND_WEIGHTS: Record<GarbageKind, number> = {
   plants: 22,
   plastic: 20,
   metal: 10,
-  barrel: 3
+  barrel: 9
 }
 
 // Weighted random pick over a subset of kinds. The spawner passes a

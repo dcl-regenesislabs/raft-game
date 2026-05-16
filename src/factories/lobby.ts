@@ -39,8 +39,10 @@ import {
 import {
   LOBBY_RAFT_Y,
   LOBBY_SEABED_Y,
-  LOBBY_WATER_Y
+  LOBBY_WATER_Y,
+  WATER_LEVEL
 } from './sceneLevels'
+import { createAvatarHideArea } from './avatarHideArea'
 import { createSeabed } from './seabed'
 import { createWaterFloorV2 } from './water2'
 
@@ -165,6 +167,18 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
 
   const water = createWaterFloorV2(parcelGrid, LOBBY_WATER_Y)
   LobbyTag.create(water)
+
+  // Hide avatars standing above the game's WATER_LEVEL — i.e. anyone
+  // currently in-game on a raft. Lobby visitors stand on LOBBY_RAFT_Y
+  // platforms (~0.6 m), comfortably below the threshold, so they stay
+  // visible to each other while the players who already committed to a
+  // portal don't bleed through the sky over the lobby island. The full
+  // hide volume is rebuilt by `buildGameWorld` once the player enters.
+  const hideArea = createAvatarHideArea(parcelGrid, {
+    minY: WATER_LEVEL,
+    maxY: WATER_LEVEL + 1000
+  })
+  LobbyTag.create(hideArea)
 
   buildIslandRafts(cx, cz)
   buildSideWingRafts(cx, cz)
@@ -547,14 +561,26 @@ function spawnButton(
 // a true neutral gray (a `diffuseColor` multiplier on the red texture
 // can only darken it toward maroon, never desaturate it).
 export function applyLobbyButtonMaterial(entity: Entity, enabled: boolean): void {
-  Material.setBasicMaterial(entity, {
-    texture: Material.Texture.Common({
-      src: enabled ? BUTTON_TEXTURE : BUTTON_TEXTURE_DISABLED,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_CLAMP
-    }),
-    diffuseColor: Color4.create(1, 1, 1, 1),
+  // PBR with emissive-only albedo preserves the basic-material unlit
+  // look and keeps alpha-test transparency working on the unity-desktop
+  // client (basic materials show a black background there). Same recipe
+  // as the chef dialog bubble.
+  const tex = Material.Texture.Common({
+    src: enabled ? BUTTON_TEXTURE : BUTTON_TEXTURE_DISABLED,
+    filterMode: TextureFilterMode.TFM_BILINEAR,
+    wrapMode: TextureWrapMode.TWM_CLAMP
+  })
+  Material.setPbrMaterial(entity, {
+    texture: tex,
+    emissiveTexture: tex,
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 1),
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
     alphaTest: 0.5,
+    roughness: 1,
+    metallic: 0,
+    specularIntensity: 0,
     castShadows: false
   })
 }

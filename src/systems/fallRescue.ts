@@ -28,10 +28,21 @@ const RESCUE_COOLDOWN_S = 1.5
 
 function setMovementLocked(locked: boolean): void {
   InputModifier.createOrReplace(engine.PlayerEntity, {
-    mode: {
-      $case: 'standard',
-      standard: { disableAll: locked }
-    }
+    mode: InputModifier.Mode.Standard({
+      disableWalk: locked,
+      disableJog: locked,
+      disableRun: locked,
+      disableJump: locked,
+      // Scene-wide invariant: double-jump and gliding are always
+      // disabled. Without pinning them here, releasing the rescue
+      // lock would write a fresh standard modifier with no flags and
+      // silently re-enable both — the bug previously seen on
+      // lobby → game transitions, where movePlayerTo's async settle
+      // leaves the player briefly below WATER_LEVEL just long enough
+      // for this system to fire and then unlock.
+      disableDoubleJump: true,
+      disableGliding: true
+    })
   })
 }
 
