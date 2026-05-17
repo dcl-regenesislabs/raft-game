@@ -31,21 +31,11 @@ const FOOD_EFFECTS: Record<string, FoodEffect> = {
   saltWater:  { thirst: -25 },
   freshWater: { thirst: 25 },
 
-  // ─── Raw ingredients (low edibility — survival fallback) ─────────
-  sardines:   { hunger: 4, thirst: -2 },
-  mussels:    { hunger: 4, thirst: -2 },
-  clams:      { hunger: 4, thirst: -2 },
-  squid:      { hunger: 4, thirst: -2 },
-  crab:       { hunger: 4, thirst: -2 },
-  shark_meat: { hunger: 6, thirst: -3 },
-  seaweed:    { hunger: 3, thirst: 2 },
-  tomatoes:   { hunger: 3, thirst: 4 },
-  potato:     { hunger: 4 },
-  garlic:     { hunger: 1, thirst: -1 },
-  olive_oil:  { hunger: 6 },
-  sea_salt:   { thirst: -8 },
-  spaghetti:  { hunger: 4, thirst: -2 },
-  fettuccine: { hunger: 4, thirst: -2 },
+  // ─── Raw ingredients ──────────────────────────────────────────────
+  // Potato is the only raw ingredient the player can eat — a tiny
+  // survival sliver of hunger. Every other raw ingredient is cook-only
+  // (`consumable: false` in `items.ts`) so no effect row is needed.
+  potato:     { hunger: 1 },
 
   // ─── 1-ingredient plates (hunger 12) ──────────────────────────────
   grilled_sardines:   { hunger: 12 },

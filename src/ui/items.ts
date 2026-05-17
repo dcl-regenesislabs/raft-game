@@ -108,18 +108,29 @@ const MATERIAL = (
 // See `foodEffects.ts` for the table and `systems/foodEat.ts` for the
 // gesture and consumption. Raw foods opt into the cook menu via
 // `ingredient: true`; cooked foods don't (you can't re-cook them).
+//
+// Non-eatable ingredients (raw fish, seasonings, pasta — everything except
+// potato) pass `consumable: false, selectable: false` so the inventory
+// stores them as cook-only stock. They auto-allocate to the grid (skipping
+// the hot bar) and silently ignore equip clicks, mirroring how raw
+// materials like wood behave.
 const FOOD = (
   id: string,
   texture: string,
-  opts: { ingredient?: boolean; glb?: string } = {}
+  opts: {
+    ingredient?: boolean
+    glb?: string
+    consumable?: boolean
+    selectable?: boolean
+  } = {}
 ): ItemDef => ({
   id,
   texture,
   stackable: true,
-  selectable: true,
+  selectable: opts.selectable ?? true,
   heldKind: 'food',
   hasAction: true,
-  consumable: true,
+  consumable: opts.consumable ?? true,
   ingredient: opts.ingredient ?? false,
   maxStackSize: PLAYER_STACK_CAP,
   glb: opts.glb
@@ -259,21 +270,29 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
 // ingredients give a small hunger nudge, a few (sea_salt) only carry a
 // thirst penalty so the player avoids snacking on them straight from the
 // inventory.
+const RAW_INGREDIENT_OPTS = {
+  ingredient: true,
+  consumable: false,
+  selectable: false
+} as const
+
 const INGREDIENT_CATALOG: Record<string, ItemDef> = {
-  sardines:   FOOD('sardines',   'images/cooking/sardines.png',   { ingredient: true }),
-  mussels:    FOOD('mussels',    'images/cooking/mussels.png',    { ingredient: true }),
-  clams:      FOOD('clams',      'images/cooking/clams.png',      { ingredient: true }),
-  squid:      FOOD('squid',      'images/cooking/squid.png',      { ingredient: true }),
-  shark_meat: FOOD('shark_meat', 'images/cooking/shark_meat.png', { ingredient: true }),
-  seaweed:    FOOD('seaweed',    'images/cooking/seaweed.png',    { ingredient: true }),
-  tomatoes:   FOOD('tomatoes',   'images/cooking/tomatoes.png',   { ingredient: true }),
-  garlic:     FOOD('garlic',     'images/cooking/garlic.png',     { ingredient: true }),
-  sea_salt:   FOOD('sea_salt',   'images/cooking/sea_salt.png',   { ingredient: true }),
-  olive_oil:  FOOD('olive_oil',  'images/cooking/olive_oil.png',  { ingredient: true }),
+  sardines:   FOOD('sardines',   'images/cooking/sardines.png',   RAW_INGREDIENT_OPTS),
+  mussels:    FOOD('mussels',    'images/cooking/mussels.png',    RAW_INGREDIENT_OPTS),
+  clams:      FOOD('clams',      'images/cooking/clams.png',      RAW_INGREDIENT_OPTS),
+  squid:      FOOD('squid',      'images/cooking/squid.png',      RAW_INGREDIENT_OPTS),
+  shark_meat: FOOD('shark_meat', 'images/cooking/shark_meat.png', RAW_INGREDIENT_OPTS),
+  seaweed:    FOOD('seaweed',    'images/cooking/seaweed.png',    RAW_INGREDIENT_OPTS),
+  tomatoes:   FOOD('tomatoes',   'images/cooking/tomatoes.png',   RAW_INGREDIENT_OPTS),
+  garlic:     FOOD('garlic',     'images/cooking/garlic.png',     RAW_INGREDIENT_OPTS),
+  sea_salt:   FOOD('sea_salt',   'images/cooking/sea_salt.png',   RAW_INGREDIENT_OPTS),
+  olive_oil:  FOOD('olive_oil',  'images/cooking/olive_oil.png',  RAW_INGREDIENT_OPTS),
+  // Potato is the one raw ingredient the player can still eat — survival
+  // fallback that restores a tiny sliver of hunger.
   potato:     FOOD('potato',     'images/cooking/potato.png',     { ingredient: true }),
-  crab:       FOOD('crab',       'images/cooking/crab.png',       { ingredient: true }),
-  spaghetti:  FOOD('spaghetti',  'images/cooking/spaghetti.png',  { ingredient: true }),
-  fettuccine: FOOD('fettuccine', 'images/cooking/fettuccine.png', { ingredient: true })
+  crab:       FOOD('crab',       'images/cooking/crab.png',       RAW_INGREDIENT_OPTS),
+  spaghetti:  FOOD('spaghetti',  'images/cooking/spaghetti.png',  RAW_INGREDIENT_OPTS),
+  fettuccine: FOOD('fettuccine', 'images/cooking/fettuccine.png', RAW_INGREDIENT_OPTS)
 }
 
 // Finished plates from the cook menu. 30 recipes split 5 / 15 / 8 / 2 by

@@ -29,15 +29,11 @@ import { restoreStat } from './statsBars'
 // Per-id warning surfaced when the player equips a food/drink that has a
 // negative side effect. Shown via the standard notification banner so the
 // player gets a clear "don't eat this" cue *before* committing to the bite.
+// Raw ingredients (sardines, sea_salt, etc.) are now cook-only and can't
+// be equipped at all (see `items.ts`), so the only remaining warning is
+// the salt-water container — still equippable, still dehydrating.
 const FOOD_WARNINGS: Record<string, string> = {
-  saltWater: 'Salt water will dehydrate you — do not drink!',
-  sea_salt: 'Eating salt straight will dehydrate you — cook with it!',
-  sardines: 'Raw fish will dehydrate you — cook it first!',
-  squid: 'Raw squid will dehydrate you — cook it first!',
-  mussels: 'Raw mussels will dehydrate you — cook them first!',
-  clams: 'Raw clams will dehydrate you — cook them first!',
-  crab: 'Raw crab will dehydrate you — cook it first!',
-  shark_meat: 'Raw shark meat will dehydrate you — cook it first!'
+  saltWater: 'Salt water will dehydrate you — do not drink!'
 }
 
 // The bottom bar shows the first BOTTOM_BAR_SLOT_COUNT entries of the
