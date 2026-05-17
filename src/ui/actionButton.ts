@@ -63,6 +63,12 @@ export function actionButtonJustReleased(): boolean {
 // so the button hides during that window (the ingredient sprites on
 // the fire already communicate "in progress").
 export function isActionButtonAvailable(): boolean {
+  // Looking at a floating debris item in pickup range — surface the
+  // button as the GRAB action regardless of the held slot. See
+  // `systems/garbageGrab.ts` for the matching handler. Checked before
+  // the grill/storage paths so the closest-thing-in-front-of-you wins
+  // when a floating item happens to drift over a placed construction.
+  if (getLookAtTarget() === 'garbage') return true
   if (getLookAtTarget() === 'grill') {
     const platform = getLookAtGrillPlatform()
     if (platform === null) return true

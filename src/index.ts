@@ -34,6 +34,7 @@ import { anchorInterpolationSystem } from './systems/anchorState'
 import { floatingIslandSystem } from './systems/floatingIsland'
 import { islandChestSystem } from './systems/islandChest'
 import { islandSpawnerSystem } from './systems/islandSpawner'
+import { garbageGrabSystem } from './systems/garbageGrab'
 import { garbageSpawnerSystem } from './systems/garbageSpawner'
 import { grillCookSystem } from './systems/grillCook'
 import { grillFireSystem } from './systems/grillFire'
@@ -144,6 +145,11 @@ export async function main(): Promise<void> {
   engine.addSystem(anchorThrowerSystem)
   engine.addSystem(garbageSpawnerSystem)
   engine.addSystem(floatingGarbageSystem)
+  // Direct grab — runs before the inventory hotkey reader so the slot-5
+  // (E key) hotkey can suppress itself when this frame's press grabbed a
+  // looked-at item. Order vs. floatingGarbageSystem doesn't matter; the
+  // grab checks `FloatingGarbage.getOrNull` defensively.
+  engine.addSystem(garbageGrabSystem)
   engine.addSystem(grillFireSystem)
   engine.addSystem(grillCookSystem)
   engine.addSystem(createFallRescueSystem(GRID_ORIGIN))

@@ -18,7 +18,11 @@ import {
 } from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
-import { isSelectionPointerLockoutActive } from '../ui/inventoryState'
+import {
+  consumeSlotDurability,
+  getSelectedSlot,
+  isSelectionPointerLockoutActive
+} from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import { tryHitShark } from './sharkAttack'
 
@@ -55,6 +59,12 @@ let cooldownRemaining = 0
 // Guard so a single swing only registers one hit, even if multiple frames
 // land inside the strike window.
 let hitResolvedThisSwing = false
+// Slot index the swing started from. Captured at trigger time and
+// consumed when the animation completes so the durability tick lands
+// after the visible stab — the player sees the full last swing on the
+// spear before it breaks and the viewmodel snaps back. -1 = no swing
+// in flight (or the swing started before durability was wired up).
+let swingSlotIndex = -1
 
 export function spearAttackSystem(dt: number): void {
   // Lobby gate: viewmodel hidden = startup overlay up; clicks on raft
@@ -100,6 +110,10 @@ export function spearAttackSystem(dt: number): void {
     attackElapsed = dt > 0 ? dt : 1e-6
     cooldownRemaining = COOLDOWN_S
     hitResolvedThisSwing = false
+    // Remember which slot this swing was paid for from. Consume on
+    // completion (below) so the last stab plays through visually
+    // before the spear "breaks" and the held viewmodel snaps back.
+    swingSlotIndex = getSelectedSlot()
   }
 
   if (attackElapsed === 0) return
@@ -121,6 +135,10 @@ export function spearAttackSystem(dt: number): void {
 
   if (attackElapsed >= ATTACK_DURATION_S) {
     attackElapsed = 0
+    if (swingSlotIndex >= 0) {
+      consumeSlotDurability(swingSlotIndex)
+      swingSlotIndex = -1
+    }
     return
   }
 

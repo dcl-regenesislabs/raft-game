@@ -1,7 +1,23 @@
-import { Entity, GltfContainer, Transform, engine } from '@dcl/sdk/ecs'
+import {
+  ColliderLayer,
+  Entity,
+  GltfContainer,
+  InputAction,
+  MeshCollider,
+  PointerEventType,
+  PointerEvents,
+  Transform,
+  engine
+} from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { FloatingGarbage } from '../components'
+
+// Pickup reach for floating debris. Used by both the PointerEvents
+// hover prompt and the look-at classification — keep them in lockstep
+// so the on-screen prompt and the action button visibility resolve
+// together.
+export const GRAB_MAX_DISTANCE = 5
 
 // Debris kinds the player can collect. Add a kind here AND drop the
 // matching GLB into `assets/scene/items/<kind>.glb` to extend the pool —
@@ -99,10 +115,33 @@ export function createFloatingGarbage(params: FloatingGarbageParams): Entity {
     scale: Vector3.create(config.scale, config.scale, config.scale)
   })
 
-  // No collider: items pass freely past the raft. Pickup will be a future
-  // pointer-event hookup (out of scope for this system).
   GltfContainer.create(entity, {
     src: `assets/scene/items/${config.glbName ?? kind}.glb`
+  })
+
+  // CL_POINTER-only box collider so the camera raycast (cookFill /
+  // lookAtTarget) and SDK pointer-input layer can target the entity,
+  // while player physics (CL_PHYSICS) still passes through — the
+  // floating item isn't supposed to block the avatar from walking
+  // across the deck.
+  MeshCollider.setBox(entity, ColliderLayer.CL_POINTER)
+
+  // SDK-native hover prompt + entity-targeted IA_PRIMARY (E) trigger.
+  // The hover prompt shows "E GRAB" on desktop within maxDistance —
+  // mobile shows just the text. `systems/garbageGrab.ts` reads the
+  // entity-targeted trigger to bank the item.
+  PointerEvents.create(entity, {
+    pointerEvents: [
+      {
+        eventType: PointerEventType.PET_DOWN,
+        eventInfo: {
+          button: InputAction.IA_PRIMARY,
+          hoverText: 'GRAB',
+          maxDistance: GRAB_MAX_DISTANCE,
+          showFeedback: true
+        }
+      }
+    ]
   })
 
   FloatingGarbage.create(entity, {

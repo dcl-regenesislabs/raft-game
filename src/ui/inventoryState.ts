@@ -17,10 +17,12 @@ import {
   INVENTORY_TOTAL_SLOTS,
   type ItemDef,
   clearInventorySlot,
+  decrementSlotDurability,
   ensureCollectibleSlot,
   getCatalogItem,
   getInventorySlot,
   getItemDisplayName,
+  getSlotDurability,
   transmuteSlot
 } from './items'
 import { showNotification } from './notification'
@@ -296,6 +298,51 @@ export function subtractCollected(kind: string, count: number = 1): number {
   collectedCounts.set(kind, next)
   if (next === 0) clearEmptyStackableSlot(kind)
   return taken
+}
+
+// Spend one use of the tool occupying `slotIndex`. No-op for slots that
+// don't track durability (empty, stackable, or a durability-less tool
+// like the building hammer). When the budget hits 0 the slot is
+// cleared — the player's tool "breaks" — and if it was the currently
+// equipped slot the selection snaps back to slot 0 with a fresh held
+// viewmodel, mirroring the cascade that `clearEmptyStackableSlot`
+// runs for consumed stackables. Returns true iff a use was consumed.
+export function consumeSlotDurability(slotIndex: number): boolean {
+  const before = getSlotDurability(slotIndex)
+  if (before === null || before <= 0) return false
+  const def = getInventorySlot(slotIndex)
+  const itemLabel = def !== null ? getItemDisplayName(def) : 'Tool'
+  const next = decrementSlotDurability(slotIndex, 1)
+  if (next > 0) return true
+  // Hit zero — destroy the tool. Capture the held kind before clearing
+  // so the snap-back can decide whether to refresh the viewmodel.
+  const heldKind = def?.heldKind ?? null
+  clearInventorySlot(slotIndex)
+  showNotification(`${itemLabel} broke!`)
+  if (slotIndex === selected) {
+    selected = 0
+    // Drop any sprite-based held kind (food/cup). Tool kinds (hook,
+    // hammer, spear, fishingRod) all map to a GLB the next equip
+    // call will swap in; defaulting to 'hook' matches the existing
+    // fallback in `clearEmptyStackableSlot`. If slot 0 still holds a
+    // real tool, refresh the viewmodel to match.
+    if (heldKind === 'food' || heldKind === 'cup') {
+      setHeldItem('hook')
+    } else {
+      const slot0 = getInventorySlot(0)
+      if (slot0 !== null && slot0.selectable) {
+        // Lean on the existing refresh path so cups/foods/tools all
+        // pick the right held representation.
+        refreshHeldForSelectedSlot()
+      } else {
+        // Slot 0 is empty (player destroyed the last starter hook
+        // before crafting another). Park on the hook GLB as a sane
+        // visual default — same behavior as the death-screen reset.
+        setHeldItem('hook')
+      }
+    }
+  }
+  return true
 }
 
 function clearEmptyStackableSlot(id: string): void {

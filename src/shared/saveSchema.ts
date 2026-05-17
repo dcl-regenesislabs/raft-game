@@ -19,7 +19,9 @@ import {
 } from '../ui/inventoryState'
 import {
   getInventorySlot,
+  hydrateInventoryDurabilities,
   hydrateInventoryLayout,
+  serializeInventoryDurabilities,
   serializeInventoryLayout
 } from '../ui/items'
 import {
@@ -53,6 +55,11 @@ export interface SaveBlob {
     layout: string[]
     counts: Array<{ id: string; count: number }>
     selected: number
+    // Per-slot remaining tool uses, parallel to `layout`. Optional so
+    // saves written before the durability system existed still load —
+    // the hydrate path seeds full durability for every tool in that
+    // case (friendlier than surprise-broken tools on the next play).
+    durabilities?: number[]
   }
   recipes: string[]
   vitals: VitalsSnapshot
@@ -72,7 +79,8 @@ export function buildSaveBlob(mode: SceneMode): SaveBlob {
     inventory: {
       layout: serializeInventoryLayout(),
       counts: serializeInventoryCounts(),
-      selected: serializeSelectedSlot()
+      selected: serializeSelectedSlot(),
+      durabilities: serializeInventoryDurabilities()
     },
     recipes: serializeLearnedRecipes(),
     vitals: serializeVitals(),
@@ -87,6 +95,14 @@ export function buildSaveBlob(mode: SceneMode): SaveBlob {
 // would target an item id the layout doesn't yet know about).
 export function applySaveBlob(blob: SaveBlob): void {
   hydrateInventoryLayout(blob.inventory.layout)
+  // Durabilities are parallel to the layout — hydrate them immediately
+  // after the layout so each slot's tool-uses match the saved state
+  // before any other system can read them. Older saves omit the field;
+  // `hydrateInventoryLayout` has already seeded full durability for
+  // every restored tool, so skipping this call is the right fallback.
+  if (blob.inventory.durabilities !== undefined) {
+    hydrateInventoryDurabilities(blob.inventory.durabilities)
+  }
   hydrateInventoryCounts(blob.inventory.counts)
   hydrateSelectedSlot(blob.inventory.selected)
   hydrateLearnedRecipes(blob.recipes)
@@ -139,6 +155,15 @@ export function parseSaveBlob(raw: string): SaveBlob | null {
   if (!Array.isArray(v.inventory.layout)) return null
   if (!Array.isArray(v.inventory.counts)) return null
   if (typeof v.inventory.selected !== 'number') return null
+  if (
+    v.inventory.durabilities !== undefined &&
+    !Array.isArray(v.inventory.durabilities)
+  ) {
+    // Tolerate a malformed durability field rather than dropping the
+    // whole save — strip it and let the seed-on-hydrate fallback
+    // restore every tool to full durability.
+    v.inventory.durabilities = undefined
+  }
   if (!Array.isArray(v.recipes)) return null
   if (typeof v.vitals !== 'object' || v.vitals === null) return null
   if (!Array.isArray(v.raft)) return null

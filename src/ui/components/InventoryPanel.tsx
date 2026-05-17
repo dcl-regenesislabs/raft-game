@@ -37,6 +37,7 @@ import {
 } from '../theme'
 import { shakeOffset } from '../utils/shake'
 import { CloseButton } from './CloseButton'
+import { DurabilityBar } from './DurabilityBar'
 import { InventoryWithBar } from './InventoryWithBar'
 import { ItemCountBadge } from './ItemCountBadge'
 
@@ -317,6 +318,7 @@ function InventoryCell(props: {
           />
         )}
         <ItemCountBadge item={display} />
+        <DurabilityBar slotIndex={globalIndex} />
       </UiEntity>
     </UiEntity>
   )

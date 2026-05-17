@@ -45,6 +45,13 @@ export interface ItemDef {
   // for the tier-4 hero plates so they read as proper meals; the
   // `texture` field still drives the inventory icon either way.
   glb?: string
+  // Per-instance use budget. Tools that have a max get a life bar
+  // under their slot icon; each gameplay use decrements it. When the
+  // value hits 0 the slot is cleared (the tool "breaks"). Items
+  // without `maxDurability` never wear out — that's how the building
+  // hammer stays permanent. Only meaningful for non-stackable items
+  // (one instance per slot); stackables don't carry per-slot state.
+  maxDurability?: number
 }
 
 // Default per-slot cap for everything stackable in the player's pocket.
@@ -55,7 +62,8 @@ export const PLAYER_STACK_CAP = 20
 const TOOL = (
   id: string,
   texture: string,
-  heldKind: HeldItemKind
+  heldKind: HeldItemKind,
+  opts: { maxDurability?: number } = {}
 ): ItemDef => ({
   id,
   texture,
@@ -64,7 +72,10 @@ const TOOL = (
   heldKind,
   hasAction: true,
   consumable: false,
-  ingredient: false
+  ingredient: false,
+  ...(opts.maxDurability !== undefined
+    ? { maxDurability: opts.maxDurability }
+    : {})
 })
 
 // Tools that don't yet have a first-person viewmodel or action wired up.
@@ -203,7 +214,7 @@ export const INVENTORY_GRID_SLOT_COUNT =
 // and without an entry here the save round-trip would silently drop the
 // starter hook as "unknown id".
 const STARTER_TOOL_CATALOG: Record<string, ItemDef> = {
-  hook: TOOL('hook', 'images/hud/items/hook.png', 'hook')
+  hook: TOOL('hook', 'images/hud/items/hook.png', 'hook', { maxDurability: 40 })
 }
 
 const layout: (ItemDef | null)[] = [
@@ -219,6 +230,65 @@ while (layout.length < INVENTORY_TOTAL_SLOTS) layout.push(null)
 // drag-and-drop system can reorder slots in place. UI consumers iterate
 // this array on every render, so writes propagate immediately.
 export const INVENTORY_LAYOUT: readonly (ItemDef | null)[] = layout
+
+// Per-slot current durability. Parallel to `layout` (same length, same
+// index space). -1 sentinel = "this slot has no durability tracking"
+// (empty slot, stackable item, or non-stackable item with no
+// `maxDurability`). The array is mutated in lockstep with `layout`:
+// every place that writes a layout slot below also writes the matching
+// durability cell so the two views never drift apart.
+const durabilities: number[] = new Array(INVENTORY_TOTAL_SLOTS).fill(-1)
+
+function seedDurabilityForSlot(slotIndex: number, def: ItemDef | null): void {
+  durabilities[slotIndex] =
+    def !== null && def.maxDurability !== undefined ? def.maxDurability : -1
+}
+
+// Seed the starter loadout's durabilities once the layout is in place.
+// `resetInventoryLayout` re-runs this same shape after a death-screen
+// reset; `hydrateInventoryDurabilities` overwrites it from a save.
+for (let i = 0; i < layout.length; i++) seedDurabilityForSlot(i, layout[i])
+
+// Read the slot's current durability (uses remaining). Returns null for
+// slots that don't have a durability budget — UI uses this to skip the
+// life bar entirely instead of rendering a "100%" hint on every item.
+export function getSlotDurability(slotIndex: number): number | null {
+  if (slotIndex < 0 || slotIndex >= durabilities.length) return null
+  const value = durabilities[slotIndex]
+  return value < 0 ? null : value
+}
+
+export function getSlotMaxDurability(slotIndex: number): number | null {
+  const def = getInventorySlot(slotIndex)
+  if (def === null) return null
+  return def.maxDurability ?? null
+}
+
+// 0..1 fraction of remaining uses. Returns null when the slot has no
+// durability budget so callers can branch on "no bar at all" cleanly.
+export function getSlotDurabilityFraction(slotIndex: number): number | null {
+  const max = getSlotMaxDurability(slotIndex)
+  if (max === null || max <= 0) return null
+  const cur = getSlotDurability(slotIndex)
+  if (cur === null) return null
+  return Math.max(0, Math.min(1, cur / max))
+}
+
+// Internal — `inventoryState.consumeSlotDurability` is the public API.
+// Decrements the slot's durability by `amount` (default 1), clamped to
+// 0. Returns the new value. Caller is responsible for clearing the
+// slot when this returns 0; doing the clear here would couple this
+// module to the held-viewmodel reset logic which lives in inventoryState.
+export function decrementSlotDurability(
+  slotIndex: number,
+  amount: number = 1
+): number {
+  if (slotIndex < 0 || slotIndex >= durabilities.length) return 0
+  if (durabilities[slotIndex] < 0) return 0
+  const next = Math.max(0, durabilities[slotIndex] - amount)
+  durabilities[slotIndex] = next
+  return next
+}
 
 // Material catalogue. Materials are NOT pre-placed in the layout — they
 // only get a slot the first time the player actually collects one. This
@@ -244,12 +314,15 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   // Tools mirror the starter-layout TOOL defs so a crafted hammer/spear
   // behaves identically to the one the player started with — same icon,
   // same equippable behaviour, same heldKind viewmodel.
+  // Hammer has no `maxDurability` on purpose — the building tool must
+  // never break, otherwise the player can softlock by running out of
+  // build hammers with no way to assemble a workbench to craft more.
   hammer: TOOL('hammer', 'images/hud/items/hammer.png', 'hammer'),
-  spear: TOOL('spear', 'images/hud/items/spear.png', 'spear'),
+  spear: TOOL('spear', 'images/hud/items/spear.png', 'spear', { maxDurability: 20 }),
   purifier: CRAFTED_PLACEABLE('purifier', 'images/hud/items/water-purifier.png'),
   grill: CRAFTED_PLACEABLE('grill', 'images/hud/items/grill.png'),
   storage: CRAFTED_PLACEABLE('storage', 'images/hud/items/storage.png'),
-  fishingRod: TOOL('fishingRod', 'images/hud/items/fishing-rod.png', 'fishingRod'),
+  fishingRod: TOOL('fishingRod', 'images/hud/items/fishing-rod.png', 'fishingRod', { maxDurability: 10 }),
   anchor: TOOL('anchor', 'images/hud/items/anchor-v3.png', 'anchor'),
   knife: CRAFTED_STACK('knife', 'images/hud/items/knife.png'),
   // Container items — kept in the catalog so save/load and existing
@@ -442,6 +515,7 @@ export function ensureCollectibleSlot(id: string): number {
   if (target === -1) return -1
   layout[target] = def
   ITEMS_BY_ID[def.id] = def
+  seedDurabilityForSlot(target, def)
   return target
 }
 
@@ -461,6 +535,10 @@ export function transmuteSlot(slotIndex: number, newId: string): boolean {
   if (next === undefined) return false
   layout[slotIndex] = next
   ITEMS_BY_ID[next.id] = next
+  // Container transmutes (cup ↔ saltWater ↔ freshWater) don't carry
+  // durability today, but seeding here keeps the parallel array
+  // consistent in case a future variant introduces one.
+  seedDurabilityForSlot(slotIndex, next)
   return true
 }
 
@@ -468,7 +546,10 @@ export function transmuteSlot(slotIndex: number, newId: string): boolean {
 // every other slot empty. Used by the death-screen Play Again flow so the
 // player restarts with the same baseline a fresh scene load gives them.
 export function resetInventoryLayout(): void {
-  for (let i = 0; i < layout.length; i++) layout[i] = null
+  for (let i = 0; i < layout.length; i++) {
+    layout[i] = null
+    durabilities[i] = -1
+  }
   const starters: ItemDef[] = [STARTER_TOOL_CATALOG.hook]
   // Drop everything from the by-id lookup so stale defs from previously
   // collected materials don't survive the reset; re-seed with the starter
@@ -477,6 +558,7 @@ export function resetInventoryLayout(): void {
   for (let i = 0; i < starters.length; i++) {
     layout[i] = starters[i]
     ITEMS_BY_ID[starters[i].id] = starters[i]
+    seedDurabilityForSlot(i, starters[i])
   }
 }
 
@@ -490,6 +572,12 @@ export function swapInventorySlots(a: number, b: number): void {
   const tmp = layout[a]
   layout[a] = layout[b]
   layout[b] = tmp
+  // Durability belongs to the tool instance, not the slot index — when
+  // the player drags a hook from slot 2 to slot 0, its 17/40 uses go
+  // with it. Swap the parallel array in lockstep.
+  const tmpDur = durabilities[a]
+  durabilities[a] = durabilities[b]
+  durabilities[b] = tmpDur
 }
 
 // Empty a single inventory slot. Used by the storage flow when a
@@ -500,6 +588,7 @@ export function swapInventorySlots(a: number, b: number): void {
 export function clearInventorySlot(slotIndex: number): void {
   if (slotIndex < 0 || slotIndex >= layout.length) return
   layout[slotIndex] = null
+  durabilities[slotIndex] = -1
 }
 
 // Save-system snapshot of the slot layout — one id per cell, '' for
@@ -511,7 +600,10 @@ export function serializeInventoryLayout(): string[] {
 }
 
 export function hydrateInventoryLayout(ids: ReadonlyArray<string>): void {
-  for (let i = 0; i < layout.length; i++) layout[i] = null
+  for (let i = 0; i < layout.length; i++) {
+    layout[i] = null
+    durabilities[i] = -1
+  }
   for (const key of Object.keys(ITEMS_BY_ID)) delete ITEMS_BY_ID[key]
   const limit = Math.min(ids.length, layout.length)
   for (let i = 0; i < limit; i++) {
@@ -533,5 +625,39 @@ export function hydrateInventoryLayout(ids: ReadonlyArray<string>): void {
     }
     layout[i] = def
     ITEMS_BY_ID[def.id] = def
+    // Seed full durability — `hydrateInventoryDurabilities` (called
+    // right after on the save path) overwrites this with the saved
+    // value when the blob includes per-slot durability. Older saves
+    // without the field land here and the tool gets a fresh budget,
+    // which is the friendliest fallback (no surprise broken tools).
+    seedDurabilityForSlot(i, def)
+  }
+}
+
+// Save snapshot of every slot's remaining uses. -1 cells (empty slots,
+// stackables, durability-less tools) are preserved as-is so the array
+// stays index-aligned with `serializeInventoryLayout`. Restoring an
+// older save that doesn't include this field simply leaves every tool
+// at full durability via the seed-on-hydrate fallback above.
+export function serializeInventoryDurabilities(): number[] {
+  return durabilities.slice()
+}
+
+export function hydrateInventoryDurabilities(
+  values: ReadonlyArray<number>
+): void {
+  const limit = Math.min(values.length, durabilities.length)
+  for (let i = 0; i < limit; i++) {
+    const def = layout[i]
+    const maxForSlot =
+      def !== null && def.maxDurability !== undefined ? def.maxDurability : -1
+    if (maxForSlot < 0) {
+      // Slot can't carry durability; ignore whatever the blob has.
+      durabilities[i] = -1
+      continue
+    }
+    const v = values[i]
+    if (typeof v !== 'number' || v < 0) continue
+    durabilities[i] = Math.min(maxForSlot, Math.max(0, Math.floor(v)))
   }
 }

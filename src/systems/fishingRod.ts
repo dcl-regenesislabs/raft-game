@@ -53,6 +53,7 @@ import {
 import { isPointerLocked } from '../ui/cursorLock'
 import {
   addCollected,
+  consumeSlotDurability,
   getSelectedSlot,
   getSlotItem,
   isSelectionPointerLockoutActive
@@ -448,6 +449,11 @@ function firePressedThisFrame(): boolean {
 }
 
 function catchFish(): void {
+  // One use per successful catch (not per cast). The rod's 10-catch
+  // budget is what the player feels — running out of empty casts
+  // wouldn't read as a worn-out tool. Done before the count roll so
+  // a depleted rod still grants the catch the player just landed.
+  consumeSlotDurability(getSelectedSlot())
   // Roll 1 or 2 catches per bite — the plural lets the hook visibly
   // dangle a small fan of fish on the way back instead of a single
   // floating sprite. Each catch can be a different species.

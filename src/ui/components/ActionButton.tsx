@@ -8,7 +8,11 @@ import {
   isFishingBiting,
   isFishingLineActive
 } from '../../systems/fishingRod'
-import { getLookAtGrillPlatform, getLookAtTarget } from '../../systems/lookAtTarget'
+import {
+  getLookAtGarbageKind,
+  getLookAtGrillPlatform,
+  getLookAtTarget
+} from '../../systems/lookAtTarget'
 import { getCookableById } from '../cookableItems'
 import {
   getActionButtonScale,
@@ -137,10 +141,23 @@ function contextualIconTexture(): string | null {
   // what the player is holding — pressing the action button opens the
   // dual-pane menu, the held item is irrelevant.
   if (lookTarget === 'storage') return getItem('storage')?.texture ?? null
+  // Floating-item pickup: show the material the player is about to
+  // grab so the button reads as GRAB instead of "use equipped tool".
+  // `barrel` has no inventory item (it unpacks into a wood + rope +
+  // pantry bundle at bank time) so we fall back to its always-guaranteed
+  // wood drop as the recognisable proxy icon.
+  if (lookTarget === 'garbage') return garbageIconTexture()
   if (getHeldItemKind() !== 'cup') return null
   if (getHeldFoodId() !== 'saltWater') return null
   if (lookTarget !== 'purifier') return null
   return getItem('purifier')?.texture ?? null
+}
+
+function garbageIconTexture(): string | null {
+  const kind = getLookAtGarbageKind()
+  if (kind === null) return null
+  const id = kind === 'barrel' ? 'wood' : kind
+  return getItem(id)?.texture ?? null
 }
 
 // Picks the right grill-context icon by inspecting the targeted grill's

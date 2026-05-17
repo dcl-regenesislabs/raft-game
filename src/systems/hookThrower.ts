@@ -2,6 +2,7 @@ import {
   Entity,
   InputAction,
   PointerEventType,
+  PointerEvents,
   Transform,
   engine,
   inputSystem
@@ -32,6 +33,7 @@ import {
   hideRope,
   updateRopeBetween
 } from '../factories'
+import { bankGarbageKind } from '../factories/garbageBank'
 import { isHeldViewmodelHidden } from '../factories/heldItem'
 import { WATER_LEVEL } from '../factories/sceneLevels'
 import {
@@ -41,15 +43,15 @@ import {
 import { isPointerLocked } from '../ui/cursorLock'
 import { isAnchorInFlight } from './anchorThrower'
 import { isFishingLineActive } from './fishingRod'
+import { isWorldClickConsumed } from '../ui/worldClickGate'
 import {
-  addCollected,
+  consumeSlotDurability,
   getSelectedSlot,
   getSlotItem,
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
-import { notifyItemReceived } from '../ui/itemReceivedNotification'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
-import { RAD_TO_DEG, randInt } from '../utils/math'
+import { RAD_TO_DEG } from '../utils/math'
 import { computeWobble } from '../utils/wobble'
 
 const HOOK_ITEM_ID = 'hook'
@@ -180,6 +182,13 @@ function tickCharge(dt: number, handPos: Vector3): void {
     // Skip the press that selected this slot — otherwise the equip-click
     // immediately starts a throw charge.
     if (justPressed && !isSelectionPointerLockoutActive()) {
+      // Mobile: the action button is shared with the direct grab
+      // path — when the player tapped it to grab a floating item, the
+      // grab system set the world-click-consumed flag this frame so
+      // we don't ALSO charge a hook on top of the grab. Desktop uses
+      // IA_POINTER (mouse) for the charge and IA_PRIMARY (E) for the
+      // grab, so this guard is a no-op there.
+      if (mobile && isWorldClickConsumed()) return
       charging = true
       chargeT = 0
     }
@@ -203,6 +212,12 @@ function cancelCharge(): void {
 function spawnAndThrow(handPos: Vector3, strength: number): void {
   const aim = computeAimDir()
   if (aim === null) return
+  // Consume one of the hook's 40 uses per cast. Done before the throw
+  // resolves so if this was the last use, the slot clears now and the
+  // viewmodel snaps back via the cascade in `consumeSlotDurability` —
+  // the player still gets the throw they paid for (the hookEntity below
+  // takes over the visuals from here regardless of the held viewmodel).
+  consumeSlotDurability(getSelectedSlot())
   playSfx('hookThrow')
   const speed =
     HOOK_MIN_THROW_SPEED + (HOOK_MAX_THROW_SPEED - HOOK_MIN_THROW_SPEED) * strength
@@ -332,57 +347,12 @@ function advanceHook(dt: number, handPos: Vector3): void {
   followGrabbedItems()
 }
 
-// Barrel rope drop is weighted: rope is the bottleneck for the raft
-// recipe, so the barrel almost always coughs up at least one and
-// occasionally two — 75% / 10% / 15% for 1 / 2 / 0 ropes.
-function rollRopeDrop(): number {
-  const r = Math.random()
-  if (r < 0.75) return 1
-  if (r < 0.85) return 2
-  return 0
-}
-
-// Pantry pool dropped by barrels — the COOKING.md "BARREL" sourced
-// ingredients minus shark/fish (those come from sharks and the rod).
-// Each barrel rolls a small bundle from this list so kitchens fill up
-// without making any single barrel a guaranteed full pantry.
-const BARREL_POOL = [
-  'mussels', 'clams', 'seaweed', 'tomatoes', 'garlic',
-  'olive_oil', 'potato', 'spaghetti', 'fettuccine', 'crab'
-] as const
-
-// Translate a hooked debris kind into inventory deposits. Most kinds map
-// 1:1 to a material; barrel unpacks into a small loot bundle (wood, rope
-// roll, plus 2–3 random pantry items). Raw fish are NOT in the surface
-// pool — those are caught with the fishing rod (`systems/fishingRod.ts`).
-function bankGrabbedItem(kind: string): void {
-  if (kind === 'barrel') {
-    // Always: a bit of wood for fuel continuity + a rope roll.
-    const woodCount = randInt(1, 2)
-    addCollected('wood', woodCount)
-    notifyItemReceived('wood', woodCount)
-    const ropeCount = rollRopeDrop()
-    addCollected('rope', ropeCount)
-    notifyItemReceived('rope', ropeCount)
-    // 2–3 random pantry/sea ingredients per barrel.
-    const drops = randInt(2, 3)
-    for (let i = 0; i < drops; i++) {
-      const pick = BARREL_POOL[Math.floor(Math.random() * BARREL_POOL.length)]
-      addCollected(pick, 1)
-      notifyItemReceived(pick, 1)
-    }
-    return
-  }
-  addCollected(kind, 1)
-  notifyItemReceived(kind, 1)
-}
-
 function despawnHook(): void {
   // Hook reached the player (or the throw was cancelled) — bank everything
   // it was dragging and remove the entities. Done before the hook itself
   // is removed so we don't leave orphaned children behind for one frame.
   for (const item of grabbedItems) {
-    bankGrabbedItem(item.kind)
+    bankGarbageKind(item.kind)
     engine.removeEntity(item.entity)
   }
   grabbedItems = []
@@ -455,6 +425,14 @@ function collectGarbageNearHook(hookX: number, hookZ: number): void {
     // hooked. Without this the float system would keep advancing its world
     // position and fight the per-frame follow we apply below.
     FloatingGarbage.deleteFrom(entity)
+    // Strip the GRAB hover prompt now that the item is riding the
+    // hook back — without this the player can hover the cluster of
+    // dragged items and see a phantom "GRAB" tooltip on something
+    // they can't act on (the entity-targeted trigger no-ops because
+    // FloatingGarbage was just removed, but the prompt still draws).
+    if (PointerEvents.getOrNull(entity) !== null) {
+      PointerEvents.deleteFrom(entity)
+    }
     const offset = computeGrabOffset(grabbedItems.length)
     grabbedItems.push({
       entity,

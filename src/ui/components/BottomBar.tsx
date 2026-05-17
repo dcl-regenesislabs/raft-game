@@ -44,6 +44,7 @@ import {
   slotTopPx
 } from '../theme'
 import { shakeOffset } from '../utils/shake'
+import { DurabilityBar } from './DurabilityBar'
 import { ItemCountBadge } from './ItemCountBadge'
 
 // Bottom-center toolbar holding BOTTOM_BAR_SLOT_COUNT slots. The painted
@@ -350,6 +351,7 @@ function Slot(props: {
         )}
 
         <ItemCountBadge item={display} />
+        <DurabilityBar slotIndex={props.index} />
       </UiEntity>
     </UiEntity>
   )

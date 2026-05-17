@@ -10,4 +10,4 @@
 // Typed as plain `boolean` rather than the `false` literal so downstream
 // flags like DEBUG_MODE don't narrow to a literal type and trigger
 // "always true / dead branch" warnings.
-export const IS_PRODUCTION: boolean = true
+export const IS_PRODUCTION: boolean = false
