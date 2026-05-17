@@ -24,6 +24,7 @@ import { constructionInteractSystem } from './systems/constructionInteract'
 import { constructionPlacementSystem } from './systems/constructionPlacement'
 import { cupFillSystem } from './systems/cupFill'
 import { createFallRescueSystem } from './systems/fallRescue'
+import { lobbyWaterRescueSystem } from './systems/lobbyWaterRescue'
 import { firstPersonItemSwaySystem } from './systems/firstPersonItemSway'
 import { fishingRodSystem } from './systems/fishingRod'
 import { floatingGarbageSystem } from './systems/floatingGarbage'
@@ -136,6 +137,7 @@ export async function main(): Promise<void> {
   engine.addSystem(grillFireSystem)
   engine.addSystem(grillCookSystem)
   engine.addSystem(createFallRescueSystem(GRID_ORIGIN))
+  engine.addSystem(lobbyWaterRescueSystem)
   engine.addSystem(survivalDrainSystem)
   engine.addSystem(raftBuilderSystem)
   engine.addSystem(constructionPlacementSystem)

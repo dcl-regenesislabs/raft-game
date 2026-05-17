@@ -23,10 +23,13 @@ const TARGETS = {
     spawnPoint: {
       name: 'spawn1',
       default: true,
-      // Centered on a 50x50 (800m) scene → middle ≈ (400, 5, 400).
-      // Y matches WATER_LEVEL (4) + ~1m head clearance above platform top.
-      position: { x: [398, 402], y: [5, 5], z: [398, 402] },
-      cameraTarget: { x: 400, y: 5, z: 400 }
+      // South tip of the lobby bridge → see `factories/lobby.ts`
+      // (getLobbyArrivalPosition). GRID_ORIGIN=(400,_,400), BRIDGE_GX=-1,
+      // LOBBY_Z_OFFSET=-0.9, ISLAND_HALF=3, BRIDGE_REACH=10, CELL=3.
+      // x = cellCentre(400,-1) = 398.5; z = 400 - 0.9 - (9 + 30 - 1.5) = 361.6.
+      // Camera faces north toward the welcome arch/island.
+      position: { x: [397.5, 399.5], y: [5, 5], z: [360.8, 362.4] },
+      cameraTarget: { x: 398.5, y: 5, z: 390 }
     }
   },
   demo: {
@@ -36,9 +39,13 @@ const TARGETS = {
     spawnPoint: {
       name: 'spawn1',
       default: true,
-      // Demo scene-local spawn (40, 5, 40). Y = WATER_LEVEL + 1m clearance.
-      position: { x: [38, 42], y: [5, 5], z: [38, 42] },
-      cameraTarget: { x: 40, y: 5, z: 40 }
+      // South tip of the lobby bridge → see `factories/lobby.ts`
+      // (getLobbyArrivalPosition). GRID_ORIGIN=(40,_,40), BRIDGE_GX=-1,
+      // LOBBY_Z_OFFSET=-0.9, ISLAND_HALF=3, BRIDGE_REACH=10, CELL=3.
+      // x = cellCentre(40,-1) = 38.5; z = 40 - 0.9 - (9 + 30 - 1.5) = 1.6.
+      // Camera faces north toward the welcome arch/island.
+      position: { x: [37.5, 39.5], y: [5, 5], z: [0.8, 2.4] },
+      cameraTarget: { x: 38.5, y: 5, z: 30 }
     }
   }
 }

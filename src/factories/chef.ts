@@ -7,7 +7,6 @@ import {
   GltfContainer,
   InputAction,
   Material,
-  MaterialTransparencyMode,
   MeshCollider,
   MeshRenderer,
   PointerEventType,
@@ -19,7 +18,7 @@ import {
   Transform,
   engine
 } from '@dcl/sdk/ecs'
-import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { ChefAnimDebug, ChefNpc } from '../components'
@@ -274,29 +273,20 @@ function buildChefDialogBubble(
   })
   MeshRenderer.setPlane(bubble)
   Billboard.create(bubble, { billboardMode: BillboardMode.BM_Y })
-  // PBR with emissive-only albedo preserves the basic-material unlit look
-  // and keeps alpha-test transparency working on the unity-desktop client
-  // (basic materials show a black background there). Same recipe as
-  // `fishingWarning.ts`.
-  Material.setPbrMaterial(bubble, {
-    texture: Material.Texture.Common({
-      src: CHEF_DIALOG_TEXTURE,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_CLAMP
-    }),
-    emissiveTexture: Material.Texture.Common({
-      src: CHEF_DIALOG_TEXTURE,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_CLAMP
-    }),
-    emissiveColor: Color3.White(),
-    emissiveIntensity: 1,
-    albedoColor: Color4.create(0, 0, 0, 1),
-    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
+  // True unlit via Material.setBasicMaterial — ignores scene lights and
+  // shadows, with no emissive bloom risk. Passing the same source as
+  // both `texture` and `alphaTexture` gives correct alpha-test cutout
+  // across clients (unity-desktop included). Matches the Genesis Plaza
+  // 2025 plaza-guide / event-board recipe.
+  const bubbleTex = Material.Texture.Common({
+    src: CHEF_DIALOG_TEXTURE,
+    filterMode: TextureFilterMode.TFM_BILINEAR,
+    wrapMode: TextureWrapMode.TWM_CLAMP
+  })
+  Material.setBasicMaterial(bubble, {
+    texture: bubbleTex,
+    alphaTexture: bubbleTex,
     alphaTest: 0.5,
-    roughness: 1,
-    metallic: 0,
-    specularIntensity: 0,
     castShadows: false
   })
 
