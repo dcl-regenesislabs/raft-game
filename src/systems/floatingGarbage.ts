@@ -1,8 +1,8 @@
 import { Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion } from '@dcl/sdk/math'
 
-import { FloatingGarbage, FloatingIsland } from '../components'
-import { GRID_ORIGIN } from '../factories/platform'
+import { FloatingGarbage, FloatingIsland, Platform } from '../components'
+import { GRID_ORIGIN, RAFT_SIZE } from '../factories/platform'
 import { RAD_TO_DEG } from '../utils/math'
 
 // Vertical bob frequency in radians/second. ~0.2 Hz feels like a slow
@@ -11,11 +11,16 @@ const BOB_RATE = Math.PI * 0.4
 // Margin (metres) inside the parcel boundary at which we despawn an item
 // that has drifted out of view.
 const SCENE_MARGIN = 3
-
-// Sinking speed when islands are active — garbage descends below water
-// and gets removed once it's far enough down that the pop is invisible.
-const SINK_SPEED = 1.5
-const SINK_REMOVE_DEPTH = 2.0
+// Metres below the item's spawn baseY to tuck it when its (x,z) rounds
+// into an occupied raft cell. Items have no collider against the deck
+// (CL_POINTER only) so without this push they visibly clip THROUGH the
+// raft. 0.6 m clears the platform collider's underside (water surface
+// at y=4, raft collider bottom at y=4.0) with a small margin.
+const SUBMERGE_DROP = 0.6
+// Per-second lerp rate toward the surface/under-raft target. Tuned so
+// the transition reads as the item dipping under the raft rather than
+// snapping. ~0.15 s effective half-life at 60 fps.
+const SUBMERGE_LERP_RATE = 6
 
 // True when at least one FloatingIsland exists. Cached per frame.
 let islandPresent = false
@@ -24,15 +29,48 @@ export function hasActiveIsland(): boolean {
   return islandPresent
 }
 
+// Per-frame set of occupied grid cells, keyed by 32-bit packing of
+// (gridX, gridZ). Rebuilt at the top of every frame so newly placed or
+// destroyed rafts are picked up without an explicit dirty flag. Raft
+// counts are small (≤25 in demo, bounded by player builds in full) so
+// the rebuild is O(N_rafts) with N tiny — cheaper than maintaining
+// a subscription on placement/destruction.
+const occupiedCells = new Set<number>()
+
+function encodeCell(gx: number, gz: number): number {
+  return ((gx & 0xffff) << 16) | (gz & 0xffff)
+}
+
+function rebuildOccupancy(): void {
+  occupiedCells.clear()
+  for (const [entity] of engine.getEntitiesWith(Platform)) {
+    const cell = Platform.get(entity)
+    occupiedCells.add(encodeCell(cell.gridX, cell.gridZ))
+  }
+}
+
+function isOverRaft(wx: number, wz: number): boolean {
+  const gx = Math.round((wx - GRID_ORIGIN.x) / RAFT_SIZE)
+  const gz = Math.round((wz - GRID_ORIGIN.z) / RAFT_SIZE)
+  return occupiedCells.has(encodeCell(gx, gz))
+}
+
 export function floatingGarbageSystem(dt: number): void {
   const sceneSize = GRID_ORIGIN.x * 2
 
-  // Check once per frame whether any island is alive
+  // Check once per frame whether any island is alive. Used by the spawner
+  // to suppress new debris while an island is on screen.
   islandPresent = false
   for (const _ of engine.getEntitiesWith(FloatingIsland)) {
     islandPresent = true
     break
   }
+
+  // Tilemap of which (gridX, gridZ) cells currently host a raft. Built
+  // once per frame and queried per-item below to suppress items clipping
+  // through the deck.
+  rebuildOccupancy()
+  const submergeBlend = Math.min(1, dt * SUBMERGE_LERP_RATE)
 
   for (const [entity] of engine.getEntitiesWith(FloatingGarbage, Transform)) {
     const garbage = FloatingGarbage.getMutable(entity)
@@ -48,17 +86,9 @@ export function floatingGarbageSystem(dt: number): void {
     const pos = transform.position
     pos.x += garbage.velocityX * dt
     pos.z += garbage.velocityZ * dt
-
-    if (islandPresent) {
-      // Sink below water and remove once invisible
-      pos.y -= SINK_SPEED * dt
-      if (pos.y < garbage.baseY - SINK_REMOVE_DEPTH) {
-        engine.removeEntity(entity)
-        continue
-      }
-    } else {
-      pos.y = garbage.baseY + Math.sin(garbage.bobPhase) * garbage.bobAmplitude
-    }
+    const surfaceY = garbage.baseY + Math.sin(garbage.bobPhase) * garbage.bobAmplitude
+    const targetY = isOverRaft(pos.x, pos.z) ? garbage.baseY - SUBMERGE_DROP : surfaceY
+    pos.y = pos.y + (targetY - pos.y) * submergeBlend
 
     // Despawn the moment the item leaves the parcel footprint
     if (
