@@ -29,6 +29,11 @@ import { firstPersonItemSwaySystem } from './systems/firstPersonItemSway'
 import { fishingRodSystem } from './systems/fishingRod'
 import { floatingGarbageSystem } from './systems/floatingGarbage'
 import { foodEatSystem } from './systems/foodEat'
+import { anchorThrowerSystem } from './systems/anchorThrower'
+import { anchorInterpolationSystem } from './systems/anchorState'
+import { floatingIslandSystem } from './systems/floatingIsland'
+import { islandChestSystem } from './systems/islandChest'
+import { islandSpawnerSystem } from './systems/islandSpawner'
 import { garbageSpawnerSystem } from './systems/garbageSpawner'
 import { grillCookSystem } from './systems/grillCook'
 import { grillFireSystem } from './systems/grillFire'
@@ -132,6 +137,11 @@ export async function main(): Promise<void> {
   engine.addSystem(boatChefDirectorSystem)
   engine.addSystem(chefDialogSystem)
   engine.addSystem(chefAnimDebugSystem)
+  engine.addSystem(islandSpawnerSystem)
+  engine.addSystem(floatingIslandSystem)
+  engine.addSystem(islandChestSystem)
+  engine.addSystem(anchorInterpolationSystem)
+  engine.addSystem(anchorThrowerSystem)
   engine.addSystem(garbageSpawnerSystem)
   engine.addSystem(floatingGarbageSystem)
   engine.addSystem(grillFireSystem)

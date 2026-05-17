@@ -1,7 +1,7 @@
 import { Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion } from '@dcl/sdk/math'
 
-import { FloatingGarbage } from '../components'
+import { FloatingGarbage, FloatingIsland } from '../components'
 import { GRID_ORIGIN } from '../factories/platform'
 import { RAD_TO_DEG } from '../utils/math'
 
@@ -9,21 +9,30 @@ import { RAD_TO_DEG } from '../utils/math'
 // ocean swell rather than a video-game wobble.
 const BOB_RATE = Math.PI * 0.4
 // Margin (metres) inside the parcel boundary at which we despawn an item
-// that has drifted out of view. Must be smaller than the spawn-side margin
-// in `garbageSpawner.ts` (MAP_EDGE_SPAWN_MARGIN) so freshly-spawned items
-// don't immediately self-despawn, and large enough that items always die
-// BEFORE they cross the map edge — DCL hides anything outside the parcel
-// footprint, so a 3 m cushion absorbs one frame of drift without flicker.
+// that has drifted out of view.
 const SCENE_MARGIN = 3
 
-// Per-frame: drift along stored velocity, sinusoidal bob on Y, gentle yaw
-// drift + pitch/roll wobble, despawn on lifetime OR scene-bounds exit.
-// Despawn is lifetime + bounds based (not platform-distance based) so we
-// don't have to recompute the platform centroid for every debris entity.
+// Sinking speed when islands are active — garbage descends below water
+// and gets removed once it's far enough down that the pop is invisible.
+const SINK_SPEED = 1.5
+const SINK_REMOVE_DEPTH = 2.0
+
+// True when at least one FloatingIsland exists. Cached per frame.
+let islandPresent = false
+
+export function hasActiveIsland(): boolean {
+  return islandPresent
+}
+
 export function floatingGarbageSystem(dt: number): void {
-  // Scene is square and centred on GRID_ORIGIN; sceneSize = 2 * GRID_ORIGIN.x.
-  // Read once per frame rather than per entity.
   const sceneSize = GRID_ORIGIN.x * 2
+
+  // Check once per frame whether any island is alive
+  islandPresent = false
+  for (const _ of engine.getEntitiesWith(FloatingIsland)) {
+    islandPresent = true
+    break
+  }
 
   for (const [entity] of engine.getEntitiesWith(FloatingGarbage, Transform)) {
     const garbage = FloatingGarbage.getMutable(entity)
@@ -39,10 +48,19 @@ export function floatingGarbageSystem(dt: number): void {
     const pos = transform.position
     pos.x += garbage.velocityX * dt
     pos.z += garbage.velocityZ * dt
-    pos.y = garbage.baseY + Math.sin(garbage.bobPhase) * garbage.bobAmplitude
 
-    // Despawn the moment the item leaves the parcel footprint — DCL hides
-    // entities outside scene bounds anyway, so keeping them around is waste.
+    if (islandPresent) {
+      // Sink below water and remove once invisible
+      pos.y -= SINK_SPEED * dt
+      if (pos.y < garbage.baseY - SINK_REMOVE_DEPTH) {
+        engine.removeEntity(entity)
+        continue
+      }
+    } else {
+      pos.y = garbage.baseY + Math.sin(garbage.bobPhase) * garbage.bobAmplitude
+    }
+
+    // Despawn the moment the item leaves the parcel footprint
     if (
       pos.x < SCENE_MARGIN ||
       pos.x > sceneSize - SCENE_MARGIN ||
@@ -54,7 +72,6 @@ export function floatingGarbageSystem(dt: number): void {
     }
 
     // Rebuild rotation each frame from euler so pitch/roll oscillate cleanly
-    // instead of drifting. Yaw drift accumulates linearly via lifetime.
     const yawDeg = garbage.baseYawDeg + garbage.spinSpeed * garbage.lifetime * RAD_TO_DEG
     const rollDeg =
       garbage.rollAmplitude > 0

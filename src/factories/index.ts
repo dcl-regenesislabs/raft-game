@@ -68,6 +68,8 @@ export {
 } from './fishingCatchSprite'
 export { createShark, spawnRingShark, SHARK_Y } from './shark'
 export type { SharkParams } from './shark'
+export { createAnchorEntity, ANCHOR_FORWARD_ROTATION } from './anchor'
+export { createIslandChest } from './islandChest'
 export { createFloatingGarbage, GARBAGE_KINDS } from './floatingGarbage'
 export type { GarbageKind, FloatingGarbageParams } from './floatingGarbage'
 export { aabbHalfExtentAlong, getPlatformExtent } from './platformExtent'

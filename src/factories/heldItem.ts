@@ -13,7 +13,7 @@ import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { createRopeEntity, updateRopeBetween } from './rope'
 
-export type HeldItemKind = 'hook' | 'hammer' | 'spear' | 'fishingRod' | 'food' | 'cup'
+export type HeldItemKind = 'hook' | 'hammer' | 'spear' | 'fishingRod' | 'anchor' | 'food' | 'cup'
 
 export interface HeldItemConfig {
   src: string
@@ -52,6 +52,12 @@ export const HELD_ITEMS: Record<HeldItemKind, HeldItemConfig> = {
     offset: Vector3.create(0.35, -0.1, 0.6),
     rotation: Quaternion.fromEulerDegrees(0, 0, -90),
     scale: Vector3.create(0.35, 0.35, 0.35)
+  },
+  anchor: {
+    src: 'assets/scene/items/anchor-v2.glb',
+    offset: Vector3.create(0.35, -0.2, 0.6),
+    rotation: Quaternion.fromEulerDegrees(195, 240, 0),
+    scale: Vector3.create(0.25, 0.25, 0.25)
   },
   food: {
     src: '',

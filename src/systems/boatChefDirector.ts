@@ -129,6 +129,12 @@ export function armBoatChefEvent(opts: { immediate: boolean }): void {
   rearmCountdown = opts.immediate ? 0 : VISIT_INTERVAL_S
 }
 
+// True while the chef boat is anywhere in the scene (arriving, docked,
+// leaving). The island spawner gates on this so both events don't overlap.
+export function isBoatChefActive(): boolean {
+  return phase !== 'ARMED'
+}
+
 // Called from `returnToLobby` after the entity sweep. The sweep already
 // destroyed any active boat/chef entities, so we just clear the module
 // refs and disarm — the next `armBoatChefEvent` rearms.

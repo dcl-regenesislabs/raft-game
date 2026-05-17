@@ -145,7 +145,9 @@ export const enum HookPhase {
   // Ballistic — velocity integrated with gravity each frame.
   Flying = 0,
   // Touched water — pulled back toward the player along XZ.
-  Floating = 1
+  Floating = 1,
+  // Hook stuck in a floating island — world is shifting toward the raft.
+  Anchored = 2
 }
 
 // Tags the single thrown fishing-line entity. Mirrors `Hook` but the
@@ -207,6 +209,28 @@ export const FloatingGarbage = engine.defineComponent('mystic-pond:floating-garb
   // comes first) — keeps despawn cheap (no centroid recompute per item).
   lifetime: Schemas.Number,
   maxLifetime: Schemas.Number
+})
+
+// Loot chest placed on top of a floating island. Contains a small random
+// assortment of items (similar to barrel drops). Opened by the player
+// walking up and clicking. `opened` flips true once looted so the pointer
+// prompt can disappear and a second click is a no-op.
+export const IslandChest = engine.defineComponent('mystic-pond:island-chest', {
+  opened: Schemas.Boolean,
+  // Parent island entity — used so the chest can be cleaned up when the island despawns
+  island: Schemas.Entity
+})
+
+export const FloatingIsland = engine.defineComponent('mystic-pond:floating-island', {
+  velocityX: Schemas.Number,
+  velocityZ: Schemas.Number,
+  // Original velocity stored for restoring after anchor release
+  baseVelocityX: Schemas.Number,
+  baseVelocityZ: Schemas.Number,
+  lifetime: Schemas.Number,
+  maxLifetime: Schemas.Number,
+  // True while the island is being nudged away from the raft
+  deflecting: Schemas.Boolean
 })
 
 // Per-grill flame-sprite animation state. Drives `systems/grillFire.ts`

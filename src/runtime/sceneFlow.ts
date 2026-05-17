@@ -50,6 +50,8 @@ import {
   resetConstructionPlacementState
 } from '../systems/constructionPlacement'
 import { resetFishingRodState } from '../systems/fishingRod'
+import { resetAnchorState } from '../systems/anchorState'
+import { resetAnchorThrowerState } from '../systems/anchorThrower'
 import { resetHookThrowerState } from '../systems/hookThrower'
 import { resetRaftBuilderState } from '../systems/raftBuilder'
 import { setCookOpen } from '../ui/cookToggle'
@@ -217,6 +219,8 @@ export function returnToLobby(): void {
   // Drop module-level entity refs cached by tool/builder systems —
   // the swept entities they were pointing at are gone, and the next
   // game-world re-entry must lazy-create fresh ones.
+  resetAnchorState()
+  resetAnchorThrowerState()
   resetHookThrowerState()
   resetFishingRodState()
   resetRaftBuilderState()

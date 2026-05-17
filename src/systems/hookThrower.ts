@@ -39,6 +39,7 @@ import {
   isActionButtonPressed
 } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
+import { isAnchorInFlight } from './anchorThrower'
 import { isFishingLineActive } from './fishingRod'
 import {
   addCollected,
@@ -99,6 +100,9 @@ export function isHookInFlight(): boolean {
 // scene, so isHookInFlight()/grabbedItems don't keep pointing at dead
 // ids when the player re-enters the game world via a portal.
 export function resetHookThrowerState(): void {
+  // If anchored, the anchor state module handles its own reset via
+  // resetAnchorState in sceneFlow — don't call releaseAnchor here
+  // because it expects the interpolation system to be running.
   hookEntity = null
   ropeEntity = null
   grabbedItems = []
@@ -149,7 +153,7 @@ export function hookThrowerSystem(dt: number): void {
     return
   }
 
-  if (isFishingLineActive()) {
+  if (isFishingLineActive() || isAnchorInFlight()) {
     cancelCharge()
     return
   }
@@ -262,9 +266,7 @@ function advanceHook(dt: number, handPos: Vector3): void {
       const nextZ = pos.z + state.velocity.z * dt
       transform.position = Vector3.create(nextX, WATER_LEVEL, nextZ)
       state.phase = HookPhase.Floating
-      // Splashdown — snag any floating garbage already within reach. Anything
-      // further out gets a chance every frame as the hook reels in (below),
-      // so the throw plays as a moving capture rather than a one-shot sweep.
+      // Splashdown — snag any floating garbage already within reach.
       collectGarbageNearHook(nextX, nextZ)
       // Keep `elapsed` ticking across the phase boundary so the wobble
       // sine waves carry on without a visual reset on splashdown.
@@ -483,6 +485,7 @@ function computeGrabOffset(index: number): { x: number; y: number; z: number } {
     z: Math.sin(angle) * radius
   }
 }
+
 
 // Each frame: copy the hook's world position to every grabbed item, plus
 // the per-item cluster offset. Rotation and scale are left untouched, so

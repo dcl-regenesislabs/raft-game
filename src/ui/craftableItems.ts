@@ -118,6 +118,17 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     ]
   },
   {
+    id: 'anchor',
+    name: 'ANCHOR',
+    description:
+      'A heavy metal weight on a rope. Throw it at a drifting island to haul it close enough to board.',
+    texture: 'images/hud/items/anchor.png',
+    cost: [
+      { materialId: 'metal', amount: 6 },
+      { materialId: 'rope', amount: 4 }
+    ]
+  },
+  {
     id: 'storage',
     name: 'STORAGE',
     description:
