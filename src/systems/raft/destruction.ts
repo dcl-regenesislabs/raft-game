@@ -198,16 +198,19 @@ function applyDestroyGhost(platform: Entity, color: Color4): void {
 // the moment the cursor leaves it (or destroy mode exits). Safe to call
 // when no override is present.
 //
-// We replace the modifiers array with `[]` instead of deleting the
-// component because some renderers don't re-evaluate the GLB material
-// when the modifier component disappears mid-flight — the platform
-// would stay tinted red even after the cursor moved away. Mirrors the
-// "mutate, don't replace" pattern documented in spectralPlatform.ts.
+// Both `deleteFrom(visual)` and `modifiers = []` leave the renderer
+// holding the previous red material — neither path reliably re-evaluates
+// the GLB once an override has been painted on. The workaround is to
+// keep the component populated with a no-op modifier (no material, no
+// shadow override): the renderer sees a fresh modifier list, finds
+// nothing to override, and falls back to the GLB's native wood.
 function clearDestroyGhost(platform: Entity): void {
   const visual = getPlatformVisual(platform)
   if (visual === null) return
   if (GltfNodeModifiers.getOrNull(visual) === null) return
-  GltfNodeModifiers.getMutable(visual).modifiers = []
+  GltfNodeModifiers.createOrReplace(visual, {
+    modifiers: [{ path: '' }]
+  })
 }
 
 function lerpColor(a: Color4, b: Color4, t: number): Color4 {
