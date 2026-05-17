@@ -36,6 +36,17 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
     ]
   },
   {
+    id: 'hook',
+    name: 'HOOK',
+    description:
+      'A whittled wooden hook lashed to a length of rope. Snags floating debris and the smaller fish that drift past the raft.',
+    texture: 'images/hud/items/hook.png',
+    cost: [
+      { materialId: 'wood', amount: 1 },
+      { materialId: 'rope', amount: 1 }
+    ]
+  },
+  {
     id: 'hammer',
     name: 'HAMMER',
     description:

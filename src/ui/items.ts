@@ -208,13 +208,18 @@ export const INVENTORY_TOTAL_SLOTS = 30
 export const INVENTORY_GRID_SLOT_COUNT =
   INVENTORY_TOTAL_SLOTS - BOTTOM_BAR_SLOT_COUNT
 
-// Items the player starts with on a fresh game. Pulled into its own
-// catalog so the hydrate path can resolve them on load — they aren't in
-// MATERIAL_CATALOG / CRAFTED_CATALOG / INGREDIENT_CATALOG / PLATE_CATALOG,
-// and without an entry here the save round-trip would silently drop the
-// starter hook as "unknown id".
+// Shared hook def — referenced by both the starter loadout AND
+// `CRAFTED_CATALOG` so the player can re-craft a hook once the starter
+// one breaks. Single source of truth keeps texture / heldKind / durability
+// in lockstep across both code paths.
+const HOOK_DEF: ItemDef = TOOL('hook', 'images/hud/items/hook.png', 'hook', { maxDurability: 40 })
+
+// Items the player starts with on a fresh game. Originally split out so
+// the hydrate path could resolve the starter hook, but now that hook is
+// also in `CRAFTED_CATALOG` (craftable recipe), this catalog is kept as
+// the explicit starter manifest — `resetInventoryLayout` reads from it.
 const STARTER_TOOL_CATALOG: Record<string, ItemDef> = {
-  hook: TOOL('hook', 'images/hud/items/hook.png', 'hook', { maxDurability: 40 })
+  hook: HOOK_DEF
 }
 
 const layout: (ItemDef | null)[] = [
@@ -317,6 +322,7 @@ const CRAFTED_CATALOG: Record<string, ItemDef> = {
   // Hammer has no `maxDurability` on purpose — the building tool must
   // never break, otherwise the player can softlock by running out of
   // build hammers with no way to assemble a workbench to craft more.
+  hook: HOOK_DEF,
   hammer: TOOL('hammer', 'images/hud/items/hammer.png', 'hammer'),
   spear: TOOL('spear', 'images/hud/items/spear.png', 'spear', { maxDurability: 20 }),
   purifier: CRAFTED_PLACEABLE('purifier', 'images/hud/items/water-purifier.png'),
