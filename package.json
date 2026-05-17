@@ -10,8 +10,8 @@
     "prepare:full": "node scripts/build-scene-json.mjs --target=full",
     "check:textures": "python3 scripts/check_gltf_textures.py",
     "fix:textures": "python3 scripts/check_gltf_textures.py --fix",
-    "deploy:demo": "npm run prepare:demo && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org",
-    "deploy:full": "npm run prepare:full && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org",
+    "deploy:demo": "npm run prepare:demo && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org --multi-scene",
+    "deploy:full": "npm run prepare:full && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org --multi-scene",
     "upgrade-sdk": "npm install --save-dev @dcl/sdk@latest",
     "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next",
     "server-logs": "sdk-commands sdk-server-logs"
