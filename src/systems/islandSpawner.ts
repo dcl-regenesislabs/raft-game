@@ -19,28 +19,58 @@ const SPAWN_INTERVAL_S = 15
 // Much slower than debris so the player has time to jump on
 const DRIFT_SPEED = 1.2
 const DRIFT_SPEED_JITTER = 0.3
-// How far upstream from the raft islands spawn
-const SPAWN_DISTANCE_MARGIN = 35
-// Lateral offset from raft edge — large enough that the island (radius ~10m)
-// never overlaps the raft deck.
-const BYPASS_MIN_MARGIN = 14
-const BYPASS_MAX_MARGIN = 20
+// Floor on perp distance from the raft edge to the island path. If neither
+// side of the map can fit this much clearance, we skip the spawn tick.
+const LATERAL_FLOOR_M = 22
+// Fraction of the available perp distance to push the island toward the
+// scene edge. 1.0 = the island centre sits right at the perp-axis spawn
+// margin. The island visual extends a few metres past the scene boundary
+// at this extreme, which reads as "the horizon" rather than a clip — the
+// despawn check (SCENE_MARGIN = 3 in floatingIsland.ts) still removes the
+// entity once its centre crosses the boundary as it drifts downstream.
+const LATERAL_FRACTION = 1.0
+// Absolute cap so the FULL (800m) map doesn't put islands so far out they
+// stop being visible. 150m sits well beyond rendering fade for the demo's
+// 80m scene and still reads as "horizon" on the full map.
+const LATERAL_MAX_M = 150
 const MAP_EDGE_SPAWN_MARGIN = 5
 const MIN_UPSTREAM_GAP = 8
 const MAX_ISLANDS = 1
 
 let elapsed = SPAWN_INTERVAL_S
+// Set by armIslandEvent({ immediate: true }) — fires one spawn on the next
+// tick that has a built game world, bypassing the boat-chef and anchor
+// gates. The startup gate still applies (no islands while the lobby UI is
+// up). Mirrors armBoatChefEvent's immediate-fire path.
+let forceSpawnArmed = false
+
+// Called from `buildGameWorld`. `immediate: true` (DEBUG / SKIP_LOBBY) drops
+// an island into the scene on the next tick so the encounter is testable
+// from any session start; otherwise the regular spawn timer runs.
+export function armIslandEvent(opts: { immediate: boolean }): void {
+  if (opts.immediate) forceSpawnArmed = true
+}
 
 export function islandSpawnerSystem(dt: number): void {
   if (isStartupGateActive()) return
-  if (isAnchored()) return
-  if (isBoatChefActive()) return
-  // Cap simultaneous islands
+  // Cap simultaneous islands — applies to both the timer path and the
+  // forced-spawn path.
   let count = 0
   for (const _ of engine.getEntitiesWith(FloatingIsland)) {
     count++
-    if (count >= MAX_ISLANDS) return
+    if (count >= MAX_ISLANDS) {
+      forceSpawnArmed = false
+      return
+    }
   }
+  if (forceSpawnArmed) {
+    forceSpawnArmed = false
+    elapsed = 0
+    spawnIsland()
+    return
+  }
+  if (isAnchored()) return
+  if (isBoatChefActive()) return
   elapsed += dt
   if (elapsed < SPAWN_INTERVAL_S) return
   elapsed = 0
@@ -59,16 +89,40 @@ function spawnIsland(): void {
   const perpHalf = aabbHalfExtentAlong(extent, perpX, perpZ)
   const sceneSize = GRID_ORIGIN.x * 2
 
-  const side = Math.random() < 0.5 ? -1 : 1
-  const lateral = side * (perpHalf + BYPASS_MIN_MARGIN + Math.random() * (BYPASS_MAX_MARGIN - BYPASS_MIN_MARGIN))
-  const lateralX = anchorX + perpX * lateral
-  const lateralZ = anchorZ + perpZ * lateral
+  // Push the island as far from the raft along the perp axis as the map
+  // allows. Start at LATERAL_FRACTION of perpMax (capped by LATERAL_MAX_M
+  // and the no-radius MAP_EDGE_SPAWN_MARGIN perp clamp), then back off
+  // geometrically if the lateral position lands in a corner with no
+  // upstream/downstream flow room — corners trade perp distance for
+  // along-flow drift room. Returns null only if no perp distance down to
+  // LATERAL_FLOOR_M leaves enough flow room.
+  const tryPick = (side: number) => {
+    const perpMax = maxFlowDistance(anchorX, anchorZ, perpX * side, perpZ * side, sceneSize, MAP_EDGE_SPAWN_MARGIN)
+    const lateralFloor = perpHalf + LATERAL_FLOOR_M
+    if (lateralFloor > perpMax) return null
+    let lateralMag = Math.min(perpMax * LATERAL_FRACTION, LATERAL_MAX_M)
+    if (lateralMag < lateralFloor) lateralMag = lateralFloor
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const lx = anchorX + perpX * side * lateralMag
+      const lz = anchorZ + perpZ * side * lateralMag
+      const upstreamMax = maxFlowDistance(lx, lz, -flowX, -flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
+      const downstreamMax = maxFlowDistance(lx, lz, flowX, flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
+      if (
+        upstreamMax >= flowHalf + MIN_UPSTREAM_GAP &&
+        downstreamMax >= MIN_UPSTREAM_GAP
+      ) {
+        return { lateralX: lx, lateralZ: lz, upstreamMax, downstreamMax }
+      }
+      lateralMag *= 0.85
+      if (lateralMag < lateralFloor) return null
+    }
+    return null
+  }
 
-  const upstreamMax = maxFlowDistance(lateralX, lateralZ, -flowX, -flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
-  const downstreamMax = maxFlowDistance(lateralX, lateralZ, flowX, flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
-
-  if (upstreamMax < flowHalf + MIN_UPSTREAM_GAP) return
-  if (downstreamMax < MIN_UPSTREAM_GAP) return
+  const firstSide = Math.random() < 0.5 ? -1 : 1
+  const pick = tryPick(firstSide) ?? tryPick(-firstSide)
+  if (!pick) return
+  const { lateralX, lateralZ, upstreamMax, downstreamMax } = pick
 
   // Always spawn at the map edge so the island is never near the raft at birth
   const spawnDistance = upstreamMax

@@ -46,6 +46,7 @@ import {
   armBoatChefEvent,
   resetBoatChefEventState
 } from '../systems/boatChefDirector'
+import { armIslandEvent } from '../systems/islandSpawner'
 import {
   resetConstructionPlacementState
 } from '../systems/constructionPlacement'
@@ -147,6 +148,11 @@ function buildGameWorld(parcelGrid: number, opts: { debug: boolean }): void {
   // and the boat sails in on its own. The director is also responsible
   // for re-arming after each visit.
   armBoatChefEvent({ immediate: opts.debug })
+  // Floating-island spawner. Same dev pattern as the boat chef: DEBUG
+  // drops one in on the next tick so it's testable without waiting for
+  // the SPAWN_INTERVAL timer. Non-debug paths leave the regular timer to
+  // produce the first island.
+  armIslandEvent({ immediate: opts.debug })
 }
 
 function spawnSharks(): void {
