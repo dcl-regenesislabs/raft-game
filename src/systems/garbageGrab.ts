@@ -9,6 +9,7 @@ import { isMobile } from '@dcl/sdk/platform'
 
 import { playSfx } from '../audio/sfx'
 import { FloatingGarbage } from '../components'
+import { destroyFloatingGarbage } from '../factories/floatingGarbage'
 import { bankGarbageKind } from '../factories/garbageBank'
 import { isHeldViewmodelHidden } from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
@@ -83,6 +84,6 @@ function grabGarbage(entity: Entity): void {
   if (data === null) return
   playSfx('waterSplash')
   bankGarbageKind(data.kind)
-  engine.removeEntity(entity)
+  destroyFloatingGarbage(entity)
   consumeWorldClick()
 }

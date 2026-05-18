@@ -217,7 +217,7 @@ export function createChef(params: CreateChefParams): ChefHandles {
       {
         eventType: PointerEventType.PET_DOWN,
         eventInfo: {
-          button: InputAction.IA_POINTER,
+          button: InputAction.IA_PRIMARY,
           hoverText: hoverLabel,
           maxDistance: 8
         }

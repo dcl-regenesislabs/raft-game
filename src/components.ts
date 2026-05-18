@@ -54,6 +54,30 @@ export const PlatformConstruction = engine.defineComponent(
   }
 )
 
+// Per-purifier runtime state. Attached to a platform entity carrying a
+// PlatformConstruction with kind === 'purifier'. Models the place-and-wait
+// loop:
+//   - E with salt-water cup on an empty purifier pours water → saltAmount = 1
+//   - F with wood adds fuel → fireSec += FUEL_PER_WOOD; `flameSprite`
+//     spawns the first time fire ignites
+//   - While fireSec > 0 AND saltAmount > 0 AND freshAmount < 1,
+//     `purifierProcessSystem` transfers salt → fresh at a fixed rate
+//   - E with empty cup when freshAmount >= 1 collects → empty cup
+//     transmutes to fresh-water cup, freshAmount = 0
+// `saltCylinder` / `freshCylinder` are the translucent visual fills
+// `purifierFillSystem` animates from `saltAmount` / `freshAmount`.
+// `flameSprite` is the billboarded fire plane (same `createFlameSprite`
+// the grill uses); set to engine.RootEntity (id 0) while unlit so
+// `destroyPlatformEntity` can guard its cleanup branch.
+export const PurifierState = engine.defineComponent('mystic-pond:purifier-state', {
+  saltCylinder: Schemas.Entity,
+  freshCylinder: Schemas.Entity,
+  saltAmount: Schemas.Number,
+  freshAmount: Schemas.Number,
+  fireSec: Schemas.Number,
+  flameSprite: Schemas.Entity
+})
+
 // Number of slots in a placed storage's grid. Fixed at 25 (5x5) — matches
 // the player's panel grid layout so the storage menu renders both surfaces
 // at the same dimensions.
@@ -208,7 +232,16 @@ export const FloatingGarbage = engine.defineComponent('mystic-pond:floating-garb
   // exceeds maxLifetime, OR when it leaves the scene parcels (whichever
   // comes first) — keeps despawn cheap (no centroid recompute per item).
   lifetime: Schemas.Number,
-  maxLifetime: Schemas.Number
+  maxLifetime: Schemas.Number,
+  // Child entity holding the GLB visual. The PARENT (this entity) owns
+  // the MeshCollider box — and the collider is sized per-kind, larger
+  // than the visual for tall/wide debris (e.g. barrel gets a raft-sized
+  // footprint so the player has a generous click/hover target). The
+  // visual child cancels the parent's collider scale and re-applies
+  // the per-kind visual scale, so the rendered model stays correctly
+  // sized regardless of how big the collider is. Removed alongside the
+  // parent by `destroyFloatingGarbage`.
+  visual: Schemas.Entity
 })
 
 // Loot chest placed on top of a floating island. Contains a small random
@@ -230,7 +263,11 @@ export const FloatingIsland = engine.defineComponent('mystic-pond:floating-islan
   lifetime: Schemas.Number,
   maxLifetime: Schemas.Number,
   // True while the island is being nudged away from the raft
-  deflecting: Schemas.Boolean
+  deflecting: Schemas.Boolean,
+  // The island entity is pooled — created once and reused. `active=false`
+  // means the renderer + colliders are off and gameplay queries should
+  // ignore it. Spawner flips this to true; lifetime expiry flips it back.
+  active: Schemas.Boolean
 })
 
 // Per-grill flame-sprite animation state. Drives `systems/grillFire.ts`

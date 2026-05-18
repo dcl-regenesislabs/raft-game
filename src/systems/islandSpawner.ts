@@ -4,7 +4,7 @@ import { Vector3 } from '@dcl/sdk/math'
 import { FloatingIsland } from '../components'
 import { isAnchored } from './anchorState'
 import { isBoatChefActive } from './boatChefDirector'
-import { createFloatingIsland } from '../factories/floatingIsland'
+import { activateFloatingIsland } from '../factories/floatingIsland'
 import { GRID_ORIGIN } from '../factories/platform'
 import { aabbHalfExtentAlong, getPlatformExtent } from '../factories/platformExtent'
 import { isStartupGateActive } from '../ui/startupGate'
@@ -19,22 +19,19 @@ const SPAWN_INTERVAL_S = 15
 // Much slower than debris so the player has time to jump on
 const DRIFT_SPEED = 1.2
 const DRIFT_SPEED_JITTER = 0.3
-// Floor on perp distance from the raft edge to the island path. If neither
-// side of the map can fit this much clearance, we skip the spawn tick.
-const LATERAL_FLOOR_M = 22
-// Fraction of the available perp distance to push the island toward the
-// scene edge. 1.0 = the island centre sits right at the perp-axis spawn
-// margin. The island visual extends a few metres past the scene boundary
-// at this extreme, which reads as "the horizon" rather than a clip — the
-// despawn check (SCENE_MARGIN = 3 in floatingIsland.ts) still removes the
-// entity once its centre crosses the boundary as it drifts downstream.
-const LATERAL_FRACTION = 1.0
-// Absolute cap so the FULL (800m) map doesn't put islands so far out they
-// stop being visible. 150m sits well beyond rendering fade for the demo's
-// 80m scene and still reads as "horizon" on the full map.
-const LATERAL_MAX_M = 150
-const MAP_EDGE_SPAWN_MARGIN = 5
-const MIN_UPSTREAM_GAP = 8
+// Perpendicular-to-flow offset from the raft footprint to the island
+// path. Sized so the island reads clearly from the deck — not jammed
+// against the raft, not parked at the parcel edge.
+const LATERAL_OFFSET_M = 15
+// Along-flow offset from the lateral approach point to the spawn
+// (upstream) and despawn (downstream) positions. Total visible drift
+// distance = 2 × FLOW_OFFSET_M.
+const FLOW_OFFSET_M = 15
+// Safety margin against the parcel boundary. If the computed spawn
+// would push the visual outside the scene, skip the tick instead of
+// dropping a half-clipped island — caller will retry on the next
+// interval.
+const PARCEL_MARGIN_M = 10
 const MAX_ISLANDS = 1
 
 let elapsed = SPAWN_INTERVAL_S
@@ -53,12 +50,13 @@ export function armIslandEvent(opts: { immediate: boolean }): void {
 
 export function islandSpawnerSystem(dt: number): void {
   if (isStartupGateActive()) return
-  // Cap simultaneous islands — applies to both the timer path and the
-  // forced-spawn path.
-  let count = 0
-  for (const _ of engine.getEntitiesWith(FloatingIsland)) {
-    count++
-    if (count >= MAX_ISLANDS) {
+  // The island is a pooled entity that always exists with the
+  // FloatingIsland component. We cap by counting *active* islands so the
+  // hidden pool slot doesn't read as already-spawned.
+  let activeCount = 0
+  for (const [entity] of engine.getEntitiesWith(FloatingIsland)) {
+    if (FloatingIsland.get(entity).active) activeCount++
+    if (activeCount >= MAX_ISLANDS) {
       forceSpawnArmed = false
       return
     }
@@ -79,84 +77,64 @@ export function islandSpawnerSystem(dt: number): void {
 
 function spawnIsland(): void {
   const extent = getPlatformExtent()
-  const anchorX = (extent.minX + extent.maxX) / 2
-  const anchorZ = (extent.minZ + extent.maxZ) / 2
   const flowX = SEA_FLOW_DIR_X
   const flowZ = SEA_FLOW_DIR_Z
   const perpX = flowZ
   const perpZ = -flowX
-  const flowHalf = aabbHalfExtentAlong(extent, flowX, flowZ)
   const perpHalf = aabbHalfExtentAlong(extent, perpX, perpZ)
+  const flowHalf = aabbHalfExtentAlong(extent, flowX, flowZ)
   const sceneSize = GRID_ORIGIN.x * 2
 
-  // Push the island as far from the raft along the perp axis as the map
-  // allows. Start at LATERAL_FRACTION of perpMax (capped by LATERAL_MAX_M
-  // and the no-radius MAP_EDGE_SPAWN_MARGIN perp clamp), then back off
-  // geometrically if the lateral position lands in a corner with no
-  // upstream/downstream flow room — corners trade perp distance for
-  // along-flow drift room. Returns null only if no perp distance down to
-  // LATERAL_FLOOR_M leaves enough flow room.
-  const tryPick = (side: number) => {
-    const perpMax = maxFlowDistance(anchorX, anchorZ, perpX * side, perpZ * side, sceneSize, MAP_EDGE_SPAWN_MARGIN)
-    const lateralFloor = perpHalf + LATERAL_FLOOR_M
-    if (lateralFloor > perpMax) return null
-    let lateralMag = Math.min(perpMax * LATERAL_FRACTION, LATERAL_MAX_M)
-    if (lateralMag < lateralFloor) lateralMag = lateralFloor
-    for (let attempt = 0; attempt < 10; attempt++) {
-      const lx = anchorX + perpX * side * lateralMag
-      const lz = anchorZ + perpZ * side * lateralMag
-      const upstreamMax = maxFlowDistance(lx, lz, -flowX, -flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
-      const downstreamMax = maxFlowDistance(lx, lz, flowX, flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
-      if (
-        upstreamMax >= flowHalf + MIN_UPSTREAM_GAP &&
-        downstreamMax >= MIN_UPSTREAM_GAP
-      ) {
-        return { lateralX: lx, lateralZ: lz, upstreamMax, downstreamMax }
-      }
-      lateralMag *= 0.85
-      if (lateralMag < lateralFloor) return null
-    }
-    return null
-  }
+  const lateralDist = perpHalf + LATERAL_OFFSET_M
+  const flowDist = flowHalf + FLOW_OFFSET_M
 
+  // Try both sides perpendicular to flow. Pick the first whose spawn
+  // position fits inside the parcel margins; fall through to the other
+  // if it doesn't.
   const firstSide = Math.random() < 0.5 ? -1 : 1
-  const pick = tryPick(firstSide) ?? tryPick(-firstSide)
-  if (!pick) return
-  const { lateralX, lateralZ, upstreamMax, downstreamMax } = pick
-
-  // Always spawn at the map edge so the island is never near the raft at birth
-  const spawnDistance = upstreamMax
-  const along = -spawnDistance
-
-  const position = Vector3.create(
-    lateralX + flowX * along,
-    WATER_LEVEL,
-    lateralZ + flowZ * along
-  )
+  const spawn = tryComputeSpawn(extent.cx, extent.cz, perpX, perpZ, flowX, flowZ, firstSide, lateralDist, flowDist, sceneSize)
+    ?? tryComputeSpawn(extent.cx, extent.cz, perpX, perpZ, flowX, flowZ, -firstSide, lateralDist, flowDist, sceneSize)
+  if (spawn === null) return
 
   const speed = DRIFT_SPEED + (Math.random() * 2 - 1) * DRIFT_SPEED_JITTER
   const velocity = Vector3.create(flowX * speed, 0, flowZ * speed)
-  const totalDistance = spawnDistance + downstreamMax
-  const maxLifetime = totalDistance / Math.max(speed, 0.1) + 5
+  // Drift from spawn through the lateral approach to the symmetric
+  // exit point, then despawn. Lifetime is the only despawn signal —
+  // simpler than juggling parcel bounds with the spawn-margin math.
+  const totalDistance = flowDist * 2
+  const maxLifetime = totalDistance / Math.max(speed, 0.1)
 
-  createFloatingIsland({ position, velocity, maxLifetime })
+  activateFloatingIsland({
+    position: Vector3.create(spawn.x, WATER_LEVEL, spawn.z),
+    velocity,
+    maxLifetime
+  })
 }
 
-function maxFlowDistance(
-  startX: number,
-  startZ: number,
-  dirX: number,
-  dirZ: number,
-  sceneSize: number,
-  margin: number
-): number {
-  const lo = margin
-  const hi = sceneSize - margin
-  let t = Infinity
-  const eps = 1e-6
-  if (dirX > eps) t = Math.min(t, (hi - startX) / dirX)
-  else if (dirX < -eps) t = Math.min(t, (lo - startX) / dirX)
-  if (dirZ > eps) t = Math.min(t, (hi - startZ) / dirZ)
-  else if (dirZ < -eps) t = Math.min(t, (lo - startZ) / dirZ)
-  return Math.max(0, t)
+function tryComputeSpawn(
+  cx: number,
+  cz: number,
+  perpX: number,
+  perpZ: number,
+  flowX: number,
+  flowZ: number,
+  side: number,
+  lateralDist: number,
+  flowDist: number,
+  sceneSize: number
+): { x: number; z: number } | null {
+  const lx = cx + perpX * side * lateralDist
+  const lz = cz + perpZ * side * lateralDist
+  const x = lx - flowX * flowDist
+  const z = lz - flowZ * flowDist
+  const lo = PARCEL_MARGIN_M
+  const hi = sceneSize - PARCEL_MARGIN_M
+  if (x < lo || x > hi || z < lo || z > hi) return null
+  // Also reject if the exit point (symmetric downstream) would clip —
+  // we don't want the island to vanish mid-flight by reaching a bound
+  // before its lifetime expires.
+  const exitX = lx + flowX * flowDist
+  const exitZ = lz + flowZ * flowDist
+  if (exitX < lo || exitX > hi || exitZ < lo || exitZ > hi) return null
+  return { x, z }
 }

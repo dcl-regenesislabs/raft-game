@@ -94,10 +94,10 @@ export function gameOverInputLockSystem(dt: number): void {
     mode: InputModifier.Mode.Standard({
       disableWalk: dead,
       disableJog: dead,
-      disableRun: dead,
+      // Run, double-jump and gliding are disabled scene-wide; keep
+      // them forced on so revive doesn't re-enable any of them.
+      disableRun: true,
       disableJump: dead,
-      // Double-jump and gliding are disabled scene-wide; keep them
-      // forced on so revive doesn't re-enable them.
       disableDoubleJump: true,
       disableGliding: true
     })

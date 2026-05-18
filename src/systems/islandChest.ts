@@ -32,24 +32,22 @@ function rollChestLoot(): void {
 }
 
 export function islandChestSystem(_dt: number): void {
-  // Remove chests whose parent island was destroyed
+  // Pool model: the chest entity is created once and reused. Activation
+  // state (open/closed, loot eligibility) is reset in
+  // activateFloatingIsland — we only need to handle click here, and gate
+  // by the parent island being active so a stray pointer event on the
+  // hidden chest can't roll loot.
   for (const [entity] of engine.getEntitiesWith(IslandChest, Transform)) {
     const chest = IslandChest.get(entity)
-    if (!FloatingIsland.getOrNull(chest.island)) {
-      engine.removeEntity(entity)
-      continue
-    }
-  }
+    const island = FloatingIsland.getOrNull(chest.island)
+    if (island === null || !island.active) continue
 
-  // Handle click interactions
-  for (const [entity] of engine.getEntitiesWith(IslandChest, Transform)) {
     const cmd = inputSystem.getInputCommand(
       InputAction.IA_POINTER,
       PointerEventType.PET_DOWN,
       entity
     )
     if (!cmd) continue
-    const chest = IslandChest.get(entity)
     if (chest.opened) continue
 
     IslandChest.getMutable(entity).opened = true

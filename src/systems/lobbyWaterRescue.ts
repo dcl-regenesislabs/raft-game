@@ -27,7 +27,7 @@ function setMovementLocked(locked: boolean): void {
     mode: InputModifier.Mode.Standard({
       disableWalk: locked,
       disableJog: locked,
-      disableRun: locked,
+      disableRun: true,
       disableJump: locked,
       // Scene-wide invariant — see `fallRescue.ts` for the long form.
       disableDoubleJump: true,

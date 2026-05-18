@@ -73,6 +73,18 @@ type KindConfig = {
   // Override GLB filename. Defaults to `<kind>.glb` when omitted. Used by
   // the `fish` kind to reuse plants.glb until a fish model exists.
   glbName?: string
+  // Local euler rotation (degrees) applied to the visual child. Compensates
+  // for GLBs authored with a different up-axis convention than DCL's Y-up.
+  visualRotationDeg?: { x?: number; y?: number; z?: number }
+}
+
+// Optional per-kind collider footprint override (world metres on each
+// axis). When unset the collider matches the visual size (config.scale
+// cubed). Barrel uses a raft-sized X/Z so the player can click/hover it
+// from anywhere within a full deck-cell, which is also forgiving for
+// the look-grab raycast classification.
+const COLLIDER_OVERRIDE_BY_KIND: Partial<Record<GarbageKind, { x: number; y: number; z: number }>> = {
+  barrel: { x: 3, y: 1.5, z: 3 }
 }
 
 const KIND_CONFIG: Record<GarbageKind, KindConfig> = {
@@ -80,12 +92,13 @@ const KIND_CONFIG: Record<GarbageKind, KindConfig> = {
   wood: { scale: 1.5, bobAmplitude: 0.10, rollAmplitude: 4, yOffset: -0.05, spinSpeedRange: 0.3 },
   // Buoyant — sits higher, rocks on waves, spins faster.
   barrel: { scale: 1.0, bobAmplitude: 0.15, rollAmplitude: 12, yOffset: 0.10, spinSpeedRange: 0.6 },
-  // Flat seaweed mat — barely moves.
-  plants: { scale: 1.0, bobAmplitude: 0.06, rollAmplitude: 2, yOffset: -0.05, spinSpeedRange: 0.2 },
+  // Flat seaweed mat — barely moves. GLB authored with Z-up; pitch -90°
+  // on the visual lays it flat on the water surface.
+  plants: { scale: 1.0, bobAmplitude: 0.06, rollAmplitude: 2, yOffset: -0.05, spinSpeedRange: 0.2, visualRotationDeg: { x: -90 } },
   // Tiny plastic bottle.
   plastic: { scale: 0.6, bobAmplitude: 0.10, rollAmplitude: 5, yOffset: -0.05, spinSpeedRange: 0.5 },
-  // Heavy scrap metal — large but settled.
-  metal: { scale: 1.5, bobAmplitude: 0.08, rollAmplitude: 3, yOffset: -0.05, spinSpeedRange: 0.3 }
+  // Heavy scrap metal — settled, mid-sized.
+  metal: { scale: 1.0, bobAmplitude: 0.08, rollAmplitude: 3, yOffset: -0.05, spinSpeedRange: 0.3 }
 }
 
 export interface FloatingGarbageParams {
@@ -104,19 +117,26 @@ export interface FloatingGarbageParams {
 export function createFloatingGarbage(params: FloatingGarbageParams): Entity {
   const { kind, position, velocity, maxLifetime } = params
   const config = KIND_CONFIG[kind]
+  const collider = COLLIDER_OVERRIDE_BY_KIND[kind] ?? {
+    x: config.scale,
+    y: config.scale,
+    z: config.scale
+  }
 
   const entity = engine.addEntity()
   const baseYawDeg = Math.random() * 360
   const spinSpeed = (Math.random() * 2 - 1) * config.spinSpeedRange
 
+  // Parent entity owns the collider + pointer events + drift logic.
+  // Transform.scale here sizes the MeshCollider box because
+  // MeshCollider.setBox uses a unit cube scaled by the entity's
+  // Transform. For barrels this is raft-sized (3 × 1.5 × 3); for all
+  // other kinds it matches the visual footprint, so behaviour matches
+  // the pre-split single-entity layout.
   Transform.create(entity, {
     position: Vector3.create(position.x, position.y + config.yOffset, position.z),
     rotation: Quaternion.fromEulerDegrees(0, baseYawDeg, 0),
-    scale: Vector3.create(config.scale, config.scale, config.scale)
-  })
-
-  GltfContainer.create(entity, {
-    src: `assets/scene/items/${config.glbName ?? kind}.glb`
+    scale: Vector3.create(collider.x, collider.y, collider.z)
   })
 
   // CL_POINTER-only box collider so the camera raycast (cookFill /
@@ -144,6 +164,29 @@ export function createFloatingGarbage(params: FloatingGarbageParams): Entity {
     ]
   })
 
+  // Visual child renders the GLB at the original per-kind size.
+  // Local scale cancels the parent's collider scale and re-applies
+  // config.scale — net world scale = parent × child = config.scale on
+  // every axis. Rotation inherits from the parent so the visual still
+  // yaws/wobbles in sync with the drift system's per-frame quaternion.
+  const visual = engine.addEntity()
+  Transform.create(visual, {
+    parent: entity,
+    rotation: Quaternion.fromEulerDegrees(
+      config.visualRotationDeg?.x ?? 0,
+      config.visualRotationDeg?.y ?? 0,
+      config.visualRotationDeg?.z ?? 0
+    ),
+    scale: Vector3.create(
+      config.scale / collider.x,
+      config.scale / collider.y,
+      config.scale / collider.z
+    )
+  })
+  GltfContainer.create(visual, {
+    src: `assets/scene/items/${config.glbName ?? kind}.glb`
+  })
+
   FloatingGarbage.create(entity, {
     kind,
     velocityX: velocity.x,
@@ -155,8 +198,22 @@ export function createFloatingGarbage(params: FloatingGarbageParams): Entity {
     spinSpeed,
     rollAmplitude: config.rollAmplitude,
     lifetime: 0,
-    maxLifetime
+    maxLifetime,
+    visual
   })
 
   return entity
+}
+
+// Removes the floating garbage parent AND its visual child. SDK7 does
+// NOT cascade child removal when a parent entity is removed, so calling
+// `engine.removeEntity(parent)` alone leaves the GLB child orphaned.
+// Every despawn / pickup / hook-collect path that destroys a floating
+// garbage entity MUST route through this helper.
+export function destroyFloatingGarbage(entity: Entity): void {
+  const data = FloatingGarbage.getOrNull(entity)
+  if (data !== null && data.visual !== engine.RootEntity) {
+    engine.removeEntity(data.visual)
+  }
+  engine.removeEntity(entity)
 }

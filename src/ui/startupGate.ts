@@ -124,7 +124,9 @@ export function startupGateInputLockSystem(dt: number): void {
       mode: InputModifier.Mode.Standard({
         disableWalk: exiting,
         disableJog: exiting,
-        disableRun: exiting,
+        // Run is disabled scene-wide — players are limited to walk
+        // and jog so they can't sprint off the raft.
+        disableRun: true,
         disableJump: exiting,
         disableDoubleJump: true,
         disableGliding: true
@@ -139,7 +141,7 @@ export function startupGateInputLockSystem(dt: number): void {
       mode: InputModifier.Mode.Standard({
         disableWalk: false,
         disableJog: false,
-        disableRun: false,
+        disableRun: true,
         disableJump: false,
         disableDoubleJump: true,
         disableGliding: true

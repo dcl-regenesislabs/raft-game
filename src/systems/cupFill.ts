@@ -68,14 +68,15 @@ export function cupFillSystem(_dt: number): void {
   // would only swallow legitimate re-lock clicks after a UI interaction.
 
   // Two fire paths:
-  //   - Entity-targeted IA_POINTER PET_DOWN on water — the player
-  //     clicked/tapped the water plane directly. Works on both desktop
-  //     and direct mobile taps.
+  //   - Entity-targeted IA_PRIMARY PET_DOWN on water — the player
+  //     pressed E while hovering the water plane (desktop) or tapped
+  //     it directly (mobile). Matches the construction E-press model
+  //     so left-click stays free for the held-tool primary action.
   //   - The mobile action button — only valid when the camera is
   //     currently aimed at water (so the button effectively means
   //     "fill the cup with what I'm pointing at").
   const tappedWater = inputSystem.isTriggered(
-    InputAction.IA_POINTER,
+    InputAction.IA_PRIMARY,
     PointerEventType.PET_DOWN,
     water
   )
@@ -155,7 +156,7 @@ function syncWaterPointer(entity: Entity, shouldHavePointer: boolean): void {
           {
             eventType: PointerEventType.PET_DOWN,
             eventInfo: {
-              button: InputAction.IA_POINTER,
+              button: InputAction.IA_PRIMARY,
               hoverText: HOVER_TEXT,
               maxDistance: HOVER_MAX_DISTANCE,
               showFeedback: true

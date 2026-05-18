@@ -31,15 +31,14 @@ function setMovementLocked(locked: boolean): void {
     mode: InputModifier.Mode.Standard({
       disableWalk: locked,
       disableJog: locked,
-      disableRun: locked,
+      // Run, double-jump and gliding are scene-wide invariants. Without
+      // pinning them here, releasing the rescue lock would write a fresh
+      // standard modifier with no flags and silently re-enable them —
+      // the bug previously seen on lobby → game transitions, where
+      // movePlayerTo's async settle leaves the player briefly below
+      // WATER_LEVEL just long enough for this system to fire and unlock.
+      disableRun: true,
       disableJump: locked,
-      // Scene-wide invariant: double-jump and gliding are always
-      // disabled. Without pinning them here, releasing the rescue
-      // lock would write a fresh standard modifier with no flags and
-      // silently re-enable both — the bug previously seen on
-      // lobby → game transitions, where movePlayerTo's async settle
-      // leaves the player briefly below WATER_LEVEL just long enough
-      // for this system to fire and then unlock.
       disableDoubleJump: true,
       disableGliding: true
     })

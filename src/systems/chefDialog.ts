@@ -15,8 +15,10 @@ import { ChefNpc } from '../components'
 // holds a single state — the idle loop — so animations never change at
 // runtime; this system only drives the dialog bubble parented above
 // the chef's head. The bubble opens on the welcome line (index 0) and
-// advances ONLY on click. After the final line, the next click hides
-// the bubble; the click after that wraps back to index 0.
+// advances ONLY on the E-press (desktop) / direct tap (mobile) bound
+// to the chef's clickbox via PointerEvents → IA_PRIMARY. After the
+// final line, the next press hides the bubble; the press after that
+// wraps back to index 0.
 //
 // The dialog script is per-instance (stored on `ChefNpc.dialogLines`),
 // so each chef carries its own conversation without the system having
@@ -128,7 +130,7 @@ function assertDialogShape(lines: ReadonlyArray<string>): void {
 export function chefDialogSystem(_dt: number): void {
   for (const [entity, chef] of engine.getEntitiesWith(ChefNpc)) {
     const clicked = inputSystem.isTriggered(
-      InputAction.IA_POINTER,
+      InputAction.IA_PRIMARY,
       PointerEventType.PET_DOWN,
       chef.clickEntity
     )

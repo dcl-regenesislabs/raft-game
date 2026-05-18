@@ -62,3 +62,7 @@ export function createIslandChest(rootEntity: Entity): Entity {
 export function playChestOpenAnimation(entity: Entity): void {
   Animator.playSingleAnimation(entity, 'open', false)
 }
+
+export function playChestCloseAnimation(entity: Entity): void {
+  Animator.playSingleAnimation(entity, 'close', false)
+}

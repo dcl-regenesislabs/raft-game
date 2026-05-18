@@ -249,7 +249,7 @@ function tickWaiting(): void {
     return
   }
   const clicked = inputSystem.isTriggered(
-    InputAction.IA_POINTER,
+    InputAction.IA_PRIMARY,
     PointerEventType.PET_DOWN,
     visitor.clickEntity
   )

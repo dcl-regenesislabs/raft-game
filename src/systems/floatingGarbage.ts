@@ -2,6 +2,7 @@ import { Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion } from '@dcl/sdk/math'
 
 import { FloatingGarbage, FloatingIsland, Platform } from '../components'
+import { destroyFloatingGarbage } from '../factories/floatingGarbage'
 import { GRID_ORIGIN, RAFT_SIZE } from '../factories/platform'
 import { RAD_TO_DEG } from '../utils/math'
 
@@ -14,15 +15,25 @@ const SCENE_MARGIN = 3
 // Metres below the item's spawn baseY to tuck it when its (x,z) rounds
 // into an occupied raft cell. Items have no collider against the deck
 // (CL_POINTER only) so without this push they visibly clip THROUGH the
-// raft. 0.6 m clears the platform collider's underside (water surface
-// at y=4, raft collider bottom at y=4.0) with a small margin.
-const SUBMERGE_DROP = 0.6
+// raft. Default 0.6 m clears the platform collider underside (water at
+// y=4, raft collider bottom at y=4.0) with a small margin. Per-kind
+// overrides below for tall/buoyant kinds whose mesh would still peek
+// through at the default depth.
+const SUBMERGE_DROP_DEFAULT = 0.6
+// Per-kind submerge override. Barrels sit higher at rest (yOffset +0.1)
+// AND their mesh is taller than the others — a default drop leaves the
+// top of the barrel poking up through the deck. 1.5 m sinks the whole
+// barrel below the collider.
+const SUBMERGE_DROP_BY_KIND: Record<string, number> = {
+  barrel: 1.5
+}
 // Per-second lerp rate toward the surface/under-raft target. Tuned so
 // the transition reads as the item dipping under the raft rather than
 // snapping. ~0.15 s effective half-life at 60 fps.
 const SUBMERGE_LERP_RATE = 6
 
-// True when at least one FloatingIsland exists. Cached per frame.
+// True when at least one *active* FloatingIsland is on screen. The pool
+// slot itself always exists, so presence alone isn't a reliable signal.
 let islandPresent = false
 
 export function hasActiveIsland(): boolean {
@@ -59,9 +70,11 @@ export function floatingGarbageSystem(dt: number): void {
   const sceneSize = GRID_ORIGIN.x * 2
 
   // Check once per frame whether any island is alive. Used by the spawner
-  // to suppress new debris while an island is on screen.
+  // to suppress new debris while an island is on screen. Skip the pooled
+  // entity when it's inactive.
   islandPresent = false
-  for (const _ of engine.getEntitiesWith(FloatingIsland)) {
+  for (const [entity] of engine.getEntitiesWith(FloatingIsland)) {
+    if (!FloatingIsland.get(entity).active) continue
     islandPresent = true
     break
   }
@@ -76,7 +89,7 @@ export function floatingGarbageSystem(dt: number): void {
     const garbage = FloatingGarbage.getMutable(entity)
     garbage.lifetime += dt
     if (garbage.lifetime >= garbage.maxLifetime) {
-      engine.removeEntity(entity)
+      destroyFloatingGarbage(entity)
       continue
     }
 
@@ -87,7 +100,8 @@ export function floatingGarbageSystem(dt: number): void {
     pos.x += garbage.velocityX * dt
     pos.z += garbage.velocityZ * dt
     const surfaceY = garbage.baseY + Math.sin(garbage.bobPhase) * garbage.bobAmplitude
-    const targetY = isOverRaft(pos.x, pos.z) ? garbage.baseY - SUBMERGE_DROP : surfaceY
+    const drop = SUBMERGE_DROP_BY_KIND[garbage.kind] ?? SUBMERGE_DROP_DEFAULT
+    const targetY = isOverRaft(pos.x, pos.z) ? garbage.baseY - drop : surfaceY
     pos.y = pos.y + (targetY - pos.y) * submergeBlend
 
     // Despawn the moment the item leaves the parcel footprint
@@ -97,7 +111,7 @@ export function floatingGarbageSystem(dt: number): void {
       pos.z < SCENE_MARGIN ||
       pos.z > sceneSize - SCENE_MARGIN
     ) {
-      engine.removeEntity(entity)
+      destroyFloatingGarbage(entity)
       continue
     }
 

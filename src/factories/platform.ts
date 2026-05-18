@@ -13,7 +13,8 @@ import {
   ActiveCook,
   MainPlatform,
   Platform,
-  PlatformConstruction
+  PlatformConstruction,
+  PurifierState
 } from '../components'
 import { DEMO_PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from './sceneLevels'
 
@@ -146,6 +147,23 @@ export function destroyPlatformEntity(entity: Entity): void {
     // older save data / in-flight scenes may. Cheap to keep guarded.
     if (construction.aux !== engine.RootEntity) {
       engine.removeEntity(construction.aux)
+    }
+  }
+  // Purifier water-fill cylinders are top-level entities parented to the
+  // construction child — they share its lifetime but SDK7 does not
+  // cascade entity removal to Transform children, so explicit cleanup
+  // is required. Same for the optional flame sprite — top-level
+  // entity, set to RootEntity while unlit.
+  const purifier = PurifierState.getOrNull(entity)
+  if (purifier !== null) {
+    if (purifier.saltCylinder !== engine.RootEntity) {
+      engine.removeEntity(purifier.saltCylinder)
+    }
+    if (purifier.freshCylinder !== engine.RootEntity) {
+      engine.removeEntity(purifier.freshCylinder)
+    }
+    if (purifier.flameSprite !== engine.RootEntity) {
+      engine.removeEntity(purifier.flameSprite)
     }
   }
   // Clean up any in-flight cook session — the flame and food sprites

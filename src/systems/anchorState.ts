@@ -135,9 +135,12 @@ function smoothstep(t: number): number {
 export function anchorInterpolationSystem(dt: number): void {
   if (phase === 'idle' || phase === 'anchored') return
 
-  // Guard: if the anchored island was removed mid-pull, abort
+  // Guard: if the anchored island was deactivated mid-pull (lifetime
+  // expired, scene rebuilt, …), abort. With pooling the entity always
+  // exists, so we check the `active` flag instead of the Transform.
   if (phase === 'pulling' && anchoredIsland !== null) {
-    if (Transform.getOrNull(anchoredIsland) === null) {
+    const island = FloatingIsland.getOrNull(anchoredIsland)
+    if (island === null || !island.active) {
       resetAnchorState()
       return
     }
@@ -172,6 +175,7 @@ function applyDeltaToAll(dx: number, dz: number): void {
   if (dx === 0 && dz === 0) return
 
   for (const [entity] of engine.getEntitiesWith(FloatingIsland, Transform)) {
+    if (!FloatingIsland.get(entity).active) continue
     const pos = Transform.getMutable(entity).position
     pos.x += dx
     pos.z += dz
@@ -187,6 +191,7 @@ function applyDeltaToAll(dx: number, dz: number): void {
 function freezeIslandVelocities(): void {
   for (const [entity] of engine.getEntitiesWith(FloatingIsland)) {
     const island = FloatingIsland.getMutable(entity)
+    if (!island.active) continue
     island.velocityX = 0
     island.velocityZ = 0
   }
@@ -195,6 +200,7 @@ function freezeIslandVelocities(): void {
 function restoreIslandVelocities(): void {
   for (const [entity] of engine.getEntitiesWith(FloatingIsland)) {
     const island = FloatingIsland.getMutable(entity)
+    if (!island.active) continue
     island.velocityX = island.baseVelocityX
     island.velocityZ = island.baseVelocityZ
   }

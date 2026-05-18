@@ -27,7 +27,6 @@ import { isCrafting } from './craftSession'
 import { isCraftOpen } from './craftToggle'
 import { isGameOver } from './gameOver'
 import { isInventoryOpen } from './inventoryToggle'
-import { isPurifying } from './purifySession'
 import { isStartupGateActive } from './startupGate'
 import { isStorageOpen } from './storageToggle'
 import { isSystemMenuOpen } from './systemSession'
@@ -96,11 +95,12 @@ function ui(): ReactEcs.JSX.Element {
       </UiEntity>
     )
   }
-  // While a craft or purify is running every interactive HUD element
-  // hides — the player can't act, only watch the progress bar fill.
-  // The bar reuses the hook charge meter style for visual consistency.
-  // Cooking is asynchronous (place-and-wait) and doesn't lock the HUD.
-  if (isCrafting() || isPurifying()) {
+  // While a craft is running every interactive HUD element hides — the
+  // player can't act, only watch the progress bar fill. The bar reuses
+  // the hook charge meter style for visual consistency. Cooking and
+  // water purification are asynchronous (place-and-wait) and don't
+  // lock the HUD.
+  if (isCrafting()) {
     return (
       <SafeArea>
         <UiEntity

@@ -391,6 +391,9 @@ function alignAnchorToRope(anchorPos: Vector3, ropeStart: Vector3): void {
 
 function findIslandNearPoint(x: number, z: number): Entity | null {
   for (const [entity] of engine.getEntitiesWith(FloatingIsland, Transform)) {
+    // Pool slot: hidden islands still have Transform, so filter them out
+    // before the hook can latch onto invisible geometry.
+    if (!FloatingIsland.get(entity).active) continue
     const pos = Transform.get(entity).position
     const dx = x - pos.x
     const dz = z - pos.z

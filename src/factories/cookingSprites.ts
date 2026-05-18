@@ -82,17 +82,32 @@ export function getFoodRestY(platform: Entity): number {
 // Billboarded animated flame plane. Driven by `grillFireSystem` which
 // re-emits the UV window each frame so the cell advances through the
 // spritesheet.
-export function createFlameSprite(platform: Entity, yawDeg: number): Entity {
+//
+// `extra` lets callers nudge the flame in the platform's local frame
+// (right is +X at yaw=0, forward is +Z at yaw=0, up is +Y). Used by the
+// purifier to lift the flame above its firebox and shift it off-centre;
+// the grill leaves it undefined and gets the cooking-surface defaults.
+export function createFlameSprite(
+  platform: Entity,
+  yawDeg: number,
+  extra?: { right?: number; forward?: number; up?: number }
+): Entity {
   const platformPos = Transform.get(platform).position
   const yawRad = (yawDeg * Math.PI) / 180
-  const forwardX = Math.sin(yawRad) * GRILL_FIRE_FORWARD_OFFSET
-  const forwardZ = Math.cos(yawRad) * GRILL_FIRE_FORWARD_OFFSET
+  const sinY = Math.sin(yawRad)
+  const cosY = Math.cos(yawRad)
+  const forwardDist = GRILL_FIRE_FORWARD_OFFSET + (extra?.forward ?? 0)
+  const rightDist = extra?.right ?? 0
+  // Yaw a (right, forward) local offset into world (x, z). At yaw=0:
+  // forward → +Z, right → +X. Negative `right` is "to the left".
+  const offsetX = sinY * forwardDist + cosY * rightDist
+  const offsetZ = cosY * forwardDist - sinY * rightDist
   const sprite = engine.addEntity()
   Transform.create(sprite, {
     position: Vector3.create(
-      platformPos.x + forwardX,
-      platformPos.y + GRILL_FIRE_WORLD_Y_OFFSET,
-      platformPos.z + forwardZ
+      platformPos.x + offsetX,
+      platformPos.y + GRILL_FIRE_WORLD_Y_OFFSET + (extra?.up ?? 0),
+      platformPos.z + offsetZ
     ),
     scale: Vector3.create(GRILL_FIRE_WORLD_W, GRILL_FIRE_WORLD_H, GRILL_FIRE_WORLD_W)
   })

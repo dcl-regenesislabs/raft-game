@@ -31,6 +31,7 @@ import { floatingGarbageSystem } from './systems/floatingGarbage'
 import { foodEatSystem } from './systems/foodEat'
 import { anchorThrowerSystem } from './systems/anchorThrower'
 import { anchorInterpolationSystem } from './systems/anchorState'
+import { createFloatingIslandPool } from './factories/floatingIsland'
 import { floatingIslandSystem } from './systems/floatingIsland'
 import { islandChestSystem } from './systems/islandChest'
 import { islandSpawnerSystem } from './systems/islandSpawner'
@@ -73,7 +74,8 @@ import { startupGateInputLockSystem } from './ui/startupGate'
 import { storageToggleResetSystem } from './ui/storageToggle'
 import { systemToggleTickSystem } from './ui/systemToggle'
 import { pressPulseTickSystem } from './ui/pressPulse'
-import { purifySessionTickSystem } from './ui/purifySession'
+import { purifierFillSystem } from './systems/purifierFill'
+import { purifierProcessSystem } from './systems/purifierProcess'
 import { worldClickGateResetSystem } from './ui/worldClickGate'
 
 export async function main(): Promise<void> {
@@ -138,6 +140,12 @@ export async function main(): Promise<void> {
   engine.addSystem(boatChefDirectorSystem)
   engine.addSystem(chefDialogSystem)
   engine.addSystem(chefAnimDebugSystem)
+  // One-shot pool init: builds the (hidden) floating-island hierarchy so
+  // the spawner/lifetime systems can flip visibility instead of creating
+  // and destroying entities every cycle. Must happen before the systems
+  // below run their first tick, but order vs. the lobby/game build is
+  // irrelevant because the entity starts inactive.
+  createFloatingIslandPool()
   engine.addSystem(islandSpawnerSystem)
   engine.addSystem(floatingIslandSystem)
   engine.addSystem(islandChestSystem)
@@ -161,7 +169,8 @@ export async function main(): Promise<void> {
   engine.addSystem(fishingRodSystem)
   engine.addSystem(inventoryInputSystem)
   engine.addSystem(craftSessionTickSystem)
-  engine.addSystem(purifySessionTickSystem)
+  engine.addSystem(purifierProcessSystem)
+  engine.addSystem(purifierFillSystem)
   engine.addSystem(inventoryToggleResetSystem)
   engine.addSystem(craftToggleResetSystem)
   engine.addSystem(storageToggleResetSystem)

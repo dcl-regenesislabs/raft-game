@@ -76,6 +76,12 @@ let ropeEntity: Entity | null = null
 // of components so we don't need an extra ECS query each frame.
 type GrabbedItem = {
   entity: Entity
+  // Visual GLB child of `entity`. Captured at collection time because we
+  // `FloatingGarbage.deleteFrom(entity)` immediately after — once that
+  // component is gone we can't recover the child reference for cleanup.
+  // engine.RootEntity (id 0) when the legacy single-entity layout is
+  // detected (defensive — shouldn't happen with current factory).
+  visual: Entity
   kind: string
   offsetX: number
   offsetY: number
@@ -353,6 +359,12 @@ function despawnHook(): void {
   // is removed so we don't leave orphaned children behind for one frame.
   for (const item of grabbedItems) {
     bankGarbageKind(item.kind)
+    // Remove the visual child first (parent-removal does NOT cascade in
+    // SDK7 — see `destroyFloatingGarbage`). engine.RootEntity (id 0)
+    // means the entity never had a visual child (defensive).
+    if (item.visual !== engine.RootEntity) {
+      engine.removeEntity(item.visual)
+    }
     engine.removeEntity(item.entity)
   }
   grabbedItems = []
@@ -420,7 +432,9 @@ function collectGarbageNearHook(hookX: number, hookZ: number): void {
     const ex = pos.x - hookX
     const ez = pos.z - hookZ
     if (ex * ex + ez * ez > radiusSq) continue
-    const kind = FloatingGarbage.get(entity).kind
+    const data = FloatingGarbage.get(entity)
+    const kind = data.kind
+    const visual = data.visual
     // Detach from the drift system — the item is no longer floating; it's
     // hooked. Without this the float system would keep advancing its world
     // position and fight the per-frame follow we apply below.
@@ -436,6 +450,7 @@ function collectGarbageNearHook(hookX: number, hookZ: number): void {
     const offset = computeGrabOffset(grabbedItems.length)
     grabbedItems.push({
       entity,
+      visual,
       kind,
       offsetX: offset.x,
       offsetY: offset.y,
