@@ -3,19 +3,21 @@ import { Vector3 } from '@dcl/sdk/math'
 
 import { FloatingIsland } from '../components'
 import { isAnchored } from './anchorState'
-import { isBoatChefActive } from './boatChefDirector'
 import { activateFloatingIsland } from '../factories/floatingIsland'
 import { GRID_ORIGIN } from '../factories/platform'
 import { aabbHalfExtentAlong, getPlatformExtent } from '../factories/platformExtent'
-import { isStartupGateActive } from '../ui/startupGate'
 import {
   SEA_FLOW_DIR_X,
   SEA_FLOW_DIR_Z,
   WATER_LEVEL
 } from '../factories/sceneLevels'
 
+// Floating-island spawn service. Scheduling lives in `eventScheduler.ts`
+// — this file only exposes a "try to spawn one right now" entry point
+// plus the parcel-fitting geometry the spawn relies on. Callers retry
+// every frame until the trigger reports success.
+
 // --- tunables ---
-const SPAWN_INTERVAL_S = 15
 // Much slower than debris so the player has time to jump on
 const DRIFT_SPEED = 1.2
 const DRIFT_SPEED_JITTER = 0.3
@@ -34,48 +36,26 @@ const FLOW_OFFSET_M = 15
 const PARCEL_MARGIN_M = 10
 const MAX_ISLANDS = 1
 
-let elapsed = SPAWN_INTERVAL_S
-// Set by armIslandEvent({ immediate: true }) — fires one spawn on the next
-// tick that has a built game world, bypassing the boat-chef and anchor
-// gates. The startup gate still applies (no islands while the lobby UI is
-// up). Mirrors armBoatChefEvent's immediate-fire path.
-let forceSpawnArmed = false
-
-// Called from `buildGameWorld`. `immediate: true` (DEBUG / SKIP_LOBBY) drops
-// an island into the scene on the next tick so the encounter is testable
-// from any session start; otherwise the regular spawn timer runs.
-export function armIslandEvent(opts: { immediate: boolean }): void {
-  if (opts.immediate) forceSpawnArmed = true
-}
-
-export function islandSpawnerSystem(dt: number): void {
-  if (isStartupGateActive()) return
-  // The island is a pooled entity that always exists with the
-  // FloatingIsland component. We cap by counting *active* islands so the
-  // hidden pool slot doesn't read as already-spawned.
-  let activeCount = 0
+// Called from `eventScheduler.ts` when an island spawn is due. Returns
+// true when an island was activated this call (so the scheduler can
+// advance its clock); false when the cap is already hit, the player
+// has anchored, or no parcel-safe spawn point could be found. The
+// scheduler retries every frame until this reports success.
+export function triggerIslandSpawn(): boolean {
+  if (isAnchored()) return false
   for (const [entity] of engine.getEntitiesWith(FloatingIsland)) {
-    if (FloatingIsland.get(entity).active) activeCount++
-    if (activeCount >= MAX_ISLANDS) {
-      forceSpawnArmed = false
-      return
+    if (FloatingIsland.get(entity).active) {
+      // Already a live island on screen — cap is 1.
+      return false
     }
+    // We never inspect more than the single pooled entity; the cap
+    // matches the pool size.
+    break
   }
-  if (forceSpawnArmed) {
-    forceSpawnArmed = false
-    elapsed = 0
-    spawnIsland()
-    return
-  }
-  if (isAnchored()) return
-  if (isBoatChefActive()) return
-  elapsed += dt
-  if (elapsed < SPAWN_INTERVAL_S) return
-  elapsed = 0
-  spawnIsland()
+  return spawnIsland()
 }
 
-function spawnIsland(): void {
+function spawnIsland(): boolean {
   const extent = getPlatformExtent()
   const flowX = SEA_FLOW_DIR_X
   const flowZ = SEA_FLOW_DIR_Z
@@ -94,7 +74,7 @@ function spawnIsland(): void {
   const firstSide = Math.random() < 0.5 ? -1 : 1
   const spawn = tryComputeSpawn(extent.cx, extent.cz, perpX, perpZ, flowX, flowZ, firstSide, lateralDist, flowDist, sceneSize)
     ?? tryComputeSpawn(extent.cx, extent.cz, perpX, perpZ, flowX, flowZ, -firstSide, lateralDist, flowDist, sceneSize)
-  if (spawn === null) return
+  if (spawn === null) return false
 
   const speed = DRIFT_SPEED + (Math.random() * 2 - 1) * DRIFT_SPEED_JITTER
   const velocity = Vector3.create(flowX * speed, 0, flowZ * speed)
@@ -109,6 +89,7 @@ function spawnIsland(): void {
     velocity,
     maxLifetime
   })
+  return true
 }
 
 function tryComputeSpawn(

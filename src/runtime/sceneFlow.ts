@@ -46,7 +46,10 @@ import {
   armBoatChefEvent,
   resetBoatChefEventState
 } from '../systems/boatChefDirector'
-import { armIslandEvent } from '../systems/islandSpawner'
+import {
+  forceImmediateIslandSpawn,
+  resetEventScheduler
+} from '../systems/eventScheduler'
 import {
   resetConstructionPlacementState
 } from '../systems/constructionPlacement'
@@ -142,17 +145,16 @@ function buildGameWorld(parcelGrid: number, opts: { debug: boolean }): void {
   // not in the keep-set are removed, taking the modifier area with them.
   createAvatarHideArea(parcelGrid)
   spawnSharks()
-  // Recurring boat-chef visitor event. DEBUG fires it immediately so
-  // the encounter is testable from any session start; non-debug paths
-  // (NEW / LOAD via the lobby portal) start the 10 min visit timer
-  // and the boat sails in on its own. The director is also responsible
-  // for re-arming after each visit.
-  armBoatChefEvent({ immediate: opts.debug })
-  // Floating-island spawner. Same dev pattern as the boat chef: DEBUG
-  // drops one in on the next tick so it's testable without waiting for
-  // the SPAWN_INTERVAL timer. Non-debug paths leave the regular timer to
-  // produce the first island.
-  armIslandEvent({ immediate: opts.debug })
+  // DEBUG fires both encounters immediately so the boat-chef and the
+  // first island spawn are testable without waiting out the regular
+  // cadence. Non-debug paths (NEW / LOAD via the lobby portal) leave
+  // the event scheduler to handle timing: chef is event-driven
+  // (tier-4 craft or first hunger ≤ 20 %), islands appear on the
+  // EVENT_ISLAND_FIRST_S / EVENT_ISLAND_INTERVAL_S cadence.
+  if (opts.debug) {
+    armBoatChefEvent()
+    forceImmediateIslandSpawn()
+  }
 }
 
 function spawnSharks(): void {
@@ -232,6 +234,7 @@ export function returnToLobby(): void {
   resetRaftBuilderState()
   resetConstructionPlacementState()
   resetBoatChefEventState()
+  resetEventScheduler()
 
   gameWorldBuilt = false
   reopenStartupGate()

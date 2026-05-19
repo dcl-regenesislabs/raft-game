@@ -8,6 +8,12 @@ import {
 import { isGameOver, triggerGameOver } from '../ui/gameOver'
 import { isStartupGateActive } from '../ui/startupGate'
 import { adjustStat, getStat } from '../ui/statsBars'
+import { notifyHungerCrossedLow } from './eventScheduler'
+
+// Chef visit is triggered the FIRST time hunger crosses this threshold
+// downward in a run. The scheduler enforces the one-shot rule — this
+// hook fires it on every crossing.
+const LOW_HUNGER_THRESHOLD = 0.2
 
 // Designer-facing rates in gameConfig are percentage-points-per-second; the
 // stat store is 0..1, so scale once here.
@@ -25,7 +31,14 @@ export function survivalDrainSystem(dt: number): void {
   // so survival timers shouldn't tick while they're picking a portal.
   if (isStartupGateActive()) return
 
+  const hungerBefore = getStat('hunger')
   adjustStat('hunger', -HUNGER_DRAIN_PCT_PER_S * PCT * dt)
+  if (
+    hungerBefore > LOW_HUNGER_THRESHOLD &&
+    getStat('hunger') <= LOW_HUNGER_THRESHOLD
+  ) {
+    notifyHungerCrossedLow()
+  }
   adjustStat('thirst', -THIRST_DRAIN_PCT_PER_S * PCT * dt)
 
   const hungerEmpty = getStat('hunger') <= 0

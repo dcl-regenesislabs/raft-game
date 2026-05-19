@@ -29,6 +29,7 @@ import { WATER_LEVEL } from '../factories/sceneLevels'
 import { NEIGHBOUR_DELTAS } from './raft/shared'
 import { setSharkAttacksSuppressed } from './sharkDirector'
 import { getCollectedCount } from '../ui/inventoryState'
+import { getTier4RecipeIds } from '../ui/cookableItems'
 import {
   BOAT_CHEF_NO_TIER4_DIALOG_LINES,
   BOAT_CHEF_TIER4_DIALOG_LINES
@@ -36,9 +37,11 @@ import {
 
 // Boat-chef visitor event director. One singleton state machine
 // (module-level — same pattern as `sharkDirector.ts`) that owns the
-// recurring scripted encounter:
+// scripted encounter once it's been triggered:
 //
-//   ARMED       — counting down to the next visit (immediate in DEBUG).
+//   ARMED       — dormant. Waiting for the event scheduler to call
+//                 `armBoatChefEvent()`. Disarmed by default; the
+//                 director no longer auto-rearms after a visit.
 //   ARRIVING    — boat sailing from the spawn point to the dock point;
 //                 chef stands and waves.
 //   DOCKING     — boat reached the dock; a 1.5 s settle window between
@@ -58,18 +61,20 @@ import {
 //                 moment reads as a self-contained beat — no rotation
 //                 or translation happens until LEAVING begins.
 //   LEAVING     — boat sails outward past the despawn radius, then we
-//                 destroy every entity and re-arm.
+//                 destroy every entity and drop back into ARMED with
+//                 the countdown disarmed. The scheduler's falling-edge
+//                 detector starts the 5-minute cooldown from here.
 //
-// The system MUST be registered before `chefDialogSystem` in
-// `src/index.ts`. On the WAITING → INTERACTING transition, both systems
-// observe the same click frame; the director must run first so it can
-// swap `ChefNpc.dialogLines` + reset `dialogLineIndex = -1` before
-// `chefDialogSystem`'s `(idx + 1) % stateCount` lands on 0 to show the
-// new script's first line.
+// Scheduling lives in `eventScheduler.ts` — this director is purely
+// fire-on-demand. The system MUST be registered before `chefDialogSystem`
+// in `src/index.ts`. On the WAITING → INTERACTING transition, both
+// systems observe the same click frame; the director must run first so
+// it can swap `ChefNpc.dialogLines` + reset `dialogLineIndex = -1`
+// before `chefDialogSystem`'s `(idx + 1) % stateCount` lands on 0 to
+// show the new script's first line.
 
 // --- constants ---
 
-const VISIT_INTERVAL_S = 600 // 10 minutes between visits
 const TRAVEL_SPEED = 2 // m/s — gentle rowing pace
 // Metres beyond the centroid-to-farthest-platform-centre radius.
 // 3 m sits the bow just off the deck edge for a 1-platform raft
@@ -121,12 +126,13 @@ let geometry: DockGeometry | null = null
 
 // --- public API ---
 
-// Called once per game-world build. `immediate: true` (DEBUG / SKIP_LOBBY)
-// fires the event on the next tick; otherwise it waits the full visit
-// interval before sailing the boat in.
-export function armBoatChefEvent(opts: { immediate: boolean }): void {
+// Fires the visit on the next tick. Called from `eventScheduler.ts`
+// (player crafted a tier-4 plate, or first hunger ≤ 20 %) and from
+// DEBUG / SKIP_LOBBY paths in `sceneFlow.ts` that want to skip straight
+// into the encounter. No-op while a visit is already in progress.
+export function armBoatChefEvent(): void {
   if (phase !== 'ARMED' || visitor !== null) return
-  rearmCountdown = opts.immediate ? 0 : VISIT_INTERVAL_S
+  rearmCountdown = 0
 }
 
 // True while the chef boat is anywhere in the scene (arriving, docked,
@@ -300,7 +306,10 @@ function tickLeaving(dt: number): void {
   const reached = moveBoatToward(visitor.boat, geometry.despawn, dt)
   if (reached) {
     despawnVisitor()
-    rearmCountdown = VISIT_INTERVAL_S
+    // Stay disarmed — the scheduler owns rearming via
+    // `armBoatChefEvent()` and starts the 5-minute cooldown from the
+    // falling edge it observes this frame.
+    rearmCountdown = -1
   }
 }
 
@@ -308,9 +317,9 @@ function tickLeaving(dt: number): void {
 
 function enterInteracting(): void {
   if (visitor === null) return
-  const hasTier4 =
-    getCollectedCount('spaghetti_alle_vongole') > 0 ||
-    getCollectedCount('fettuccine_sea_hunter') > 0
+  const hasTier4 = getTier4RecipeIds().some(
+    (id) => getCollectedCount(id) > 0
+  )
   const script = hasTier4
     ? BOAT_CHEF_TIER4_DIALOG_LINES
     : BOAT_CHEF_NO_TIER4_DIALOG_LINES
@@ -342,10 +351,10 @@ function enterLeaving(): void {
 
 function abort(): void {
   // Defensive fallback if any phase tick lost its visitor/geometry
-  // reference — wipe state and re-arm so the next interval restarts
-  // the event cleanly instead of stranding the machine.
+  // reference — wipe state and stay disarmed. The scheduler will
+  // re-arm on its own next trigger.
   despawnVisitor()
-  rearmCountdown = VISIT_INTERVAL_S
+  rearmCountdown = -1
 }
 
 function despawnVisitor(): void {

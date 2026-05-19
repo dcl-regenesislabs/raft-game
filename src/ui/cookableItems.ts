@@ -340,6 +340,30 @@ export function getCookableById(id: string): CookableItem | null {
   return COOKABLE_ITEMS.find((c) => c.id === id) ?? null
 }
 
+// Tier predicates — `cookSec` is the source of truth for tier (SEC_4 is
+// the 4-ingredient hero plates, SEC_3 is the 3-ingredient tier the chef
+// gifts on the low-hunger trigger). Anything missing `cookSec` falls
+// through to the cook session default and is not considered tiered for
+// scheduling purposes.
+export function isTier4Recipe(id: string): boolean {
+  const item = COOKABLE_ITEMS.find((c) => c.id === id)
+  return item?.cookSec === SEC_4
+}
+
+export function getTier3RecipeIds(): readonly string[] {
+  return COOKABLE_ITEMS.filter((c) => c.cookSec === SEC_3).map((c) => c.id)
+}
+
+export function getTier4RecipeIds(): readonly string[] {
+  return COOKABLE_ITEMS.filter((c) => c.cookSec === SEC_4).map((c) => c.id)
+}
+
+export function pickRandomTier3PlateId(): string | null {
+  const ids = getTier3RecipeIds()
+  if (ids.length === 0) return null
+  return ids[Math.floor(Math.random() * ids.length)]
+}
+
 // Recipe matcher for the drop-and-cook menu. Cells are SYMBOLIC: each
 // holds one ingredient type, never two of the same. `inputs` is the
 // list of placed cell contents (nulls allowed but ignored). A recipe

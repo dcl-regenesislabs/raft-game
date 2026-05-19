@@ -29,6 +29,25 @@ export const DEBUG_MODE = true
 const SKIP_LOBBY_RAW = true
 export const SKIP_LOBBY: boolean = !IS_PRODUCTION && SKIP_LOBBY_RAW
 
+// --- Event scheduler -------------------------------------------------------
+// Centralised cadence for the recurring scripted events. The scheduler
+// in `src/systems/eventScheduler.ts` decides at most one action per
+// frame and owns these timers; individual directors (shark, island,
+// boat-chef) are fire-on-demand services.
+
+// First shark attack lands at t=7:30; subsequent attacks every 5 min.
+export const EVENT_SHARK_FIRST_S = 7.5 * 60
+export const EVENT_SHARK_INTERVAL_S = 5 * 60
+
+// First floating-island spawn at t=10:00; subsequent spawns every 10 min.
+export const EVENT_ISLAND_FIRST_S = 10 * 60
+export const EVENT_ISLAND_INTERVAL_S = 10 * 60
+
+// Chef boat visits are event-driven (tier-4 craft or first-time
+// hunger ≤ 20%). Once the boat sails away, this much wall time must
+// pass before a queued/new trigger can fire another visit.
+export const EVENT_CHEF_COOLDOWN_S = 5 * 60
+
 // --- Shark director --------------------------------------------------------
 // Initial patrol population. The director scales up/down each frame from
 // the patrol-ring circumference; this is just the t=0 value.
@@ -36,9 +55,6 @@ export const SHARK_INITIAL_COUNT = 3
 // Initial patrol radius (m). Director recomputes from raft extent each frame.
 export const SHARK_INITIAL_RADIUS = 12
 
-// One scheduled attack per this interval (s). The clock only ticks while
-// at least one destructible (non-Main) platform exists.
-export const SHARK_ATTACK_INTERVAL_S = 5 * 60
 export const SHARK_APPROACH_DURATION_S = 2.0
 export const SHARK_BITE_DURATION_S = 60
 export const SHARK_RETURN_DURATION_S = 3.0

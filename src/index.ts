@@ -34,7 +34,7 @@ import { anchorInterpolationSystem } from './systems/anchorState'
 import { createFloatingIslandPool } from './factories/floatingIsland'
 import { floatingIslandSystem } from './systems/floatingIsland'
 import { islandChestSystem } from './systems/islandChest'
-import { islandSpawnerSystem } from './systems/islandSpawner'
+import { eventSchedulerSystem } from './systems/eventScheduler'
 import { garbageGrabSystem } from './systems/garbageGrab'
 import { garbageSpawnerSystem } from './systems/garbageSpawner'
 import { grillCookSystem } from './systems/grillCook'
@@ -146,7 +146,12 @@ export async function main(): Promise<void> {
   // below run their first tick, but order vs. the lobby/game build is
   // irrelevant because the entity starts inactive.
   createFloatingIslandPool()
-  engine.addSystem(islandSpawnerSystem)
+  // One scheduler decides which scripted event fires this frame —
+  // sharks (fixed cadence), islands (fixed cadence), or chef (event
+  // driven). Registered after the directors so the falling-edge
+  // detector observes this-frame chef state and so the `armX`/`triggerX`
+  // calls land before the directors re-run next frame.
+  engine.addSystem(eventSchedulerSystem)
   engine.addSystem(floatingIslandSystem)
   engine.addSystem(islandChestSystem)
   engine.addSystem(anchorInterpolationSystem)

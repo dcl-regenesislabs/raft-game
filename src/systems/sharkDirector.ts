@@ -11,7 +11,6 @@ import {
 } from '../components'
 import {
   SHARK_APPROACH_DURATION_S,
-  SHARK_ATTACK_INTERVAL_S,
   SHARK_BITE_DURATION_S,
   SHARK_BITE_PITCH_DEG,
   SHARK_BITE_SHAKE_AMP_DEG,
@@ -54,12 +53,14 @@ import { resetSharkHits } from './sharkAttack'
 //      fields each frame, so the patrol re-centers automatically.
 //   2. Cancel any in-flight attack whose target was destroyed externally
 //      (e.g. player used the destroy tool mid-bite).
-//   3. Schedule a new attack at most every SHARK_ATTACK_INTERVAL_S, only when no
-//      shark is currently attacking and at least one destructible platform
-//      is still standing.
-//   4. Drive the attacker's transform through the approach → bite → return
+//   3. Drive the attacker's transform through the approach → bite → return
 //      cycle. The orbit system early-returns on attackers so we have full
 //      control of their position and yaw during the cycle.
+//
+// Scheduling lives in `eventScheduler.ts` — it calls `triggerSharkAttack()`
+// on this director when a bite is due. `attacksSuppressed` is the only
+// gate this file still owns; the boat-chef director sets it while a
+// visit is in progress so a queued bite doesn't undercut the encounter.
 
 // 4-connected grid neighbours, used to score how "exposed" a destructible
 // platform is. Tips of the raft (1 neighbour) get attacked first.
@@ -87,20 +88,32 @@ type AttackCache = {
 }
 const attackCache = new Map<Entity, AttackCache>()
 
-// Time since the last attack started (or since system load).
-let timeSinceLastAttack = 0
-
 // External freeze on starting NEW attacks. Set by the boat-chef director
 // while the visitor event is in progress so the cinematic moment isn't
-// undercut by a bite. We deliberately do NOT zero `timeSinceLastAttack`
-// while suppressed — the schedule clock keeps accumulating so an attack
-// can fire as soon as suppression lifts (mirrors the user-facing intent
-// "don't reset the timer, just ignore"). Mid-attack sharks are not
-// interrupted; only the trigger that begins new bites checks this flag.
+// undercut by a bite. The scheduler's own clock keeps ticking
+// underneath, so a queued bite can fire the instant suppression lifts
+// (the scheduler retries `triggerSharkAttack` every frame until it
+// succeeds). Mid-attack sharks are not interrupted; only the trigger
+// that begins new bites checks this flag.
 let attacksSuppressed = false
 
 export function setSharkAttacksSuppressed(value: boolean): void {
   attacksSuppressed = value
+}
+
+// Called from `eventScheduler.ts` when a bite is due. Returns true if
+// an attack actually began (so the scheduler can advance its clock);
+// false when there's no destructible platform yet, no idle shark, or
+// suppression is active. The scheduler retries every frame until this
+// reports success.
+export function triggerSharkAttack(): boolean {
+  if (attacksSuppressed) return false
+  if (anySharkAttacking()) return false
+  if (!hasAttackablePlatform()) return false
+  const choice = selectAttack()
+  if (choice === null) return false
+  beginAttack(choice.attacker, choice.target)
+  return true
 }
 
 export function sharkDirectorSystem(dt: number): void {
@@ -129,25 +142,6 @@ export function sharkDirectorSystem(dt: number): void {
   }
 
   cancelStaleAttacks()
-
-  // Freeze the schedule clock while the player has only the starter raft —
-  // there's nothing attackable, so the 5-minute countdown shouldn't tick.
-  if (hasAttackablePlatform()) {
-    timeSinceLastAttack += dt
-  } else {
-    timeSinceLastAttack = 0
-  }
-  if (
-    timeSinceLastAttack >= SHARK_ATTACK_INTERVAL_S &&
-    !anySharkAttacking() &&
-    !attacksSuppressed
-  ) {
-    const choice = selectAttack()
-    if (choice !== null) {
-      beginAttack(choice.attacker, choice.target)
-      timeSinceLastAttack = 0
-    }
-  }
 
   for (const [entity] of engine.getEntitiesWith(SharkAttack)) {
     advanceAttack(entity, dt)

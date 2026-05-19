@@ -10,6 +10,7 @@ import {
   getConstructionDefaultHoverText,
   setConstructionPointerPrompt
 } from '../factories/construction'
+import { notifyTier4Crafted } from '../systems/eventScheduler'
 import { addCollected } from './inventoryState'
 import { notifyItemReceived } from './itemReceivedNotification'
 
@@ -18,6 +19,9 @@ export function grabCookOutput(platform: Entity, itemId: string): boolean {
   if (cook === null) return false
   addCollected(itemId, 1)
   notifyItemReceived(itemId, 1)
+  // Tier-4 hero plates trigger a chef visit (subject to the 5-minute
+  // cooldown the scheduler owns). Non-tier-4 ids are dropped silently.
+  notifyTier4Crafted(itemId)
   for (const sprite of cook.foodSprites) {
     engine.removeEntity(sprite)
   }
