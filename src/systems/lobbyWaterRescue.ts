@@ -41,10 +41,10 @@ let cooldownRemaining = 0
 let lockRemaining = 0
 
 // Lobby-specific water rescue. The game-world `fallRescue` self-suppresses
-// while the startup gate is active (its WATER_LEVEL-0.5 threshold = 3.5 m
-// would fire constantly against the lobby's 0.6 m deck), so something else
-// has to cover the "player entered the world from a neighbouring scene and
-// landed in the water" case. That's this system.
+// while the startup gate is active (its WATER_LEVEL-0.5 threshold would
+// otherwise fire constantly against the lobby's 0.6 m deck), so something
+// else has to cover the "player entered the world from a neighbouring scene
+// and landed in the water" case. That's this system.
 //
 // While the gate is active and the player's feet sit at or below the raft
 // base, we teleport them to the lobby's bridge-tail spawn — the same

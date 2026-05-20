@@ -176,7 +176,7 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
   // hide volume is rebuilt by `buildGameWorld` once the player enters.
   const hideArea = createAvatarHideArea(parcelGrid, {
     minY: WATER_LEVEL,
-    maxY: WATER_LEVEL + 1000
+    maxY: WATER_LEVEL + 100
   })
   LobbyTag.create(hideArea)
 

@@ -67,7 +67,7 @@ export function createFallRescueSystem(platformCenter: Vector3) {
     }
 
     // While the lobby is up the player legitimately stands at y≈0.3
-    // (lobby raft surface) — far below the game's WATER_LEVEL=4 fall
+    // (lobby raft surface) — far below the game's WATER_LEVEL fall
     // threshold. Suppress the rescue so the lobby doesn't constantly
     // teleport the player back onto a non-existent main raft.
     if (isStartupGateActive()) return

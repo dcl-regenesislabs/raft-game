@@ -9,8 +9,8 @@ export const SEABED_Y = SCENE_BASE_Y
 
 // Y of the water surface. The platform and any floating prop should sit at
 // this height so they look like they're resting on the water. Platform top
-// lands at ~50 m (PLATFORM_SIZE_Y/2 above WATER_LEVEL).
-export const WATER_LEVEL = SCENE_BASE_Y + 4
+// lands at PLATFORM_SIZE_Y/2 above WATER_LEVEL.
+export const WATER_LEVEL = SCENE_BASE_Y + 16
 
 // Y stack for the lobby world. Sand sits flush with the parcel floor,
 // water rises just above it (so the surface reads as wet sand under
