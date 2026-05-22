@@ -64,26 +64,26 @@ const BRIDGE_REACH = 10
 const CELL = RAFT_SIZE
 const LOBBY_DECK_Y = LOBBY_RAFT_Y + PLATFORM_SIZE_Y
 // World-meter Z nudge applied to every lobby element (island, bridge,
-// walls, decor, portal, campfire, fishing). Negative shifts toward the
-// south bridge (-Z); seabed and water remain centred since they cover
+// walls, decor, portal, campfire, fishing). Positive shifts toward the
+// north bridge (+Z); seabed and water remain centred since they cover
 // the whole parcel footprint.
-const LOBBY_Z_OFFSET = -0.9
+const LOBBY_Z_OFFSET = 0.9
 
-// Cell-grid X index the south bridge is aligned to. With the irregular
-// south row spanning gx = -3..1 (gx=2 corner removed), the geometric
+// Cell-grid X index the north bridge is aligned to. With the irregular
+// north row spanning gx = -3..1 (gx=2 corner removed), the geometric
 // midpoint is gx=-1 — putting the bridge cells on the same X line as
-// the island's middle south cell so the connection reads as a single
+// the island's middle north cell so the connection reads as a single
 // flush plank-walk rather than half-a-cell offset.
 const BRIDGE_GX = -1
 
 // Irregularity to lift the main deck off the boring 6×6 square. The base
 // ranges over gx,gz ∈ [-3..2]; we punch out two diagonal corners and
-// graft two small "tabs" jutting north of the rectangle so the silhouette
+// graft two small "tabs" jutting south of the rectangle so the silhouette
 // reads as a hand-built scavenger raft rather than a perfect grid.
-const ISLAND_REMOVE: ReadonlySet<string> = new Set(['-3,2', '2,-3'])
+const ISLAND_REMOVE: ReadonlySet<string> = new Set(['-3,-3', '2,2'])
 const ISLAND_TABS: ReadonlyArray<readonly [number, number]> = [
-  [-2, 3],
-  [1, 3]
+  [-2, -4],
+  [1, -4]
 ]
 
 // East/west decoration wings — each two cells deep along Z, attached to
@@ -182,41 +182,41 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
 
   buildIslandRafts(cx, cz)
   buildSideWingRafts(cx, cz)
-  buildSouthBridge(cx, cz)
+  buildBridge(cx, cz)
   buildBlockerWalls(cx, cz, mode, parcelGrid)
   buildDecor(cx, cz)
   buildActionPanel(cx, cz)
   if (mode === 'demo') {
-    spawnTeleportPortal(cx + 4.5, cz + 6)
+    spawnTeleportPortal(cx + 4.5, cz - 6)
   }
   buildCampfireZone(cx - 10.5, cz, mode)
   buildFishingCorner(cx + 10.5, cz, mode)
   buildPerimeterProps(cx, cz)
-  // Lobby chef stands a couple of metres east-and-south of the
+  // Lobby chef stands a couple of metres east-and-north of the
   // information kiosk so the welcome animations read as the kiosk's
   // greeter without blocking the click rays into the NEW/LOAD/DEBUG
-  // buttons. Yaw 200° = south-facing rotated 20° toward his own right
+  // buttons. Yaw 355° = north-facing rotated 5° toward his own left
   // (toward the centre of the deck) so he reads as "talking toward
   // the kiosk" rather than staring straight at the bridge.
-  buildLobbyChef(cx + PANEL_OFFSET_X + 2, cz + PANEL_OFFSET_Z - 2.5, 185)
+  buildLobbyChef(cx + PANEL_OFFSET_X + 2, cz + PANEL_OFFSET_Z + 2.5, 355)
 }
 
 // World-space position the player teleports to on lobby entry: the
-// SOUTH end of the only bridge into the central island. Lifted into a
+// NORTH end of the only bridge into the central island. Lifted into a
 // helper so `runtime/sceneFlow.ts` can drop the avatar here on the BACK
 // TO LOBBY path without re-deriving the bridge geometry. Used in both
 // DEMO and FULL — the bridge is built in both modes.
 const BRIDGE_REACH_M = BRIDGE_REACH * CELL
 const ISLAND_HALF_M = ISLAND_HALF * CELL
-// Half-cell south of the bridge's southernmost row so the marker sits
+// Half-cell north of the bridge's northernmost row so the marker sits
 // in the centre of that cell rather than at the seam between two
-// cells. The bridge runs from gz = -ISLAND_HALF-1 down to
-// gz = -ISLAND_HALF-BRIDGE_REACH; the centre of the southernmost cell
-// is `cz - ISLAND_HALF_M - BRIDGE_REACH_M + CELL/2`.
+// cells. The bridge runs from gz = ISLAND_HALF up to
+// gz = ISLAND_HALF + BRIDGE_REACH - 1; the centre of the northernmost
+// cell is `cz + ISLAND_HALF_M + BRIDGE_REACH_M - CELL/2`.
 const BRIDGE_TAIL_OFFSET = ISLAND_HALF_M + BRIDGE_REACH_M - CELL / 2
 export function getLobbyArrivalPosition(cx: number, cz: number): { x: number; z: number } {
   const shiftedCz = cz + LOBBY_Z_OFFSET
-  return { x: cellCentre(cx, BRIDGE_GX), z: shiftedCz - BRIDGE_TAIL_OFFSET }
+  return { x: cellCentre(cx, BRIDGE_GX), z: shiftedCz + BRIDGE_TAIL_OFFSET }
 }
 
 export function teardownLobby(): void {
@@ -247,18 +247,18 @@ function buildIslandRafts(cx: number, cz: number): void {
   }
 }
 
-// Single south-facing bridge connecting the central island to the
-// scene's southern parcel border. Built in both DEMO and FULL modes;
-// in DEMO the player spawns at the bridge's southern tip and walks
-// north under the welcome arch onto the island. One cell wide (3 m),
+// Single north-facing bridge connecting the central island to the
+// scene's northern parcel border. Built in both DEMO and FULL modes;
+// in DEMO the player spawns at the bridge's northern tip and walks
+// south under the welcome arch onto the island. One cell wide (3 m),
 // aligned to the cell-grid X line at `BRIDGE_GX` so it shares an X
-// edge with the island's middle south cell — the connection looks
+// edge with the island's middle north cell — the connection looks
 // like a flush plank-walk instead of half a cell offset.
-function buildSouthBridge(cx: number, cz: number): void {
+function buildBridge(cx: number, cz: number): void {
   for (let span = ISLAND_HALF; span < ISLAND_HALF + BRIDGE_REACH; span++) {
     tagged(createPlatform(
-      Vector3.create(cellCentre(cx, BRIDGE_GX), LOBBY_RAFT_Y, cellCentre(cz, -span - 1)),
-      { gridX: BRIDGE_GX, gridZ: -span - 1, yOverride: LOBBY_RAFT_Y }
+      Vector3.create(cellCentre(cx, BRIDGE_GX), LOBBY_RAFT_Y, cellCentre(cz, span)),
+      { gridX: BRIDGE_GX, gridZ: span, yOverride: LOBBY_RAFT_Y }
     ))
   }
 }
@@ -277,7 +277,7 @@ function tagged(entity: Entity): Entity {
 //
 // The bridge connection is the only exception: the bridge is centred
 // on `cx` (between the gx=-1 and gx=0 grid lines) and is one cell wide,
-// so it overlaps the south face of TWO island cells by 1.5 m each. We
+// so it overlaps the north face of TWO island cells by 1.5 m each. We
 // detect that overlap and emit two short segments around the gap
 // instead of a full-cell wall.
 function buildBlockerWalls(
@@ -303,8 +303,8 @@ function buildBlockerWalls(
   for (const [gx, gz] of cells) {
     const x = cellCentre(cx, gx)
     const z = cellCentre(cz, gz)
-    if (!isCell(gx, gz + 1)) {
-      spawnWall(x, z + halfCell, CELL, WALL_THICKNESS)
+    if (!isCell(gx, gz - 1)) {
+      spawnWall(x, z - halfCell, CELL, WALL_THICKNESS)
     }
     if (!isCell(gx + 1, gz)) {
       spawnWall(x + halfCell, z, WALL_THICKNESS, CELL)
@@ -312,27 +312,27 @@ function buildBlockerWalls(
     if (!isCell(gx - 1, gz)) {
       spawnWall(x - halfCell, z, WALL_THICKNESS, CELL)
     }
-    if (!isCell(gx, gz - 1)) {
-      // South face — split around the bridge gap if this cell sits on
-      // the island's south edge AND the bridge intersects its X range.
+    if (!isCell(gx, gz + 1)) {
+      // North face — split around the bridge gap if this cell sits on
+      // the island's north edge AND the bridge intersects its X range.
       const cellMinX = x - halfCell
       const cellMaxX = x + halfCell
       const overlapMin = Math.max(cellMinX, bridgeMinX)
       const overlapMax = Math.min(cellMaxX, bridgeMaxX)
-      const overlaps = gz === -ISLAND_HALF && overlapMin < overlapMax
+      const overlaps = gz === ISLAND_HALF - 1 && overlapMin < overlapMax
       if (!overlaps) {
-        spawnWall(x, z - halfCell, CELL, WALL_THICKNESS)
+        spawnWall(x, z + halfCell, CELL, WALL_THICKNESS)
         continue
       }
       if (cellMinX < overlapMin) {
         const segLen = overlapMin - cellMinX
         const segCx = (cellMinX + overlapMin) / 2
-        spawnWall(segCx, z - halfCell, segLen, WALL_THICKNESS)
+        spawnWall(segCx, z + halfCell, segLen, WALL_THICKNESS)
       }
       if (cellMaxX > overlapMax) {
         const segLen = cellMaxX - overlapMax
         const segCx = (overlapMax + cellMaxX) / 2
-        spawnWall(segCx, z - halfCell, segLen, WALL_THICKNESS)
+        spawnWall(segCx, z + halfCell, segLen, WALL_THICKNESS)
       }
     }
   }
@@ -340,14 +340,14 @@ function buildBlockerWalls(
   // Bridge sides so the player can't fall off the walkway mid-span.
   const bridgeReachM = BRIDGE_REACH * CELL
   const bridgeMidOffset = ISLAND_HALF * CELL + bridgeReachM / 2
-  spawnWall(bridgeCx + halfCell, cz - bridgeMidOffset, WALL_THICKNESS, bridgeReachM)
-  spawnWall(bridgeCx - halfCell, cz - bridgeMidOffset, WALL_THICKNESS, bridgeReachM)
-  // South cap at the bridge tip. In DEMO 5x5 the bridge tip sits at the
-  // south parcel border, so we drop this wall to let the player walk
+  spawnWall(bridgeCx + halfCell, cz + bridgeMidOffset, WALL_THICKNESS, bridgeReachM)
+  spawnWall(bridgeCx - halfCell, cz + bridgeMidOffset, WALL_THICKNESS, bridgeReachM)
+  // North cap at the bridge tip. In DEMO 5x5 the bridge tip sits at the
+  // north parcel border, so we drop this wall to let the player walk
   // off the tip; in FULL mode the cap stays in place since the bridge
   // ends in mid-scene with open water beyond.
   if (mode !== 'demo') {
-    spawnWall(bridgeCx, cz - ISLAND_HALF * CELL - bridgeReachM, CELL, WALL_THICKNESS)
+    spawnWall(bridgeCx, cz + ISLAND_HALF * CELL + bridgeReachM, CELL, WALL_THICKNESS)
   }
 }
 
@@ -366,17 +366,16 @@ function spawnWall(
   LobbyTag.create(wall)
 }
 
-// Welcome arch sits at the south threshold of the island — the spot
-// where the bridge meets the deck. Rotated 180° around Y so the
-// "WELCOME" face reads toward the bridge (-Z), greeting the player as
-// they walk north onto the island.
+// Welcome arch sits at the north threshold of the island — the spot
+// where the bridge meets the deck. Natural orientation faces +Z so the
+// "WELCOME" face reads toward the bridge (+Z), greeting the player as
+// they walk south onto the island.
 function buildDecor(cx: number, cz: number): void {
   const archX = cellCentre(cx, BRIDGE_GX)
-  const archZ = cz - ISLAND_HALF * CELL + 0.65
+  const archZ = cz + ISLAND_HALF * CELL - 0.65
   const welcome = engine.addEntity()
   Transform.create(welcome, {
     position: Vector3.create(archX, LOBBY_DECK_Y + WELCOME_LIFT, archZ),
-    rotation: Quaternion.fromEulerDegrees(0, 180, 0),
     scale: Vector3.create(WELCOME_SCALE, WELCOME_SCALE, WELCOME_SCALE)
   })
   GltfContainer.create(welcome, {
@@ -413,17 +412,16 @@ const HIT_DEPTH = 0.05
 // centre; DEBUG is a small ghost button tucked in the bottom-right
 // corner so it doesn't compete for attention. Placed at the back-LEFT
 // of the lobby island per the hub-concept layout — info kiosk on one
-// side, the cross-realm portal on the other, both facing south so the
+// side, the cross-realm portal on the other, both facing north so the
 // player at spawn can read both signs at once.
 const PANEL_OFFSET_X = -1.5
-const PANEL_OFFSET_Z = 3
+const PANEL_OFFSET_Z = -3
 function buildActionPanel(cx: number, cz: number): void {
   const panelX = cx + PANEL_OFFSET_X
   const panelZ = cz + PANEL_OFFSET_Z
   const panel = engine.addEntity()
   Transform.create(panel, {
     position: Vector3.create(panelX, LOBBY_DECK_Y + PANEL_LIFT, panelZ),
-    rotation: Quaternion.fromEulerDegrees(0, 180, 0),
     scale: Vector3.create(2.4, 2.4, 2.4)
   })
   GltfContainer.create(panel, {
@@ -436,7 +434,7 @@ function buildActionPanel(cx: number, cz: number): void {
   // front of the panel mesh (avoids z-fighting). Scaled with the panel
   // (0.08 m at scale 1.6 → 0.12 m at scale 2.4) so the plates still
   // read as printed onto the panel's "screen" face instead of floating.
-  const buttonZ = panelZ - 0.12
+  const buttonZ = panelZ + 0.12
   const baseY = LOBBY_DECK_Y + PANEL_LIFT
   spawnButton('NEW', 'NEW WORLD', panelX, baseY - 0.075, buttonZ, BIG_BUTTON)
   spawnButton('LOAD', 'LOAD WORLD', panelX, baseY - 0.825, buttonZ, BIG_BUTTON)
@@ -471,6 +469,10 @@ function spawnButton(
   const button = engine.addEntity()
   Transform.create(button, {
     position: Vector3.create(worldX, worldY, worldZ),
+    // 180° around Y so the visible plate's natural -Z face points +Z
+    // toward the player approaching from the north bridge. The visual
+    // (parented below) inherits this rotation automatically.
+    rotation: Quaternion.fromEulerDegrees(0, 180, 0),
     scale: Vector3.create(clickW, clickH, HIT_DEPTH)
   })
   MeshCollider.setBox(button, [ColliderLayer.CL_POINTER])
@@ -519,16 +521,17 @@ function spawnButton(
   applyLobbyButtonMaterial(visual, kind !== 'LOAD')
   LobbyTag.create(visual)
 
-  // Floating label sat ~0.04 m south of the plane (toward the player)
+  // Floating label sat ~0.04 m north of the plane (toward the player)
   // so the glyphs render clearly in front of the button without
   // z-fighting. Lifted a touch above the plate centre so the glyph
   // baseline sits visually centred (TextShape anchors at glyph centre
   // but capital strokes hang below — the +0.02 nudge cancels that).
-  // TextShape's default front face already points -Z, so no rotation
-  // is needed for the player approaching from the south.
+  // TextShape's default front face points -Z, so a 180° Y rotation
+  // is needed for the player approaching from the north.
   const text = engine.addEntity()
   Transform.create(text, {
-    position: Vector3.create(worldX, worldY + 0.02, worldZ - 0.04)
+    position: Vector3.create(worldX, worldY + 0.02, worldZ + 0.04),
+    rotation: Quaternion.fromEulerDegrees(0, 180, 0)
   })
   TextShape.create(text, {
     text: label,
@@ -611,19 +614,20 @@ function spawnTeleportPortal(worldX: number, worldZ: number): void {
   // Red button plate behind the FULL GAME label, mirroring the NEW
   // WORLD / LOAD WORLD buttons on the kiosk so the portal reads as a
   // call-to-action of the same family. Static (no billboard): the
-  // plate's default plane normal points -Z, which matches the player's
-  // approach from the south, same convention as the kiosk buttons. The
-  // text is parented to the plate and inverse-scaled so glyphs render
-  // at their natural aspect ratio despite the parent's non-uniform
-  // stretch.
+  // plate's default plane normal points -Z, so we rotate 180° around Y
+  // to face +Z toward the player approaching from the north bridge,
+  // same convention as the kiosk buttons. The text is parented to the
+  // plate and inverse-scaled so glyphs render at their natural aspect
+  // ratio despite the parent's non-uniform stretch.
   const PLATE_SCALE = 0.5
   const PLATE_W = 2.7 * PLATE_SCALE
   const PLATE_H = 0.9 * PLATE_SCALE
   const plateY = LOBBY_DECK_Y + PORTAL_LIFT + 1.1
-  const plateZ = worldZ - 0.5
+  const plateZ = worldZ + 0.5
   const plate = engine.addEntity()
   Transform.create(plate, {
     position: Vector3.create(worldX, plateY, plateZ),
+    rotation: Quaternion.fromEulerDegrees(0, 180, 0),
     scale: Vector3.create(PLATE_W, PLATE_H, 1)
   })
   MeshRenderer.setPlane(plate)
@@ -651,6 +655,9 @@ function spawnPortalInterior(worldX: number, worldZ: number): void {
   const interior = engine.addEntity()
   Transform.create(interior, {
     position: Vector3.create(worldX, LOBBY_DECK_Y + PORTAL_LIFT, worldZ),
+    // Default plane normal is -Z; rotate so the swirling texture faces
+    // +Z toward the player approaching from the north bridge.
+    rotation: Quaternion.fromEulerDegrees(0, 180, 0),
     scale: Vector3.create(2, 2.2, 1)
   })
   MeshRenderer.setPlane(interior, [
@@ -737,13 +744,13 @@ function buildCampfireZone(wingX: number, wingZ: number, _mode: SceneMode): void
   }
 }
 
-// Stands the chef NPC at the south-east corner of the information
+// Stands the chef NPC at the north-east corner of the information
 // panel so he reads as the kiosk's greeter. The model's pivot sits at
 // the foot (accessor 0 min y ≈ 0, max y ≈ 1.7), so we drop him
-// directly on the deck with no Y lift. Caller picks the yaw — 180°
-// is straight-south (facing the bridge); higher values turn him
-// toward his own right (west of south) so he reads as conversing
-// with the panel rather than ignoring it.
+// directly on the deck with no Y lift. Caller picks the yaw — 0°
+// is straight-north (facing the bridge); slightly negative values
+// turn him toward his own left (west of north) so he reads as
+// conversing with the panel rather than ignoring it.
 //
 // All chef internals (GLB, animator, click box, speech bubble) live in
 // the shared `createChef` factory so the in-game boat passenger reuses
@@ -780,15 +787,15 @@ function buildFishingCorner(wingX: number, wingZ: number, _mode: SceneMode): voi
 // the natural walking lanes (welcome → centre, centre → kiosk, centre
 // → portal) so the deck stays traversable.
 function buildPerimeterProps(cx: number, cz: number): void {
-  // The SE (2,-3) and NW (-3,2) deck cells are punched out by
+  // The NE (2,2) and SW (-3,-3) deck cells are punched out by
   // ISLAND_REMOVE, so the matching corner barrels are shifted 2 m
-  // inward along x — landing them on cells (1,-3) and (-2,2)
+  // inward along x — landing them on cells (1,2) and (-2,-3)
   // respectively instead of hanging off the deck.
   const cornerBarrels: Array<{ x: number; z: number; yawDeg: number }> = [
-    { x: -7, z: -7, yawDeg: 15 },
-    { x: 5, z: -7, yawDeg: 200 },
-    { x: -5, z: 7, yawDeg: 110 },
-    { x: 7, z: 7, yawDeg: 290 }
+    { x: -7, z: 7, yawDeg: 165 },
+    { x: 5, z: 7, yawDeg: 340 },
+    { x: -5, z: -7, yawDeg: 70 },
+    { x: 7, z: -7, yawDeg: 250 }
   ]
   for (const { x, z, yawDeg } of cornerBarrels) {
     const barrel = engine.addEntity()
@@ -805,8 +812,8 @@ function buildPerimeterProps(cx: number, cz: number): void {
   }
 
   const driftwood: Array<{ x: number; z: number; yawDeg: number }> = [
-    { x: 4.8, z: -3, yawDeg: 60 },
-    { x: -4.8, z: -3, yawDeg: -60 }
+    { x: 4.8, z: 3, yawDeg: 120 },
+    { x: -4.8, z: 3, yawDeg: 240 }
   ]
   for (const { x, z, yawDeg } of driftwood) {
     const wood = engine.addEntity()

@@ -23,13 +23,13 @@ const TARGETS = {
     spawnPoint: {
       name: 'spawn1',
       default: true,
-      // South tip of the lobby bridge → see `factories/lobby.ts`
+      // North tip of the lobby bridge → see `factories/lobby.ts`
       // (getLobbyArrivalPosition). GRID_ORIGIN=(400,_,400), BRIDGE_GX=-1,
-      // LOBBY_Z_OFFSET=-0.9, ISLAND_HALF=3, BRIDGE_REACH=10, CELL=3.
-      // x = cellCentre(400,-1) = 398.5; z = 400 - 0.9 - (9 + 30 - 1.5) = 361.6.
-      // Camera faces north toward the welcome arch/island.
-      position: { x: [397.5, 399.5], y: [5, 5], z: [360.8, 362.4] },
-      cameraTarget: { x: 398.5, y: 5, z: 390 }
+      // LOBBY_Z_OFFSET=+0.9, ISLAND_HALF=3, BRIDGE_REACH=10, CELL=3.
+      // x = cellCentre(400,-1) = 398.5; z = 400 + 0.9 + (9 + 30 - 1.5) = 438.4.
+      // Camera faces south toward the welcome arch/island.
+      position: { x: [397.5, 399.5], y: [5, 5], z: [437.6, 439.2] },
+      cameraTarget: { x: 398.5, y: 5, z: 410 }
     }
   },
   demo: {
@@ -39,13 +39,13 @@ const TARGETS = {
     spawnPoint: {
       name: 'spawn1',
       default: true,
-      // South tip of the lobby bridge → see `factories/lobby.ts`
+      // North tip of the lobby bridge → see `factories/lobby.ts`
       // (getLobbyArrivalPosition). GRID_ORIGIN=(40,_,40), BRIDGE_GX=-1,
-      // LOBBY_Z_OFFSET=-0.9, ISLAND_HALF=3, BRIDGE_REACH=10, CELL=3.
-      // x = cellCentre(40,-1) = 38.5; z = 40 - 0.9 - (9 + 30 - 1.5) = 1.6.
-      // Camera faces north toward the welcome arch/island.
-      position: { x: [37.5, 39.5], y: [5, 5], z: [0.8, 2.4] },
-      cameraTarget: { x: 38.5, y: 5, z: 30 }
+      // LOBBY_Z_OFFSET=+0.9, ISLAND_HALF=3, BRIDGE_REACH=10, CELL=3.
+      // x = cellCentre(40,-1) = 38.5; z = 40 + 0.9 + (9 + 30 - 1.5) = 78.4.
+      // Camera faces south toward the welcome arch/island.
+      position: { x: [37.5, 39.5], y: [5, 5], z: [77.6, 79.2] },
+      cameraTarget: { x: 38.5, y: 5, z: 50 }
     }
   }
 }
