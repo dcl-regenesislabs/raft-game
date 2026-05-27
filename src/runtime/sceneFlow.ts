@@ -75,6 +75,11 @@ import type { SceneMode } from './sceneMode'
 let cachedSceneMode: SceneMode | null = null
 let cachedParcelGrid = DEMO_PARCEL_GRID
 let gameWorldBuilt = false
+let debugRun = false
+
+export function isDebugRun(): boolean {
+  return debugRun
+}
 
 // One-time call from `main()` once the deployment mode + parcel grid are
 // known. Captures both for the BACK TO LOBBY path (which has to be
@@ -121,6 +126,7 @@ function armLobbyExit(): void {
 // purifier, and stocked storage). Gated by SKIP_LOBBY in gameConfig.ts —
 // force-disabled in production builds.
 export function skipLobbyToDebug(parcelGrid: number): void {
+  debugRun = true
   dismissStartupGate()
   setHeldViewmodelHidden(false)
   buildGameWorld(parcelGrid)
@@ -173,9 +179,9 @@ function spawnSharks(): void {
 }
 
 function runPortalAction(kind: LobbyButtonKind): void {
+  debugRun = kind === 'DEBUG'
   switch (kind) {
     case 'NEW':
-      // Fresh start — gameplay state is already at its module defaults.
       return
     case 'LOAD':
       void requestLoad(false)
@@ -246,6 +252,7 @@ export function returnToLobby(): void {
   resetWinState()
   clearRankingPanelRefs()
   resetRankingPanelRefreshState()
+  debugRun = false
 
   gameWorldBuilt = false
   reopenStartupGate()

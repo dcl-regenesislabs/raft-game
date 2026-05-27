@@ -2,6 +2,7 @@ export interface RankingEntry {
   rank: number
   address: string
   timeS: number
+  debug: boolean
 }
 
 export function formatTimeS(totalSeconds: number): string {

@@ -91,6 +91,7 @@ export function runServer(): void {
     const entry = {
       address,
       timeS: data.timeS,
+      debug: data.debug,
       submittedAtMs: Date.now()
     }
     const key = `ranking:${mode}:${Date.now()}:${address}`
@@ -116,7 +117,7 @@ export function runServer(): void {
     }
     try {
       const result = await Storage.getValues({ prefix: `ranking:${mode}:`, limit: 100 })
-      const entries: Array<{ address: string; timeS: number; submittedAtMs: number }> = []
+      const entries: Array<{ address: string; timeS: number; debug: boolean; submittedAtMs: number }> = []
       for (const item of result.data) {
         try {
           const parsed = typeof item.value === 'string' ? JSON.parse(item.value) : item.value
@@ -136,7 +137,8 @@ export function runServer(): void {
       const top10 = entries.slice(0, 10).map((e, i) => ({
         rank: i + 1,
         address: truncateAddress(e.address),
-        timeS: e.timeS
+        timeS: e.timeS,
+        debug: e.debug ?? false
       }))
       saveRoom.send(
         'rankingsResult',

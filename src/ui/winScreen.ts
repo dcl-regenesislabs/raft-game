@@ -3,6 +3,7 @@ import { InputModifier, engine } from '@dcl/sdk/ecs'
 import { disableChefAfterWin } from '../systems/boatChefDirector'
 import { getPlayTimeS, stopPlayTimer } from '../systems/playTimer'
 import { submitScore } from '../client/rankingClient'
+import { isDebugRun } from '../runtime/sceneFlow'
 import type { SceneMode } from '../runtime/sceneMode'
 
 const FADE_BACKDROP_DURATION_S = 1.5
@@ -41,7 +42,7 @@ export function triggerWin(mode: SceneMode): void {
   won = true
   elapsedSec = 0
   disableChefAfterWin()
-  submitScore(mode, finalTimeS)
+  submitScore(mode, finalTimeS, isDebugRun())
 }
 
 export function dismissWin(): void {

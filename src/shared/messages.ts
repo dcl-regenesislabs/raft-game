@@ -31,7 +31,8 @@ export const SAVE_MESSAGES = {
   }),
   submitScore: Schemas.Map({
     mode: Schemas.String,
-    timeS: Schemas.Number
+    timeS: Schemas.Number,
+    debug: Schemas.Boolean
   }),
   submitScoreAck: Schemas.Map({
     ok: Schemas.Boolean,

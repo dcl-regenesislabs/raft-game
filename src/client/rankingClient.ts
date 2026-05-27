@@ -50,12 +50,12 @@ export function requestRankings(mode: SceneMode): void {
   saveRoom.send('requestRankings', { mode })
 }
 
-export function submitScore(mode: SceneMode, timeS: number): void {
+export function submitScore(mode: SceneMode, timeS: number, debug: boolean): void {
   if (!isStateSyncronized()) {
     showNotification('Not connected — score could not be submitted.')
     return
   }
-  saveRoom.send('submitScore', { mode, timeS })
+  saveRoom.send('submitScore', { mode, timeS, debug })
 }
 
 export function getRankings(mode: SceneMode): RankingEntry[] | null {
@@ -76,14 +76,19 @@ function parseRankingEntries(raw: string): RankingEntry[] {
   try {
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-      (e: unknown) =>
-        typeof e === 'object' &&
-        e !== null &&
-        typeof (e as RankingEntry).rank === 'number' &&
-        typeof (e as RankingEntry).address === 'string' &&
-        typeof (e as RankingEntry).timeS === 'number'
-    ) as RankingEntry[]
+    return parsed
+      .filter(
+        (e: unknown) =>
+          typeof e === 'object' &&
+          e !== null &&
+          typeof (e as RankingEntry).rank === 'number' &&
+          typeof (e as RankingEntry).address === 'string' &&
+          typeof (e as RankingEntry).timeS === 'number'
+      )
+      .map((e: RankingEntry) => ({
+        ...e,
+        debug: typeof e.debug === 'boolean' ? e.debug : false
+      })) as RankingEntry[]
   } catch {
     return []
   }
