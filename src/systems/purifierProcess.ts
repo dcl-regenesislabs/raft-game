@@ -17,7 +17,7 @@ const lastPromptByChild = new Map<Entity, string>()
 
 function pickPrimaryPrompt(freshAmount: number): string {
   if (freshAmount > 0) {
-    const pct = Math.round(freshAmount * 100)
+    const pct = Math.round(freshAmount * 10) * 10
     return `Drink purified water ${pct}%`
   }
   return PROMPT_ADD_SALT

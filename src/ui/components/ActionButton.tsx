@@ -2,7 +2,6 @@ import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { ActiveCook, CookStatus } from '../../components'
-import { getHeldFoodId, getHeldItemKind } from '../../factories/heldItem'
 import {
   getFishingBiteIntensity,
   isFishingBiting,
@@ -147,10 +146,8 @@ function contextualIconTexture(): string | null {
   // pantry bundle at bank time) so we fall back to its always-guaranteed
   // wood drop as the recognisable proxy icon.
   if (lookTarget === 'garbage') return garbageIconTexture()
-  if (getHeldItemKind() !== 'cup') return null
-  if (getHeldFoodId() !== 'saltWater') return null
-  if (lookTarget !== 'purifier') return null
-  return getItem('purifier')?.texture ?? null
+  if (lookTarget === 'purifier') return getItem('purifier')?.texture ?? null
+  return null
 }
 
 function garbageIconTexture(): string | null {

@@ -79,6 +79,7 @@ export function isActionButtonAvailable(): boolean {
   // Aimed at a placed storage — surface the button regardless of the
   // selected slot's own action so mobile players can open the chest.
   if (getLookAtTarget() === 'storage') return true
+  if (getLookAtTarget() === 'purifier') return true
   // Fishing line is out — surface the button as the contextual
   // retract / catch trigger. The same press fires the catch during
   // the bite window. This intentionally also unlocks visibility on
