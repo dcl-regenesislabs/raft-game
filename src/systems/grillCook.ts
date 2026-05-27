@@ -6,6 +6,7 @@ import {
   CookStatus,
   PlatformConstruction
 } from '../components'
+import { playSfx } from '../audio/sfx'
 import {
   GRILL_HOVER_BURNED,
   GRILL_HOVER_PICKUP,
@@ -106,6 +107,7 @@ function transitionToReady(
     : createPlateSprite(platform, construction.yawDeg, getRecipeOutputTexture(state.recipeId))
   state.foodSprites = [plate]
   state.status = CookStatus.Ready
+  playSfx('cookReady')
   // Re-enable taps with a "PICK UP" prompt — the cook session was
   // muted while ingredients were on the fire (see `cookSession.startCook`).
   setConstructionPointerPrompt(construction.child, GRILL_HOVER_PICKUP)
@@ -136,6 +138,7 @@ function transitionToBurned(
     state.fireSprite = engine.RootEntity
   }
   state.status = CookStatus.Burned
+  playSfx('cookBurned')
   // Swap the hover prompt to "GRAB COAL" so the player knows the cook
   // tipped over into ruined.
   if (construction !== null) {

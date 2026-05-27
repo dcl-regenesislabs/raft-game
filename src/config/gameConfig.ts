@@ -8,8 +8,6 @@
 //   - it would make sense to expose to a hot-reload / config-file flow,
 //   - or it's referenced by more than one system.
 
-import { IS_PRODUCTION } from './env'
-
 // --- Debug -----------------------------------------------------------------
 // Master debug switch. When true:
 //   - The DEBUG button is shown on the lobby information panel.
@@ -17,17 +15,15 @@ import { IS_PRODUCTION } from './env'
 //     / food and spawns the 8-platform ring around the main raft (grill
 //     east, water purifier west, fully-stocked storage chest north).
 //
-// Standalone toggle — independent of IS_PRODUCTION. Flip to `false`
-// before deploying if you want a clean lobby with only NEW WORLD and
-// LOAD WORLD visible to players.
+// Flip to `false` before deploying if you want a clean lobby with only
+// NEW WORLD and LOAD WORLD visible to players.
 export const DEBUG_MODE = true
 
 // Dev-only fast-boot: bypass the lobby + startup gate and drop the player
 // straight into the DEBUG-seeded game world. Force-disabled in production
 // builds so a stray `true` can't ship — flip the raw constant below to
 // re-enable locally.
-const SKIP_LOBBY_RAW = true
-export const SKIP_LOBBY: boolean = !IS_PRODUCTION && SKIP_LOBBY_RAW
+export const SKIP_LOBBY = true
 
 // --- Event scheduler -------------------------------------------------------
 // Centralised cadence for the recurring scripted events. The scheduler

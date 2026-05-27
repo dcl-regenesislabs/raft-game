@@ -76,6 +76,95 @@ export function runServer(): void {
       replyAck(address, 'wipe', false, errorMessage(error))
     }
   })
+
+  saveRoom.onMessage('submitScore', async (data, ctx) => {
+    const address = ctx?.from
+    if (address === undefined || address === '') {
+      replySubmitScoreAck(address, false, 'missing-sender')
+      return
+    }
+    const mode = normalizeMode(data.mode)
+    if (mode === null) {
+      replySubmitScoreAck(address, false, 'invalid-mode')
+      return
+    }
+    const entry = {
+      address,
+      timeS: data.timeS,
+      submittedAtMs: Date.now()
+    }
+    const key = `ranking:${mode}:${Date.now()}:${address}`
+    try {
+      await Storage.set(key, JSON.stringify(entry))
+      replySubmitScoreAck(address, true, '')
+    } catch (error) {
+      replySubmitScoreAck(address, false, errorMessage(error))
+    }
+  })
+
+  saveRoom.onMessage('requestRankings', async (data, ctx) => {
+    const address = ctx?.from
+    if (address === undefined || address === '') return
+    const mode = normalizeMode(data.mode)
+    if (mode === null) {
+      saveRoom.send(
+        'rankingsResult',
+        { mode: data.mode, entries: '[]' },
+        { to: [address] }
+      )
+      return
+    }
+    try {
+      const result = await Storage.getValues({ prefix: `ranking:${mode}:`, limit: 100 })
+      const entries: Array<{ address: string; timeS: number; submittedAtMs: number }> = []
+      for (const item of result.data) {
+        try {
+          const parsed = typeof item.value === 'string' ? JSON.parse(item.value) : item.value
+          if (
+            typeof parsed === 'object' &&
+            parsed !== null &&
+            typeof parsed.address === 'string' &&
+            typeof parsed.timeS === 'number'
+          ) {
+            entries.push(parsed)
+          }
+        } catch {
+          // skip malformed entries
+        }
+      }
+      entries.sort((a, b) => a.timeS - b.timeS)
+      const top10 = entries.slice(0, 10).map((e, i) => ({
+        rank: i + 1,
+        address: truncateAddress(e.address),
+        timeS: e.timeS
+      }))
+      saveRoom.send(
+        'rankingsResult',
+        { mode, entries: JSON.stringify(top10) },
+        { to: [address] }
+      )
+    } catch {
+      saveRoom.send(
+        'rankingsResult',
+        { mode, entries: '[]' },
+        { to: [address] }
+      )
+    }
+  })
+}
+
+function truncateAddress(address: string): string {
+  if (address.length <= 10) return address
+  return `${address.slice(0, 6)}..${address.slice(-4)}`
+}
+
+function replySubmitScoreAck(
+  address: string | undefined,
+  ok: boolean,
+  error: string
+): void {
+  if (address === undefined || address === '') return
+  saveRoom.send('submitScoreAck', { ok, error }, { to: [address] })
 }
 
 function storageKey(mode: 'full' | 'demo'): string {

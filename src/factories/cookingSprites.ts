@@ -1,4 +1,5 @@
 import {
+  AudioSource,
   Billboard,
   BillboardMode,
   Entity,
@@ -139,6 +140,12 @@ export function createFlameSprite(
   GrillFire.create(sprite, {
     frameTimer: 0,
     currentFrame: Math.floor(Math.random() * 11)
+  })
+  AudioSource.create(sprite, {
+    audioClipUrl: 'assets/Audio/fire-crackling.mp3',
+    playing: true,
+    loop: true,
+    volume: 0.2
   })
   return sprite
 }

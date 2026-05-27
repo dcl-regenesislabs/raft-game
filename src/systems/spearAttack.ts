@@ -24,6 +24,7 @@ import {
   isSelectionPointerLockoutActive
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
+import { playSfx } from '../audio/sfx'
 import { tryHitShark } from './sharkAttack'
 
 // Spear stab: a quick forward thrust + slight downward pitch, then ease back
@@ -110,6 +111,7 @@ export function spearAttackSystem(dt: number): void {
     attackElapsed = dt > 0 ? dt : 1e-6
     cooldownRemaining = COOLDOWN_S
     hitResolvedThisSwing = false
+    playSfx('spearSwing')
     // Remember which slot this swing was paid for from. Consume on
     // completion (below) so the last stab plays through visually
     // before the spear "breaks" and the held viewmodel snaps back.

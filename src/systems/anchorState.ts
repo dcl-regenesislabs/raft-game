@@ -1,15 +1,21 @@
 import { Entity, Transform, engine } from '@dcl/sdk/ecs'
 
-import { FloatingGarbage, FloatingIsland } from '../components'
+import { FloatingGarbage, FloatingIsland, WaterScroll } from '../components'
 import { getPlatformExtent } from '../factories/platformExtent'
 
-// Interpolation duration for the pull / release shift
-const ANCHOR_INTERP_DURATION = 3.0
-// Distance between the island edge and the raft edge — small enough to
-// jump across without falling in the water.
-const ANCHOR_GAP = 1
+// Magnitude of the water scroll speed while the anchor is pulling / anchored.
+// Faster than the idle drift so the "raft moving toward the island" sensation
+// is unmistakable.
+const ANCHOR_WATER_SPEED = 0.07
 
-type AnchorPhase = 'idle' | 'pulling' | 'anchored' | 'releasing'
+// Interpolation duration for the pull / release shift
+const ANCHOR_INTERP_DURATION = 12.0
+// Distance between the island edge and the raft edge — close enough to
+// jump across with a running start, far enough to feel like a separate
+// landmass rather than a snap-on extension.
+const ANCHOR_GAP = 4
+
+type AnchorPhase = 'idle' | 'pulling' | 'anchored'
 
 let phase: AnchorPhase = 'idle'
 let anchoredIsland: Entity | null = null
@@ -29,6 +35,10 @@ let interpElapsed = 0
 // Relative offset from the island center where the hook stuck
 let hookRelX = 0
 let hookRelZ = 0
+// Saved original water-scroll speeds so we can restore them on release
+let savedSpeedU = 0
+let savedSpeedV = 0
+let waterSpeedOverridden = false
 
 export function isAnchored(): boolean {
   return phase === 'anchored'
@@ -48,6 +58,38 @@ export function getAnchorHookPos(): { x: number; z: number } | null {
   const pos = Transform.getOrNull(anchoredIsland)
   if (pos === null) return null
   return { x: pos.position.x + hookRelX, z: pos.position.z + hookRelZ }
+}
+
+function overrideWaterScroll(islandX: number, islandZ: number): void {
+  const ext = getPlatformExtent()
+  const dx = islandX - ext.cx
+  const dz = islandZ - ext.cz
+  const dist = Math.sqrt(dx * dx + dz * dz)
+  if (dist < 0.01) return
+
+  const flowU = (dx / dist) * ANCHOR_WATER_SPEED
+  const flowV = (dz / dist) * ANCHOR_WATER_SPEED
+
+  for (const [entity] of engine.getEntitiesWith(WaterScroll)) {
+    const scroll = WaterScroll.getMutable(entity)
+    if (!waterSpeedOverridden) {
+      savedSpeedU = scroll.speedU
+      savedSpeedV = scroll.speedV
+    }
+    scroll.speedU = flowU
+    scroll.speedV = flowV
+  }
+  waterSpeedOverridden = true
+}
+
+function restoreWaterScroll(): void {
+  if (!waterSpeedOverridden) return
+  for (const [entity] of engine.getEntitiesWith(WaterScroll)) {
+    const scroll = WaterScroll.getMutable(entity)
+    scroll.speedU = savedSpeedU
+    scroll.speedV = savedSpeedV
+  }
+  waterSpeedOverridden = false
 }
 
 export function beginAnchor(islandEntity: Entity, anchorX: number, anchorZ: number): void {
@@ -93,19 +135,22 @@ export function beginAnchor(islandEntity: Entity, anchorX: number, anchorZ: numb
   endOffsetZ = targetOffsetZ
   interpElapsed = 0
   phase = 'pulling'
+
+  overrideWaterScroll(islandPos.x, islandPos.z)
 }
 
 export function releaseAnchor(): void {
   if (phase !== 'anchored') return
-  startOffsetX = appliedOffsetX
-  startOffsetZ = appliedOffsetZ
-  endOffsetX = 0
-  endOffsetZ = 0
-  interpElapsed = 0
-  phase = 'releasing'
+  restoreWaterScroll()
+  restoreIslandVelocities()
+  appliedOffsetX = 0
+  appliedOffsetZ = 0
+  anchoredIsland = null
+  phase = 'idle'
 }
 
 export function resetAnchorState(): void {
+  restoreWaterScroll()
   // Snap everything back instantly if mid-anchor
   if (appliedOffsetX !== 0 || appliedOffsetZ !== 0) {
     const dx = -appliedOffsetX
@@ -160,14 +205,8 @@ export function anchorInterpolationSystem(dt: number): void {
   applyDeltaToAll(dx, dz)
 
   if (rawT >= 1) {
-    if (phase === 'pulling') {
-      freezeIslandVelocities()
-      phase = 'anchored'
-    } else if (phase === 'releasing') {
-      restoreIslandVelocities()
-      anchoredIsland = null
-      phase = 'idle'
-    }
+    freezeIslandVelocities()
+    phase = 'anchored'
   }
 }
 

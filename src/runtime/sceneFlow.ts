@@ -19,7 +19,13 @@
 import { Entity, Transform, engine } from '@dcl/sdk/ecs'
 import { movePlayerTo } from '~system/RestrictedActions'
 
+import { resetAmbienceState, startAmbience, stopAmbience } from '../audio/ambience'
+import { resetMusicState, setMusicTrack } from '../audio/music'
 import { requestLoad } from '../client/saveClient'
+import { resetPlayTimer, startPlayTimer, stopPlayTimer } from '../systems/playTimer'
+import { resetWinState } from '../ui/winScreen'
+import { clearRankingPanelRefs } from '../factories/rankingPanel'
+import { resetRankingPanelRefreshState } from '../systems/rankingPanelRefresh'
 import { SHARK_INITIAL_COUNT, SHARK_INITIAL_RADIUS } from '../config/gameConfig'
 import {
   GRID_ORIGIN,
@@ -40,7 +46,7 @@ import {
   getLobbyArrivalPosition,
   teardownLobby
 } from '../factories/lobby'
-import { DEMO_PARCEL_GRID } from '../factories/sceneLevels'
+import { DEMO_PARCEL_GRID, LOBBY_RAFT_Y } from '../factories/sceneLevels'
 import { setLobbyExitHandler } from '../systems/lobbyPortalSystem'
 import { resetBoatChefEventState } from '../systems/boatChefDirector'
 import { resetEventScheduler } from '../systems/eventScheduler'
@@ -51,6 +57,7 @@ import { resetFishingRodState } from '../systems/fishingRod'
 import { resetAnchorState } from '../systems/anchorState'
 import { resetAnchorThrowerState } from '../systems/anchorThrower'
 import { resetHookThrowerState } from '../systems/hookThrower'
+import { resetChefIdleStarterState } from '../systems/chefIdleStarter'
 import { resetRaftBuilderState } from '../systems/raftBuilder'
 import { setCookOpen } from '../ui/cookToggle'
 import { setCraftOpen } from '../ui/craftToggle'
@@ -89,7 +96,10 @@ function armLobbyExit(): void {
       // seeded tool (hook by default) should appear in hand.
       setHeldViewmodelHidden(false)
       buildGameWorld(cachedParcelGrid)
-      // Drop the player onto the freshly-built main raft. Game spawn
+      resetPlayTimer()
+      startPlayTimer()
+      setMusicTrack('game')
+      startAmbience()
       // mirrors the parcel-centre coords used in the demo's scene.json
       // spawn point; using movePlayerTo (not Transform mutation) is
       // the only way SDK7 will move the camera as well.
@@ -114,6 +124,10 @@ export function skipLobbyToDebug(parcelGrid: number): void {
   dismissStartupGate()
   setHeldViewmodelHidden(false)
   buildGameWorld(parcelGrid)
+  resetPlayTimer()
+  startPlayTimer()
+  setMusicTrack('game')
+  startAmbience()
   void movePlayerTo({
     newRelativePosition: {
       x: GRID_ORIGIN.x,
@@ -224,6 +238,14 @@ export function returnToLobby(): void {
   resetConstructionPlacementState()
   resetBoatChefEventState()
   resetEventScheduler()
+  resetMusicState()
+  resetAmbienceState()
+  resetChefIdleStarterState()
+  stopPlayTimer()
+  resetPlayTimer()
+  resetWinState()
+  clearRankingPanelRefs()
+  resetRankingPanelRefreshState()
 
   gameWorldBuilt = false
   reopenStartupGate()
@@ -235,6 +257,8 @@ export function returnToLobby(): void {
     createLobby(cachedParcelGrid, cachedSceneMode)
   }
   armLobbyExit()
+  setMusicTrack('lobby')
+  stopAmbience()
   // Drop the player back at the lobby's bridge-tail spawn in both
   // modes — the bridge is now visible in DEMO and FULL. Lobby rafts
   // sit at LOBBY_RAFT_Y; +1 m gives a tiny drop onto the deck so the
@@ -243,7 +267,7 @@ export function returnToLobby(): void {
   void movePlayerTo({
     newRelativePosition: {
       x: arrival.x,
-      y: GRID_ORIGIN.y + 1,
+      y: LOBBY_RAFT_Y + 1,
       z: arrival.z
     }
   })

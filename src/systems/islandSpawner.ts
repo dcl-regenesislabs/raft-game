@@ -2,8 +2,8 @@ import { engine } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
 
 import { FloatingIsland } from '../components'
-import { isAnchored } from './anchorState'
-import { activateFloatingIsland } from '../factories/floatingIsland'
+import { isAnchored, resetAnchorState } from './anchorState'
+import { activateFloatingIsland, deactivateFloatingIsland } from '../factories/floatingIsland'
 import { GRID_ORIGIN } from '../factories/platform'
 import { aabbHalfExtentAlong, getPlatformExtent } from '../factories/platformExtent'
 import {
@@ -97,6 +97,17 @@ function spawnIsland(): boolean {
     maxLifetime
   })
   return true
+}
+
+export function forceIslandSpawn(): boolean {
+  if (isAnchored()) resetAnchorState()
+  for (const [entity] of engine.getEntitiesWith(FloatingIsland)) {
+    if (FloatingIsland.get(entity).active) {
+      deactivateFloatingIsland()
+    }
+    break
+  }
+  return spawnIsland()
 }
 
 function tryComputeSpawn(

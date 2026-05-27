@@ -15,7 +15,8 @@
 
 import { InputModifier, engine } from '@dcl/sdk/ecs'
 
-const EXIT_FADE_DURATION_S = 0.6
+const EXIT_FADE_DURATION_S = 1.0
+const REVEAL_FADE_DURATION_S = 1.0
 
 let active = true
 let probeCompleted = false
@@ -25,6 +26,9 @@ let lastModifierApplied: boolean | null = null
 let exiting = false
 let exitElapsed = 0
 let exitAction: (() => void) | null = null
+
+let revealing = false
+let revealElapsed = 0
 
 export function isStartupGateActive(): boolean {
   return active
@@ -41,6 +45,8 @@ export function dismissStartupGate(): void {
   exiting = false
   exitElapsed = 0
   exitAction = null
+  revealing = false
+  revealElapsed = 0
   active = false
 }
 
@@ -51,6 +57,8 @@ export function reopenStartupGate(): void {
   exiting = false
   exitElapsed = 0
   exitAction = null
+  revealing = false
+  revealElapsed = 0
   active = true
 }
 
@@ -58,6 +66,10 @@ export function reopenStartupGate(): void {
 // StartupScreen renderer to fade the backdrop, logo, and buttons in
 // lockstep during the exit transition.
 export function getStartupGateOpacity(): number {
+  if (revealing) {
+    const t = revealElapsed / REVEAL_FADE_DURATION_S
+    return t >= 1 ? 1 : t
+  }
   if (!exiting) return 1
   const t = exitElapsed / EXIT_FADE_DURATION_S
   return t >= 1 ? 0 : 1 - t
@@ -105,29 +117,32 @@ export function setSaveProbeResult(found: boolean): void {
 // inventory close → walk-unlocked), and that would otherwise clobber
 // the double-jump and gliding blocks.
 export function startupGateInputLockSystem(dt: number): void {
+  if (revealing) {
+    revealElapsed += dt
+    if (revealElapsed >= REVEAL_FADE_DURATION_S) {
+      revealing = false
+      active = false
+    }
+  }
   if (exiting) {
     exitElapsed += dt
     if (exitElapsed >= EXIT_FADE_DURATION_S) {
       const action = exitAction
       exiting = false
       exitAction = null
-      active = false
-      // Run the deferred action after the fade — load request, debug
-      // seed, etc. Done before the input modifier flip below so any
-      // movePlayerTo issued by the action races the lock release in
-      // a predictable order.
+      revealing = true
+      revealElapsed = 0
       action?.()
     }
   }
+  const locked = exiting || revealing
   if (active) {
     InputModifier.createOrReplace(engine.PlayerEntity, {
       mode: InputModifier.Mode.Standard({
-        disableWalk: exiting,
-        disableJog: exiting,
-        // Run is disabled scene-wide — players are limited to walk
-        // and jog so they can't sprint off the raft.
+        disableWalk: locked,
+        disableJog: locked,
         disableRun: true,
-        disableJump: exiting,
+        disableJump: locked,
         disableDoubleJump: true,
         disableGliding: true
       })

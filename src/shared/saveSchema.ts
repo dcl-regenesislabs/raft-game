@@ -11,6 +11,7 @@ import {
   setHeldItem,
   type HeldItemKind
 } from '../factories/heldItem'
+import { getPlayTimeS, setPlayTimeS } from '../systems/playTimer'
 import {
   hydrateInventoryCounts,
   hydrateSelectedSlot,
@@ -64,10 +65,8 @@ export interface SaveBlob {
   recipes: string[]
   vitals: VitalsSnapshot
   raft: PlatformSnapshot[]
-  // Optional so saves written before this field was added still load.
-  // The `version` constant doesn't need to bump for purely-additive
-  // fields; missing position just means "leave the player where they are".
   position?: PositionSnapshot
+  playTimeS?: number
 }
 
 export function buildSaveBlob(mode: SceneMode): SaveBlob {
@@ -85,6 +84,7 @@ export function buildSaveBlob(mode: SceneMode): SaveBlob {
     recipes: serializeLearnedRecipes(),
     vitals: serializeVitals(),
     raft: serializeRaft(),
+    playTimeS: getPlayTimeS(),
     ...(position !== null ? { position } : {})
   }
 }
@@ -108,6 +108,7 @@ export function applySaveBlob(blob: SaveBlob): void {
   hydrateLearnedRecipes(blob.recipes)
   hydrateVitals(blob.vitals)
   hydrateRaft(blob.raft)
+  setPlayTimeS(blob.playTimeS ?? 0)
   refreshHeldItemFromSelection(blob.inventory.selected)
   if (blob.position !== undefined) hydratePlayerPosition(blob.position)
 }
@@ -176,10 +177,11 @@ export function parseSaveBlob(raw: string): SaveBlob | null {
       typeof p.y !== 'number' ||
       typeof p.z !== 'number'
     ) {
-      // Tolerate a malformed position field rather than dropping the
-      // whole save — strip it and keep the rest.
       v.position = undefined
     }
+  }
+  if (v.playTimeS !== undefined && typeof v.playTimeS !== 'number') {
+    v.playTimeS = undefined
   }
   return v as SaveBlob
 }

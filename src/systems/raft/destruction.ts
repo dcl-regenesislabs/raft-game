@@ -18,6 +18,7 @@ import {
   getPlatformVisual
 } from '../../factories/platform'
 import { buildSpectralPbMaterial } from '../../factories/spectralPlatform'
+import { playSfx } from '../../audio/sfx'
 import { isInventoryActionLocked } from '../../ui/inventoryToggle'
 import { showNotification } from '../../ui/notification'
 import { isStorageNonEmpty } from '../../ui/storageSession'
@@ -152,6 +153,7 @@ export function commitDestroyFromHover(): boolean {
   hideDestroyOverlay()
   destroyPlatformEntity(target)
   triggerHammerSwing()
+  playSfx('woodBreak')
   return true
 }
 
@@ -175,6 +177,7 @@ function attachDestroyClick(entity: Entity): void {
       hideDestroyOverlay()
       destroyPlatformEntity(entity)
       triggerHammerSwing()
+      playSfx('woodBreak')
     }
   )
 }

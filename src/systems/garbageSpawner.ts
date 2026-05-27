@@ -7,7 +7,6 @@ import {
 } from '../factories/floatingGarbage'
 import { GRID_ORIGIN } from '../factories/platform'
 import { aabbHalfExtentAlong, getPlatformExtent } from '../factories/platformExtent'
-import { hasActiveIsland } from './floatingGarbage'
 import { isStartupGateActive } from '../ui/startupGate'
 import {
   SEA_FLOW_DIR_X,
@@ -64,9 +63,6 @@ export function garbageSpawnerSystem(dt: number): void {
   // Suppress while the lobby is up — debris spawned at WATER_LEVEL=4
   // would float in the sky above the lobby raft (which sits at y=0).
   if (isStartupGateActive()) return
-  // No garbage while an island is on screen — existing debris sinks
-  // and gets cleaned up by floatingGarbageSystem.
-  if (hasActiveIsland()) return
   elapsed += dt
   if (elapsed < nextInterval) return
   elapsed = 0

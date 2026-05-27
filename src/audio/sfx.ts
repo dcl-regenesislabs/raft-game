@@ -9,9 +9,23 @@ const SFX_CLIPS = {
   craftOpen: 'assets/Audio/craft-short.wav',
   craftClose: 'assets/Audio/craft-short-reverse.wav',
   craftStart: 'assets/Audio/button-sound.mp3',
-  hookThrow: 'assets/Audio/fireworklaunch.mp3',
+  hookThrow: 'assets/Audio/GateWoodChain1.mp3',
   rodCast: 'assets/Audio/reel-flying.mp3',
-  waterSplash: 'assets/Audio/water-splash.wav'
+  waterSplash: 'assets/Audio/water-splash.wav',
+  eatFood: 'assets/Audio/EatingFood2.mp3',
+  drinkWater: 'assets/Audio/FoodPackagingWaterBottle1.mp3',
+  hammerPlace: 'assets/Audio/HammerNail1.mp3',
+  spearSwing: 'assets/Audio/DesignedAxe1.mp3',
+  spearHit: 'assets/Audio/DesignedPunch1.mp3',
+  woodBreak: 'assets/Audio/WoodSnap1.mp3',
+  fallSplash: 'assets/Audio/WaterSplash1.mp3',
+  cookReady: 'assets/Audio/SwitchButton1_On.mp3',
+  cookBurned: 'assets/Audio/SwitchButton1_Off.mp3',
+  cupFill: 'assets/Audio/FoodPackagingWaterBottle2.mp3',
+  addWood: 'assets/Audio/WoodLogHandling1.mp3',
+  playerHurt: 'assets/Audio/HumanInjured2.mp3',
+  constructionPlace: 'assets/Audio/Hammer3.mp3',
+  fireIgnite: 'assets/Audio/MatchLight1.mp3'
 } as const
 
 const LOOP_CLIPS = {

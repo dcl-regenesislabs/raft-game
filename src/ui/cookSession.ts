@@ -11,6 +11,7 @@
 
 import { Entity } from '@dcl/sdk/ecs'
 
+import { playSfx } from '../audio/sfx'
 import { ActiveCook, CookStatus, PlatformConstruction } from '../components'
 import { setConstructionPointerPrompt } from '../factories/construction'
 import {
@@ -86,6 +87,7 @@ export function startCook(): boolean {
   subtractFromAll(recipe.fuel.itemId, recipe.fuel.amount)
   consumePlacedCells()
   // Spawn the world-side sprites and tag the grill with cook state.
+  playSfx('fireIgnite')
   const flame = createFlameSprite(grill, construction.yawDeg)
   const ingredientSprites = createIngredientSprites(grill, construction.yawDeg, recipe)
   // Cooking is in progress — strip the grill's PointerEvents so taps

@@ -287,6 +287,7 @@ function advanceHook(dt: number, handPos: Vector3): void {
       const nextZ = pos.z + state.velocity.z * dt
       transform.position = Vector3.create(nextX, WATER_LEVEL, nextZ)
       state.phase = HookPhase.Floating
+      playSfx('waterSplash')
       // Splashdown — snag any floating garbage already within reach.
       collectGarbageNearHook(nextX, nextZ)
       // Keep `elapsed` ticking across the phase boundary so the wobble

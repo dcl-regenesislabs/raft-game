@@ -14,7 +14,7 @@ import { isStartupGateActive } from '../ui/startupGate'
 const LOBBY_WATER_THRESHOLD = LOBBY_RAFT_Y
 
 // Y lift above the parcel floor when teleporting back to the bridge tail.
-// Mirrors the `GRID_ORIGIN.y + 1` drop used by the BACK TO LOBBY path so
+// Mirrors the `LOBBY_RAFT_Y + 1` drop used by the BACK TO LOBBY path so
 // the player lands on the deck with a tiny step-down rather than spawning
 // inside the raft mesh.
 const ARRIVAL_HEIGHT = 1
@@ -80,7 +80,7 @@ export function lobbyWaterRescueSystem(dt: number): void {
   movePlayerTo({
     newRelativePosition: {
       x: arrival.x,
-      y: GRID_ORIGIN.y + ARRIVAL_HEIGHT,
+      y: LOBBY_RAFT_Y + ARRIVAL_HEIGHT,
       z: arrival.z
     }
   }).finally(() => {

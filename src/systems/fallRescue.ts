@@ -5,6 +5,7 @@ import { movePlayerTo } from '~system/RestrictedActions'
 import { FALL_LIFE_DAMAGE_PCT } from '../config/gameConfig'
 import { WATER_LEVEL } from '../factories/sceneLevels'
 import { isOnFloatingIsland } from './floatingIsland'
+import { playSfx } from '../audio/sfx'
 import { isGameOver } from '../ui/gameOver'
 import { isStartupGateActive } from '../ui/startupGate'
 import { adjustStat } from '../ui/statsBars'
@@ -86,6 +87,7 @@ export function createFallRescueSystem(platformCenter: Vector3) {
     // Charge life damage once per fall — `inFlight` plus the cooldown
     // ensure the system only fires once per dip, so each fall costs
     // FALL_LIFE_DAMAGE_PCT and not more.
+    playSfx('fallSplash')
     adjustStat('life', -FALL_LIFE_DAMAGE_PCT / 100)
 
     inFlight = true

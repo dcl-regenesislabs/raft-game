@@ -3,6 +3,7 @@ import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs, { ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
 
 import { ActionButton } from './components/ActionButton'
+import { DebugPanel } from './components/DebugPanel'
 import { BottomBar } from './components/BottomBar'
 import { ChargeReticle } from './components/ChargeReticle'
 import { CookMenu } from './components/CookMenu'
@@ -10,7 +11,9 @@ import { CraftButton } from './components/CraftButton'
 import { CraftDoubleMenu } from './components/CraftMenu'
 import { CraftProgressBar } from './components/CraftProgressBar'
 import { DeathScreen } from './components/DeathScreen'
+import { WinScreen } from './components/WinScreen'
 import { DestroyBanner } from './components/DestroyBanner'
+import { LobbyMusicButton } from './components/LobbyMusicButton'
 import { InventoryButton } from './components/InventoryButton'
 import { InventoryPanel } from './components/InventoryPanel'
 import { ItemReceivedOverlay } from './components/ItemReceivedNotification'
@@ -26,18 +29,18 @@ import { isCookOpen } from './cookToggle'
 import { isCrafting } from './craftSession'
 import { isCraftOpen } from './craftToggle'
 import { isGameOver } from './gameOver'
+import { isWinActive } from './winScreen'
 import { isInventoryOpen } from './inventoryToggle'
 import { isStartupGateActive } from './startupGate'
 import { isStorageOpen } from './storageToggle'
 import { isSystemMenuOpen } from './systemSession'
 
-// Both platforms use the same 1366×768 virtual canvas (entry-level
-// laptop reference) so a single set of pixel constants in `theme.ts`
-// lays out the HUD on every aspect ratio — proportional scaling fills
-// the viewport in both directions.
+// Both platforms use the same 1600×720 virtual canvas so a single set
+// of pixel constants in `theme.ts` lays out the HUD on every aspect
+// ratio — proportional scaling fills the viewport in both directions.
 // See `.agents/skills/local/mobile-ui-scaling/SKILL.md`.
 export function setupUi(): void {
-  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1366, virtualHeight: 768 })
+  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1600, virtualHeight: 720 })
 }
 
 // Mobile is the only platform with hardware insets (notch / home indicator)
@@ -81,17 +84,24 @@ function ui(): ReactEcs.JSX.Element {
   if (isStartupGateActive()) {
     return (
       <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
+        <SafeArea>
+          <LobbyMusicButton />
+        </SafeArea>
         <StartupScreen />
       </UiEntity>
     )
   }
-  // Death overlay sits OUTSIDE the safe area so its dark backdrop covers
-  // the full viewport (notch / home-indicator strips included). All
-  // regular HUD elements suppress while dead.
   if (isGameOver()) {
     return (
       <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
         <DeathScreen />
+      </UiEntity>
+    )
+  }
+  if (isWinActive()) {
+    return (
+      <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
+        <WinScreen />
       </UiEntity>
     )
   }
@@ -117,6 +127,8 @@ function ui(): ReactEcs.JSX.Element {
     )
   }
 
+  const anyPanel = isInventoryOpen() || isCraftOpen() || isCookOpen() || isStorageOpen() || isSystemMenuOpen()
+
   return (
     <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
       <SafeArea>
@@ -134,21 +146,20 @@ function ui(): ReactEcs.JSX.Element {
               same slot to deselect, click another slot to swap, or close
               the inventory (which runs cancelSelection internally). */}
           <DestroyBanner />
-          {/* Standalone hot-bar hides while a panel is up — the inventory
-              panel and the craft menu both render their own bar attached
-              under the inventory grid via <InventoryWithBar/>. */}
-          {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <BottomBar />}
-          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <StatsBars />}
-          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ActionButton />}
-          {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <ModeToggleButton />}
-          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && <InventoryButton />}
-          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && <CraftButton />}
-          {!isCraftOpen() && !isCookOpen() && !isStorageOpen() && <SystemButton />}
+          {/* All standalone HUD elements hide while ANY panel is up —
+              each panel renders its own relevant sub-elements. */}
+          {!anyPanel && <BottomBar />}
+          {!anyPanel && <StatsBars />}
+          {!anyPanel && <ActionButton />}
+          {!anyPanel && <ModeToggleButton />}
+          {!anyPanel && <InventoryButton />}
+          {!anyPanel && <CraftButton />}
+          {!anyPanel && <SystemButton />}
           <InventoryPanel />
           <CraftDoubleMenu />
           <CookMenu />
           <StorageMenu />
-          {!isInventoryOpen() && !isCraftOpen() && !isCookOpen() && !isStorageOpen() && !isSystemMenuOpen() && <RotateButtons />}
+          {!anyPanel && <RotateButtons />}
           <ChargeReticle />
           <NotificationOverlay />
           <ItemReceivedOverlay />
@@ -160,6 +171,9 @@ function ui(): ReactEcs.JSX.Element {
           modal's own contents are centered, so they stay clear of the
           insets regardless of platform. */}
       <SystemMenu />
+      <SafeArea>
+        <DebugPanel />
+      </SafeArea>
     </UiEntity>
   )
 }

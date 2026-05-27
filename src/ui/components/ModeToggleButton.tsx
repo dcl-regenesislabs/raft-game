@@ -67,8 +67,8 @@ export function ModeToggleButton(): ReactEcs.JSX.Element | null {
       >
         <Label
           value={buttonText}
-          fontSize={22}
-          color={MODE_TOGGLE_TEXT_COLOR}
+          fontSize={nextIsDestroy ? 16 : 22}
+          color={nextIsDestroy ? DESTROY_TEXT_COLOR : MODE_TOGGLE_TEXT_COLOR}
           textAlign="middle-center"
           uiTransform={{ width: '100%', height: '100%' }}
         />
@@ -80,6 +80,7 @@ export function ModeToggleButton(): ReactEcs.JSX.Element | null {
 // Wood-brown matches the rotate-button label colour so the new button
 // reads as part of the same desktop chrome family.
 const MODE_TOGGLE_TEXT_COLOR = Color4.create(0.3, 0.18, 0.1, 1)
+const DESTROY_TEXT_COLOR = Color4.create(0.85, 0.15, 0.15, 1)
 
 function ModeToggleHint(props: { value: string }): ReactEcs.JSX.Element {
   return (

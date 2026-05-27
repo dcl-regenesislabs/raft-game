@@ -7,6 +7,7 @@ import {
 import { Color3, Color4 } from '@dcl/sdk/math'
 
 import { SharkAttack, SharkAttackPhase, SharkHittable } from '../components'
+import { playSfx } from '../audio/sfx'
 import { repelAttacker } from './sharkDirector'
 
 // Lets the player damage a shark while it is biting a raft. Two timed hits
@@ -60,6 +61,7 @@ export function tryHitShark(entity: Entity): void {
   hit.cooldown = HIT_COOLDOWN_S
   hit.flashTimer = FLASH_DURATION_S
   applyHitTint(entity)
+  playSfx('spearHit')
 
   if (hit.hits >= HITS_TO_REPEL) {
     repelAttacker(entity)

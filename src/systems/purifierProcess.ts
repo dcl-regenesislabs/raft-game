@@ -1,6 +1,7 @@
 import { Entity, engine } from '@dcl/sdk/ecs'
 
 import { PlatformConstruction, PurifierState } from '../components'
+import { playSfx } from '../audio/sfx'
 import { setPurifierHoverPrompt } from '../factories/construction'
 import { createFlameSprite } from '../factories/cookingSprites'
 
@@ -119,6 +120,7 @@ export function addFuelToPurifier(platform: Entity): boolean {
   // for the one-frame window before the prompt update lands.
   if (state.fireSec > 0) return false
   state.fireSec = Math.min(MAX_FIRE_SEC, state.fireSec + FUEL_PER_WOOD_SEC)
+  playSfx('fireIgnite')
   if (state.flameSprite === engine.RootEntity) {
     const pc = PlatformConstruction.getOrNull(platform)
     const yaw = pc !== null ? pc.yawDeg : 0

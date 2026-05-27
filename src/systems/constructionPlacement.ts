@@ -12,6 +12,7 @@ import {
 import { Color4, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
+import { playSfx } from '../audio/sfx'
 import { MainPlatform, Platform, PlatformConstruction } from '../components'
 import {
   type ConstructionKind,
@@ -300,6 +301,7 @@ function commitPlacement(): void {
 
   subtractCollected(mode, 1)
   createConstruction(platform, mode, getPlacementRotationDeg())
+  playSfx('constructionPlace')
   // Hover stays the same target; the platform now carries a
   // PlatformConstruction so the next frame's raycast result will mark
   // hoverValid = false and the green ghost will swap to red.

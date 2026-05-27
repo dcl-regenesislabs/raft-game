@@ -17,7 +17,7 @@ export const BANNER_FG = Color4.White()
 export const BAR_TEXTURE = 'images/hud/bottom-bar.png'
 export const BAR_WIDTH = 600
 export const BAR_HEIGHT = 150
-export const BAR_BOTTOM = 24
+export const BAR_BOTTOM = 0
 // Global hot-bar scale. Applied wherever the bar is rendered (standalone
 // `BottomBar` and the bar inside `InventoryWithBar`) so both surfaces
 // shrink together. Height tracks width via the painted aspect ratio.

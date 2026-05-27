@@ -23,6 +23,7 @@ import {
   getPlacementRotationDeg,
   resetPlacementRotation
 } from '../../ui/placementRotation'
+import { playSfx } from '../../audio/sfx'
 import { triggerHammerSwing } from '../hammerSwing'
 import { publishLookAtHit } from '../lookAtTarget'
 import { canAffordPlatform, spendPlatformCost } from './platformCost'
@@ -264,6 +265,7 @@ function placeRaft(gridX: number, gridZ: number): void {
     yawDeg: getPlacementRotationDeg()
   })
   triggerHammerSwing()
+  playSfx('hammerPlace')
   removeAllMarkers()
   if (validGhost !== null) hideSpectral(validGhost)
   if (noStockGhost !== null) hideSpectral(noStockGhost)

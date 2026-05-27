@@ -1,4 +1,6 @@
 import { engine } from '@dcl/sdk/ecs'
+import { ambienceTickSystem } from './audio/ambience'
+import { musicTickSystem, setMusicTrack } from './audio/music'
 import { sfxTickSystem } from './audio/sfx'
 // import { isServer } from '@dcl/sdk/network'
 
@@ -6,6 +8,10 @@ import { sfxTickSystem } from './audio/sfx'
 //   initSaveClient,
 //   saveClientTickSystem
 // } from './client/saveClient'
+// import {
+//   initRankingClient,
+//   rankingClientTickSystem
+// } from './client/rankingClient'
 // import { runServer } from './server/server'
 
 import {
@@ -46,6 +52,7 @@ import { rodHookSwingSystem } from './systems/rodHookSwing'
 import { inventoryInputSystem } from './systems/inventoryInput'
 import { boatChefDirectorSystem } from './systems/boatChefDirector'
 import { chefAnimDebugSystem } from './systems/chefAnimDebug'
+import { chefIdleStarterSystem } from './systems/chefIdleStarter'
 import { chefDialogSystem } from './systems/chefDialog'
 import { lobbyButtonHoverSystem } from './systems/lobbyButtonHover'
 import { lobbyPortalSystem } from './systems/lobbyPortalSystem'
@@ -59,12 +66,15 @@ import { sharkOrbitSystem } from './systems/sharkOrbit'
 import { sharkPointerEventsSystem } from './systems/sharkPointerEvents'
 import { spearAttackSystem } from './systems/spearAttack'
 import { survivalDrainSystem } from './systems/survivalDrain'
+import { playTimerSystem } from './systems/playTimer'
+import { rankingPanelRefreshSystem, setRankingPanelMode } from './systems/rankingPanelRefresh'
 import { waterScrollSystem } from './systems/waterScroll'
 import { setupUi } from './ui'
 import { actionButtonResetSystem } from './ui/actionButton'
 import { craftSessionTickSystem } from './ui/craftSession'
 import { craftToggleResetSystem } from './ui/craftToggle'
 import { gameOverInputLockSystem } from './ui/gameOver'
+import { winScreenInputLockSystem } from './ui/winScreen'
 import { dragResetSystem } from './ui/inventoryDrag'
 import { inventoryToggleResetSystem } from './ui/inventoryToggle'
 import { tickItemReceivedNotification } from './ui/itemReceivedNotification'
@@ -104,6 +114,8 @@ export async function main(): Promise<void> {
   // any equipped tool through it.
   setHeldViewmodelHidden(true)
   engine.addSystem(sfxTickSystem)
+  engine.addSystem(musicTickSystem)
+  engine.addSystem(ambienceTickSystem)
   engine.addSystem(firstPersonItemSwaySystem)
   engine.addSystem(spearAttackSystem)
   engine.addSystem(hammerSwingSystem)
@@ -140,6 +152,7 @@ export async function main(): Promise<void> {
   engine.addSystem(boatChefDirectorSystem)
   engine.addSystem(chefDialogSystem)
   engine.addSystem(chefAnimDebugSystem)
+  engine.addSystem(chefIdleStarterSystem)
   // One-shot pool init: builds the (hidden) floating-island hierarchy so
   // the spawner/lifetime systems can flip visibility instead of creating
   // and destroying entities every cycle. Must happen before the systems
@@ -181,6 +194,9 @@ export async function main(): Promise<void> {
   engine.addSystem(storageToggleResetSystem)
   engine.addSystem(systemToggleTickSystem)
   engine.addSystem(gameOverInputLockSystem)
+  engine.addSystem(winScreenInputLockSystem)
+  engine.addSystem(playTimerSystem)
+  engine.addSystem(rankingPanelRefreshSystem)
   engine.addSystem(startupGateInputLockSystem)
   engine.addSystem(pressPulseTickSystem)
   engine.addSystem(tickNotification)
@@ -200,6 +216,8 @@ export async function main(): Promise<void> {
   // TODO: re-enable once @dcl/sdk/network is available
   // initSaveClient()
   // engine.addSystem(saveClientTickSystem)
+  // initRankingClient(mode)
+  // engine.addSystem(rankingClientTickSystem)
 
   // Build the lobby world (water at y=0, raft island, bridges, portals)
   // and arm the portal-trigger handler via the scene-flow runtime. The
@@ -211,11 +229,13 @@ export async function main(): Promise<void> {
   // SKIP_LOBBY (dev-only, force-disabled in production) jumps straight
   // into the DEBUG-seeded game world. Bootstrap still runs so a later
   // BACK TO LOBBY from the system menu can rebuild the lobby cleanly.
+  setRankingPanelMode(mode)
   bootstrapSceneFlow(mode, parcelGrid)
   if (SKIP_LOBBY) {
     skipLobbyToDebug(parcelGrid)
   } else {
     createLobby(parcelGrid, mode)
+    setMusicTrack('lobby')
   }
 
   setupUi()

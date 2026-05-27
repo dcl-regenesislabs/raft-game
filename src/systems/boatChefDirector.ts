@@ -34,6 +34,8 @@ import {
   BOAT_CHEF_NO_TIER4_DIALOG_LINES,
   BOAT_CHEF_TIER4_DIALOG_LINES
 } from './chefDialog'
+import { triggerWin } from '../ui/winScreen'
+import { getSceneMode } from '../runtime/sceneMode'
 
 // Boat-chef visitor event director. One singleton state machine
 // (module-level — same pattern as `sharkDirector.ts`) that owns the
@@ -118,6 +120,8 @@ interface DockGeometry {
 
 let phase: Phase = 'ARMED'
 let elapsedInPhase = 0
+let wasTier4Visit = false
+let chefDisabledAfterWin = false
 // Seconds until the next ARMED → ARRIVING transition. -1 means
 // "disarmed" (BACK TO LOBBY / fresh boot). 0 fires on the next tick.
 let rearmCountdown = -1
@@ -131,8 +135,13 @@ let geometry: DockGeometry | null = null
 // DEBUG / SKIP_LOBBY paths in `sceneFlow.ts` that want to skip straight
 // into the encounter. No-op while a visit is already in progress.
 export function armBoatChefEvent(): void {
+  if (chefDisabledAfterWin) return
   if (phase !== 'ARMED' || visitor !== null) return
   rearmCountdown = 0
+}
+
+export function disableChefAfterWin(): void {
+  chefDisabledAfterWin = true
 }
 
 // True while the chef boat is anywhere in the scene (arriving, docked,
@@ -150,8 +159,8 @@ export function resetBoatChefEventState(): void {
   rearmCountdown = -1
   visitor = null
   geometry = null
-  // BACK TO LOBBY may fire mid-visit; restore the shark trigger so the
-  // next game-world build starts with a clean default.
+  wasTier4Visit = false
+  chefDisabledAfterWin = false
   setSharkAttacksSuppressed(false)
 }
 
@@ -274,11 +283,10 @@ function tickInteracting(): void {
     return
   }
   const chefState = ChefNpc.get(visitor.chef)
-  // `chefDialogSystem` advances `dialogLineIndex` to `dialogLines.length`
-  // (the hidden state) on the click past the final line. When we see
-  // that, the dialog has played out — let the chef wave goodbye and
-  // start the departure.
   if (chefState.dialogLineIndex >= chefState.dialogLines.length) {
+    if (wasTier4Visit) {
+      void getSceneMode().then((mode) => triggerWin(mode))
+    }
     setBoatChefPose(visitor.chef, CHEF_THANKS_CLIP)
     phase = 'LINGER'
     elapsedInPhase = 0
@@ -320,6 +328,7 @@ function enterInteracting(): void {
   const hasTier4 = getTier4RecipeIds().some(
     (id) => getCollectedCount(id) > 0
   )
+  wasTier4Visit = hasTier4
   const script = hasTier4
     ? BOAT_CHEF_TIER4_DIALOG_LINES
     : BOAT_CHEF_NO_TIER4_DIALOG_LINES

@@ -11,6 +11,8 @@ import { Entity, InputModifier, engine } from '@dcl/sdk/ecs'
 import { MainPlatform, Platform } from '../components'
 import { setHeldItem } from '../factories/heldItem'
 import { destroyPlatformEntity } from '../factories/platform'
+import { resetPlayTimer, startPlayTimer } from '../systems/playTimer'
+import { resetWinState } from './winScreen'
 import { clearCookSlots } from './cookSlots'
 import { setCookOpen } from './cookToggle'
 import { setCraftOpen } from './craftToggle'
@@ -66,6 +68,9 @@ export function playAgain(): void {
   resetInventoryLayout()
   resetInventoryState()
   resetLearnedRecipes()
+  resetPlayTimer()
+  startPlayTimer()
+  resetWinState()
   setStat('life', 1)
   setStat('hunger', 1)
   setStat('thirst', 1)

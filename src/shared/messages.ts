@@ -28,6 +28,21 @@ export const SAVE_MESSAGES = {
     op: Schemas.String,
     ok: Schemas.Boolean,
     error: Schemas.String
+  }),
+  submitScore: Schemas.Map({
+    mode: Schemas.String,
+    timeS: Schemas.Number
+  }),
+  submitScoreAck: Schemas.Map({
+    ok: Schemas.Boolean,
+    error: Schemas.String
+  }),
+  requestRankings: Schemas.Map({
+    mode: Schemas.String
+  }),
+  rankingsResult: Schemas.Map({
+    mode: Schemas.String,
+    entries: Schemas.String
   })
 }
 

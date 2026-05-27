@@ -25,6 +25,7 @@ import {
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
 import { isWorldClickConsumed } from '../ui/worldClickGate'
+import { playSfx } from '../audio/sfx'
 
 // One-shot consume animation triggered on a single fire press. Two flavours
 // based on what's equipped:
@@ -112,6 +113,7 @@ export function foodEatSystem(dt: number): void {
     elapsed = dt > 0 ? dt : 1e-6
     cooldown = COOLDOWN_S
     consumed = false
+    playSfx(activeKind === 'drink' ? 'drinkWater' : 'eatFood')
   }
 
   if (activeKind === null) return

@@ -17,6 +17,7 @@ import {
   engine
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
+import { isMobile } from '@dcl/sdk/platform'
 
 import { DEBUG_MODE } from '../config/gameConfig'
 import {
@@ -27,7 +28,7 @@ import {
   PortalPulse,
   PortalUvSwirl
 } from '../components'
-import { createChef } from './chef'
+import { CHEF_ALL_CLIPS, CHEF_IDLE_CLIP, createChef } from './chef'
 import { LOBBY_CHEF_DIALOG_LINES } from '../systems/chefDialog'
 import { SceneMode } from '../runtime/sceneMode'
 import {
@@ -43,6 +44,7 @@ import {
   WATER_LEVEL
 } from './sceneLevels'
 import { createAvatarHideArea } from './avatarHideArea'
+import { buildRankingPanel } from './rankingPanel'
 import { createSeabed } from './seabed'
 import { createWaterFloorV2 } from './water2'
 
@@ -186,6 +188,7 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
   buildBlockerWalls(cx, cz, mode, parcelGrid)
   buildDecor(cx, cz)
   buildActionPanel(cx, cz)
+  buildRankingPanel(GRID_ORIGIN.x, GRID_ORIGIN.z)
   if (mode === 'demo') {
     spawnTeleportPortal(cx + 4.5, cz - 6)
   }
@@ -391,7 +394,7 @@ function buildDecor(cx: number, cz: number): void {
 // 2.34:1 aspect so the labels have room to breathe. fontSize is in
 // DCL TextShape units (default = 10) — these values are tuned so the
 // label sits comfortably inside the plate without bleeding past it.
-const BIG_BUTTON: ButtonShape = { width: 1.8, height: 0.6, fontSize: 2.7 }
+const BIG_BUTTON: ButtonShape = { width: 1.8, height: 0.6, fontSize: isMobile() ? 2.0 : 2.7 }
 const SMALL_BUTTON: ButtonShape = { width: 0.78, height: 0.27, fontSize: 1.125 }
 
 // Click-plate padding factors. The click target is intentionally
@@ -436,8 +439,8 @@ function buildActionPanel(cx: number, cz: number): void {
   // read as printed onto the panel's "screen" face instead of floating.
   const buttonZ = panelZ + 0.12
   const baseY = LOBBY_DECK_Y + PANEL_LIFT
-  spawnButton('NEW', 'NEW WORLD', panelX, baseY - 0.075, buttonZ, BIG_BUTTON)
-  spawnButton('LOAD', 'LOAD WORLD', panelX, baseY - 0.825, buttonZ, BIG_BUTTON)
+  spawnButton('NEW', 'NEW GAME', panelX, baseY - 0.075, buttonZ, BIG_BUTTON)
+  spawnButton('LOAD', 'LOAD GAME', panelX, baseY - 0.825, buttonZ, BIG_BUTTON)
   if (DEBUG_MODE) {
     spawnButton('DEBUG', 'DEBUG', panelX, baseY - 1.28, buttonZ, SMALL_BUTTON)
   }
@@ -684,16 +687,11 @@ function spawnPortalInterior(worldX: number, worldZ: number): void {
       filterMode: TextureFilterMode.TFM_BILINEAR,
       wrapMode: TextureWrapMode.TWM_REPEAT
     }),
-    alphaTexture: Material.Texture.Common({
-      src: PORTAL_TEXTURE,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_REPEAT
-    }),
     albedoColor: Color4.create(1, 1, 1, 1),
     emissiveColor: Color3.create(1, 1, 1),
     emissiveIntensity: 0.75,
     specularIntensity: 0,
-    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
+    transparencyMode: MaterialTransparencyMode.MTM_OPAQUE,
     castShadows: false,
     roughness: 1,
     metallic: 0
@@ -760,6 +758,8 @@ function buildLobbyChef(worldX: number, worldZ: number, yawDeg: number): void {
   createChef({
     position: Vector3.create(worldX, LOBBY_DECK_Y - 0.05, worldZ),
     rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
+    idleClip: CHEF_IDLE_CLIP,
+    availableClips: [...CHEF_ALL_CLIPS],
     dialogLines: LOBBY_CHEF_DIALOG_LINES,
     tag: (entity: Entity) => LobbyTag.create(entity)
   })

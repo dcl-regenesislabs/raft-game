@@ -8,26 +8,44 @@ import {
 
 import { FloatingIsland, IslandChest } from '../components'
 import { playChestOpenAnimation } from '../factories/islandChest'
+import { getCookableById, getTier4RecipeIds } from '../ui/cookableItems'
 import { addCollected } from '../ui/inventoryState'
 import { notifyItemReceived } from '../ui/itemReceivedNotification'
+import { isRecipeLearned, markRecipeLearned } from '../ui/learnedRecipes'
+import { showNotification } from '../ui/notification'
 import { randInt } from '../utils/math'
 
-const CHEST_POOL = [
-  'wood', 'metal', 'plastic', 'rope', 'plants',
-  'mussels', 'clams', 'seaweed', 'tomatoes', 'garlic',
-  'olive_oil', 'potato', 'crab'
+const TIER4_INGREDIENT_POOL = [
+  'spaghetti', 'shark_meat', 'tomatoes', 'olive_oil',
+  'fettuccine', 'squid', 'crab'
 ] as const
 
-function rollChestLoot(): void {
-  const ropeCount = randInt(1, 2)
-  addCollected('rope', ropeCount)
-  notifyItemReceived('rope', ropeCount)
+function getUnlearnedTier4Ids(): string[] {
+  return getTier4RecipeIds().filter((id) => !isRecipeLearned(id)) as string[]
+}
 
+function rollTier4Ingredients(): void {
   const drops = randInt(2, 4)
   for (let i = 0; i < drops; i++) {
-    const pick = CHEST_POOL[Math.floor(Math.random() * CHEST_POOL.length)]
+    const pick = TIER4_INGREDIENT_POOL[
+      Math.floor(Math.random() * TIER4_INGREDIENT_POOL.length)
+    ]
     addCollected(pick, 1)
     notifyItemReceived(pick, 1)
+  }
+}
+
+function rollChestLoot(): void {
+  const unlearned = getUnlearnedTier4Ids()
+  const giveRecipe = unlearned.length > 0 && Math.random() < 0.75
+
+  if (giveRecipe) {
+    const pick = unlearned[Math.floor(Math.random() * unlearned.length)]
+    markRecipeLearned(pick)
+    const recipe = getCookableById(pick)
+    showNotification(`NEW RECIPE: ${recipe?.name ?? pick}`)
+  } else {
+    rollTier4Ingredients()
   }
 }
 

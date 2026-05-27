@@ -11,6 +11,7 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { WaterScroll } from '../components'
+import { playSfx } from '../audio/sfx'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
 import { actionButtonJustPressed } from '../ui/actionButton'
 import {
@@ -89,6 +90,7 @@ export function cupFillSystem(_dt: number): void {
 
   const slot = getSelectedSlot()
   if (transmuteContainerSlot(slot, 'saltWater')) {
+    playSfx('cupFill')
     showNotification('Cup filled with salt water.')
   }
   consumeWorldClick()

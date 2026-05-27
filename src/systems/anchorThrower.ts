@@ -82,7 +82,7 @@ export function getAnchorChargeT(): number {
 }
 
 export function isAnchorInFlight(): boolean {
-  return anchorEntity !== null
+  return anchorEntity !== null && anchorPhase !== 'anchored'
 }
 
 export function resetAnchorThrowerState(): void {
@@ -254,6 +254,7 @@ function advanceAnchor(dt: number, handPos: Vector3): void {
       transform.position = Vector3.create(splashX, WATER_LEVEL, splashZ)
       anchorPhase = 'reeling'
       velocity = Vector3.Zero()
+      playSfx('waterSplash')
     } else {
       transform.position = Vector3.create(nextX, nextY, nextZ)
     }
@@ -284,9 +285,7 @@ function advanceAnchor(dt: number, handPos: Vector3): void {
       const island = getAnchoredIsland()
       const islandY = island ? Transform.get(island).position.y + ANCHOR_ON_ISLAND_Y_OFFSET : WATER_LEVEL
       transform.position = Vector3.create(anchorPos.x, islandY, anchorPos.z)
-      // Only allow releasing the anchor while standing on the raft.
-      // Releasing from the island would lose the raft connection.
-      if (onRaft) {
+      if (onRaft && getHeldItemKind() === 'anchor') {
         const mobile = isMobile()
         const justPressed = mobile
           ? actionButtonJustPressed()
@@ -299,11 +298,13 @@ function advanceAnchor(dt: number, handPos: Vector3): void {
     }
   }
 
-  // Rope endpoint: hand while on raft, raft edge tie post while off raft.
   if (ropeEntity !== null && anchorEntity !== null) {
     const anchorPos = Transform.get(anchorEntity).position
     let ropeStart: Vector3
-    if (onRaft) {
+    if (anchorPhase === 'anchored') {
+      ropeStart = computeRaftTiePoint(anchorPos.x, anchorPos.z)
+      showTiePostAt(ropeStart)
+    } else if (onRaft) {
       ropeStart = handPos
       hideTiePost()
     } else {
@@ -311,7 +312,6 @@ function advanceAnchor(dt: number, handPos: Vector3): void {
       showTiePostAt(ropeStart)
     }
     updateRopeBetween(ropeEntity, ropeStart, anchorPos)
-    // Align the anchor model so its top points toward the rope origin
     alignAnchorToRope(anchorPos, ropeStart)
   }
 }

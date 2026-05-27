@@ -1,6 +1,7 @@
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
+import { isMusicMuted, toggleMusicMuted } from '../../audio/music'
 import { requestLoad, requestSave, requestWipe } from '../../client/saveClient'
 import { returnToLobby } from '../../runtime/sceneFlow'
 import { Panel } from '../panel'
@@ -25,7 +26,7 @@ import {
 // room for a status line and an optional confirm step. Centered with the
 // rest of the panel-style modals (death screen, craft menu).
 const PANEL_WIDTH = 560
-const PANEL_HEIGHT = 520
+const PANEL_HEIGHT = 580
 const BACKDROP_COLOR = Color4.create(0, 0, 0, 0.55)
 
 // Wider, full-width-feeling buttons for the system menu. We render the red
@@ -89,11 +90,12 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
 }
 
 function ActionColumn(): ReactEcs.JSX.Element {
+  const musicLabel = isMusicMuted() ? 'MUSIC: OFF' : 'MUSIC: ON'
   return (
     <UiEntity
       uiTransform={{
         width: '100%',
-        height: 280,
+        height: 340,
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
@@ -124,6 +126,10 @@ function ActionColumn(): ReactEcs.JSX.Element {
         onPress={() => {
           setSystemConfirm('restart')
         }}
+      />
+      <SystemActionButton
+        label={musicLabel}
+        onPress={toggleMusicMuted}
       />
     </UiEntity>
   )
