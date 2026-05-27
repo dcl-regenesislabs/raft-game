@@ -4,7 +4,6 @@ import {
   engine,
   inputSystem
 } from '@dcl/sdk/ecs'
-import { isMobile } from '@dcl/sdk/platform'
 
 import { ActiveCook, CookStatus, PlatformConstruction, PurifierState } from '../components'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
@@ -57,7 +56,7 @@ export function constructionInteractSystem(_dt: number): void {
   // E-press (desktop) or direct tap (mobile) to that specific entity,
   // which inherently requires the hover prompt to be visible.
 
-  const actionButton = isMobile() && actionButtonJustPressed()
+  const actionButton = actionButtonJustPressed()
   const lookTarget = getLookAtTarget()
 
   for (const [platform, pc] of engine.getEntitiesWith(PlatformConstruction)) {

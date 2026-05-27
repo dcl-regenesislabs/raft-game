@@ -5,7 +5,6 @@ import {
   inputSystem
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 
 import {
   getHeldFoodId,
@@ -94,13 +93,12 @@ export function foodEatSystem(dt: number): void {
     !isInventoryActionLocked() &&
     !isSelectionPointerLockoutActive() &&
     !isWorldClickConsumed() &&
-    (isMobile()
-      ? actionButtonJustPressed()
-      : isPointerLocked() &&
+    (actionButtonJustPressed() ||
+      (isPointerLocked() &&
         inputSystem.isTriggered(
           InputAction.IA_POINTER,
           PointerEventType.PET_DOWN
-        ))
+        )))
 
   if (
     isEdibleHeld &&

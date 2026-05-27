@@ -8,7 +8,6 @@ import {
   inputSystem
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 
 import { WaterScroll } from '../components'
 import { playSfx } from '../audio/sfx'
@@ -82,7 +81,6 @@ export function cupFillSystem(_dt: number): void {
     water
   )
   const actionButtonFire =
-    isMobile() &&
     actionButtonJustPressed() &&
     getLookAtTarget() === 'water' &&
     isPlayerWithinFillRange(water)
