@@ -4,6 +4,7 @@ import { Quaternion } from '@dcl/sdk/math'
 import { FloatingGarbage, FloatingIsland, Platform } from '../components'
 import { destroyFloatingGarbage } from '../factories/floatingGarbage'
 import { GRID_ORIGIN, RAFT_SIZE } from '../factories/platform'
+import { isOnFloatingIsland } from './floatingIsland'
 import { RAD_TO_DEG } from '../utils/math'
 
 // Vertical bob frequency in radians/second. ~0.2 Hz feels like a slow
@@ -101,7 +102,11 @@ export function floatingGarbageSystem(dt: number): void {
     pos.z += garbage.velocityZ * dt
     const surfaceY = garbage.baseY + Math.sin(garbage.bobPhase) * garbage.bobAmplitude
     const drop = SUBMERGE_DROP_BY_KIND[garbage.kind] ?? SUBMERGE_DROP_DEFAULT
-    const targetY = isOverRaft(pos.x, pos.z) ? garbage.baseY - drop : surfaceY
+    // The active floating-island participates in the same submersion
+    // grid as rafts — items drifting over it dip under, matching the
+    // platform behaviour.
+    const overObstacle = isOverRaft(pos.x, pos.z) || isOnFloatingIsland(pos.x, pos.z)
+    const targetY = overObstacle ? garbage.baseY - drop : surfaceY
     pos.y = pos.y + (targetY - pos.y) * submergeBlend
 
     // Despawn the moment the item leaves the parcel footprint

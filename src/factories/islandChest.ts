@@ -3,6 +3,7 @@ import {
   ColliderLayer,
   Entity,
   GltfContainer,
+  InputAction,
   PointerEventType,
   PointerEvents,
   Transform,
@@ -43,9 +44,10 @@ export function createIslandChest(rootEntity: Entity): Entity {
       {
         eventType: PointerEventType.PET_DOWN,
         eventInfo: {
-          button: 0,
+          button: InputAction.IA_PRIMARY,
           hoverText: 'Open Chest',
-          maxDistance: 6
+          maxDistance: 6,
+          showFeedback: true
         }
       }
     ]

@@ -43,7 +43,7 @@ export function islandChestSystem(_dt: number): void {
     if (island === null || !island.active) continue
 
     const cmd = inputSystem.getInputCommand(
-      InputAction.IA_POINTER,
+      InputAction.IA_PRIMARY,
       PointerEventType.PET_DOWN,
       entity
     )

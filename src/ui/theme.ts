@@ -95,11 +95,17 @@ export const ROTATE_BUTTON_TOP = 24
 export const ROTATE_BUTTON_GAP = 16
 export const ROTATE_BUTTON_LABEL_COLOR = Color4.create(0.3, 0.18, 0.1, 1)
 export const ROTATE_BUTTON_LABEL_SIZE = 48
-// Desktop key-hint glyph rendered under the arrow ("E" / "F"). Sits just
-// inside the bottom edge of the wood-framed circle so the central arrow
-// stays the dominant glyph.
+// Desktop key-hint glyph rendered in the bottom-right corner of the wood
+// frame ("E" / "F"). White so it reads against the warm wood texture
+// without competing with the central arrow.
 export const ROTATE_BUTTON_KEY_HINT_SIZE = 18
-export const ROTATE_BUTTON_KEY_HINT_BOTTOM = 12
+export const ROTATE_BUTTON_KEY_HINT_BOTTOM = 6
+export const ROTATE_BUTTON_KEY_HINT_RIGHT = 10
+export const ROTATE_BUTTON_KEY_HINT_COLOR = Color4.White()
+// Lift the central arrow glyph a hair above the geometric center so it
+// sits visually centered inside the painted cream circle (the cream area
+// is offset slightly upward inside the wood frame).
+export const ROTATE_BUTTON_LABEL_TOP_OFFSET = -6
 
 // --- Inventory panel -------------------------------------------------------
 // The art (`inventory.png`) is a 900×900 PNG with a 5×5 grid of cream cells
@@ -155,6 +161,16 @@ export const INVENTORY_BUTTON_RIGHT =
   SYSTEM_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
 export const CRAFT_BUTTON_RIGHT =
   INVENTORY_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
+// Desktop snaps the trio into the actual top-right corner. The frame is
+// 1.25× the button (~17.5px padding per side), so a small negative
+// `top` and `right` nest the frame into the corner while keeping the
+// visible button safely inside the canvas.
+export const INVENTORY_BUTTON_TOP_DESKTOP = -15
+export const SYSTEM_BUTTON_RIGHT_DESKTOP = 4
+export const INVENTORY_BUTTON_RIGHT_DESKTOP =
+  SYSTEM_BUTTON_RIGHT_DESKTOP + INVENTORY_BUTTON_SIZE - 30
+export const CRAFT_BUTTON_RIGHT_DESKTOP =
+  INVENTORY_BUTTON_RIGHT_DESKTOP + INVENTORY_BUTTON_SIZE - 30
 
 // --- Craft double-menu -----------------------------------------------------
 // Mini inventory + list + details render as one centered row on every
@@ -344,6 +360,11 @@ export const STATS_ORB_GAP = 8
 // with viewport width and broke parity between platforms.
 export const STATS_ORB_TOP = 24
 export const STATS_ORB_LEFT = 360
+// Desktop has no front-camera notch and the chat/minimap chrome sits
+// outside the UI canvas, so the orbs can hug the top-left corner
+// instead of the centered mobile anchor.
+export const STATS_ORB_TOP_DESKTOP = 4
+export const STATS_ORB_LEFT_DESKTOP = 240
 // Per-stat ring-reveal SPRITESHEETS. Each is a 4×4 grid of 16 frames at
 // 64×64 per cell, total 256×256 — the mobile texture-optimizer caps all
 // HUD textures at 256×256, so we ship at that exact size to avoid lossy

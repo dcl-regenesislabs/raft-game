@@ -42,14 +42,8 @@ import {
 } from '../factories/lobby'
 import { DEMO_PARCEL_GRID } from '../factories/sceneLevels'
 import { setLobbyExitHandler } from '../systems/lobbyPortalSystem'
-import {
-  armBoatChefEvent,
-  resetBoatChefEventState
-} from '../systems/boatChefDirector'
-import {
-  forceImmediateIslandSpawn,
-  resetEventScheduler
-} from '../systems/eventScheduler'
+import { resetBoatChefEventState } from '../systems/boatChefDirector'
+import { resetEventScheduler } from '../systems/eventScheduler'
 import {
   resetConstructionPlacementState
 } from '../systems/constructionPlacement'
@@ -94,7 +88,7 @@ function armLobbyExit(): void {
       // Restore the held viewmodel — gameplay starts now, so the
       // seeded tool (hook by default) should appear in hand.
       setHeldViewmodelHidden(false)
-      buildGameWorld(cachedParcelGrid, { debug: kind === 'DEBUG' })
+      buildGameWorld(cachedParcelGrid)
       // Drop the player onto the freshly-built main raft. Game spawn
       // mirrors the parcel-centre coords used in the demo's scene.json
       // spawn point; using movePlayerTo (not Transform mutation) is
@@ -119,7 +113,7 @@ function armLobbyExit(): void {
 export function skipLobbyToDebug(parcelGrid: number): void {
   dismissStartupGate()
   setHeldViewmodelHidden(false)
-  buildGameWorld(parcelGrid, { debug: true })
+  buildGameWorld(parcelGrid)
   void movePlayerTo({
     newRelativePosition: {
       x: GRID_ORIGIN.x,
@@ -134,7 +128,7 @@ export function skipLobbyToDebug(parcelGrid: number): void {
 // WATER_LEVEL, the origin raft, sharks). Idempotency-guarded so a stray
 // re-entry can't double-spawn — `returnToLobby` flips the flag back to
 // false so the next portal entry rebuilds cleanly.
-function buildGameWorld(parcelGrid: number, opts: { debug: boolean }): void {
+function buildGameWorld(parcelGrid: number): void {
   if (gameWorldBuilt) return
   gameWorldBuilt = true
   createSeabed(parcelGrid)
@@ -145,16 +139,11 @@ function buildGameWorld(parcelGrid: number, opts: { debug: boolean }): void {
   // not in the keep-set are removed, taking the modifier area with them.
   createAvatarHideArea(parcelGrid)
   spawnSharks()
-  // DEBUG fires both encounters immediately so the boat-chef and the
-  // first island spawn are testable without waiting out the regular
-  // cadence. Non-debug paths (NEW / LOAD via the lobby portal) leave
-  // the event scheduler to handle timing: chef is event-driven
-  // (tier-4 craft or first hunger ≤ 20 %), islands appear on the
-  // EVENT_ISLAND_FIRST_S / EVENT_ISLAND_INTERVAL_S cadence.
-  if (opts.debug) {
-    armBoatChefEvent()
-    forceImmediateIslandSpawn()
-  }
+  // Event scheduling (chef / sharks / islands) is owned entirely by
+  // eventScheduler.ts — chef is event-driven (tier-4 craft or first
+  // hunger ≤ 20 %), sharks/islands run on the EVENT_*_FIRST_S /
+  // EVENT_*_INTERVAL_S cadence. DEBUG runs the same scheduler so the
+  // event flow is testable end-to-end.
 }
 
 function spawnSharks(): void {

@@ -1,3 +1,4 @@
+import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs from '@dcl/sdk/react-ecs'
 
 import {
@@ -8,7 +9,9 @@ import {
 import {
   CRAFT_BUTTON_ICON,
   CRAFT_BUTTON_RIGHT,
-  INVENTORY_BUTTON_TOP
+  CRAFT_BUTTON_RIGHT_DESKTOP,
+  INVENTORY_BUTTON_TOP,
+  INVENTORY_BUTTON_TOP_DESKTOP
 } from '../theme'
 import { IconButton } from './IconButton'
 
@@ -16,13 +19,15 @@ import { IconButton } from './IconButton'
 // backpack so the visible edges sit flush. Shares the inventory button's
 // top offset so the two read as a single row.
 export function CraftButton(): ReactEcs.JSX.Element {
+  const top = isMobile() ? INVENTORY_BUTTON_TOP : INVENTORY_BUTTON_TOP_DESKTOP
+  const right = isMobile() ? CRAFT_BUTTON_RIGHT : CRAFT_BUTTON_RIGHT_DESKTOP
   return (
     <IconButton
       open={isCraftOpen()}
       scale={getCraftButtonScale()}
       iconTexture={CRAFT_BUTTON_ICON}
-      top={INVENTORY_BUTTON_TOP}
-      right={CRAFT_BUTTON_RIGHT}
+      top={top}
+      right={right}
       onPress={toggleCraft}
     />
   )

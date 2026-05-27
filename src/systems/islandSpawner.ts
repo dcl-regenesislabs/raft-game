@@ -18,9 +18,13 @@ import {
 // every frame until the trigger reports success.
 
 // --- tunables ---
-// Much slower than debris so the player has time to jump on
-const DRIFT_SPEED = 1.2
-const DRIFT_SPEED_JITTER = 0.3
+// Island travels AGAINST the sea flow (toward where the items are coming
+// from), so it crosses the visible play area more slowly than debris and
+// reads as the "obstacle approaching" beat rather than another piece of
+// drift. Keep well below FloatingGarbage's drift speed so debris always
+// overtakes / passes the island.
+const DRIFT_SPEED = 0.5
+const DRIFT_SPEED_JITTER = 0.1
 // Perpendicular-to-flow offset from the raft footprint to the island
 // path. Sized so the island reads clearly from the deck — not jammed
 // against the raft, not parked at the parcel edge.
@@ -77,7 +81,10 @@ function spawnIsland(): boolean {
   if (spawn === null) return false
 
   const speed = DRIFT_SPEED + (Math.random() * 2 - 1) * DRIFT_SPEED_JITTER
-  const velocity = Vector3.create(flowX * speed, 0, flowZ * speed)
+  // Negative-flow velocity: island moves opposite to debris drift. Spawn
+  // tryComputeSpawn() places the entry on the downstream end so the
+  // island then drifts upstream across the visible window.
+  const velocity = Vector3.create(-flowX * speed, 0, -flowZ * speed)
   // Drift from spawn through the lateral approach to the symmetric
   // exit point, then despawn. Lifetime is the only despawn signal —
   // simpler than juggling parcel bounds with the spawn-margin math.
@@ -106,16 +113,19 @@ function tryComputeSpawn(
 ): { x: number; z: number } | null {
   const lx = cx + perpX * side * lateralDist
   const lz = cz + perpZ * side * lateralDist
-  const x = lx - flowX * flowDist
-  const z = lz - flowZ * flowDist
+  // Spawn on the DOWNSTREAM side and drift upstream (negative flow).
+  // The island enters from where debris exits, so player reads the two
+  // streams crossing rather than racing in parallel.
+  const x = lx + flowX * flowDist
+  const z = lz + flowZ * flowDist
   const lo = PARCEL_MARGIN_M
   const hi = sceneSize - PARCEL_MARGIN_M
   if (x < lo || x > hi || z < lo || z > hi) return null
-  // Also reject if the exit point (symmetric downstream) would clip —
-  // we don't want the island to vanish mid-flight by reaching a bound
+  // Also reject if the exit point (symmetric upstream) would clip — we
+  // don't want the island to vanish mid-flight by reaching a bound
   // before its lifetime expires.
-  const exitX = lx + flowX * flowDist
-  const exitZ = lz + flowZ * flowDist
+  const exitX = lx - flowX * flowDist
+  const exitZ = lz - flowZ * flowDist
   if (exitX < lo || exitX > hi || exitZ < lo || exitZ > hi) return null
   return { x, z }
 }

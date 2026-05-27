@@ -7,9 +7,12 @@ import { rotatePlacementLeft, rotatePlacementRight } from '../placementRotation'
 import {
   ROTATE_BUTTON_GAP,
   ROTATE_BUTTON_KEY_HINT_BOTTOM,
+  ROTATE_BUTTON_KEY_HINT_COLOR,
+  ROTATE_BUTTON_KEY_HINT_RIGHT,
   ROTATE_BUTTON_KEY_HINT_SIZE,
   ROTATE_BUTTON_LABEL_COLOR,
   ROTATE_BUTTON_LABEL_SIZE,
+  ROTATE_BUTTON_LABEL_TOP_OFFSET,
   ROTATE_BUTTON_SIZE,
   ROTATE_BUTTON_TEXTURE,
   ROTATE_BUTTON_TOP
@@ -77,18 +80,26 @@ function RotateArrow(props: {
         fontSize={ROTATE_BUTTON_LABEL_SIZE}
         color={ROTATE_BUTTON_LABEL_COLOR}
         textAlign="middle-center"
-        uiTransform={{ width: '100%', height: '100%' }}
+        uiTransform={{
+          positionType: 'absolute',
+          position: { top: ROTATE_BUTTON_LABEL_TOP_OFFSET },
+          width: '100%',
+          height: '100%'
+        }}
       />
       {props.keyHint !== null && (
         <Label
           value={props.keyHint}
           fontSize={ROTATE_BUTTON_KEY_HINT_SIZE}
-          color={ROTATE_BUTTON_LABEL_COLOR}
-          textAlign="middle-center"
+          color={ROTATE_BUTTON_KEY_HINT_COLOR}
+          textAlign="bottom-right"
           uiTransform={{
             positionType: 'absolute',
-            position: { bottom: ROTATE_BUTTON_KEY_HINT_BOTTOM },
-            width: '100%',
+            position: {
+              bottom: ROTATE_BUTTON_KEY_HINT_BOTTOM,
+              right: ROTATE_BUTTON_KEY_HINT_RIGHT
+            },
+            width: ROTATE_BUTTON_KEY_HINT_SIZE * 2,
             height: ROTATE_BUTTON_KEY_HINT_SIZE
           }}
         />

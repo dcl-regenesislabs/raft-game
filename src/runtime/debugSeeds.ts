@@ -39,6 +39,20 @@ function seedDebugInventory(): void {
   // One empty cup is enough — the player can fill it at the ocean and
   // purify it at the debug purifier to exercise both water states.
   addCollected('cup', 1)
+
+  // Tier-4 cook test pack — covers both hero plates so the chef event
+  // fires off a tier-4 craft without grinding ingredients. Lets the
+  // event scheduler arm the boat chef naturally via notifyTier4Crafted.
+  //   spaghetti_shark_pomodoro: spaghetti, shark_meat, tomatoes, olive_oil
+  //   fettuccine_sea_food:      fettuccine, shark_meat, squid, crab
+  addCollected('spaghetti', 1)
+  addCollected('fettuccine', 1)
+  addCollected('shark_meat', 2)
+  addCollected('tomatoes', 1)
+  addCollected('olive_oil', 1)
+  addCollected('squid', 1)
+  addCollected('crab', 1)
+  addCollected('wood', 4)
 }
 
 // Stuffs the pre-placed storage chest with everything the player would

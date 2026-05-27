@@ -1,3 +1,4 @@
+import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 
 import { isCraftOpen } from '../craftToggle'
@@ -9,11 +10,13 @@ import {
   STATS_ORB_GAP,
   STATS_ORB_ICON_INSET_PCT,
   STATS_ORB_LEFT,
+  STATS_ORB_LEFT_DESKTOP,
   STATS_ORB_SIZE,
   STATS_ORB_SWEEP_COLS,
   STATS_ORB_SWEEP_FRAMES,
   STATS_ORB_SWEEP_ROWS,
   STATS_ORB_TOP,
+  STATS_ORB_TOP_DESKTOP,
   STATS_ORDER
 } from '../theme'
 
@@ -33,11 +36,13 @@ import {
 // clockwise with v=0 at bottom of source.
 export function StatsBars(): ReactEcs.JSX.Element | null {
   if (isCraftOpen()) return null
+  const top = isMobile() ? STATS_ORB_TOP : STATS_ORB_TOP_DESKTOP
+  const left = isMobile() ? STATS_ORB_LEFT : STATS_ORB_LEFT_DESKTOP
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: STATS_ORB_TOP, left: STATS_ORB_LEFT },
+        position: { top, left },
         height: STATS_ORB_SIZE,
         flexDirection: 'row',
         alignItems: 'center'
