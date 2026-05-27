@@ -131,7 +131,8 @@ export function constructionPlacementSystem(dt: number): void {
 function firePressed(): boolean {
   return (
     actionButtonJustPressed() ||
-    (isPointerLocked() &&
+    (!isMobile() &&
+      isPointerLocked() &&
       inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN))
   )
 }
