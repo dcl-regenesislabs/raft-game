@@ -23,7 +23,7 @@ export const DEBUG_MODE = true
 // straight into the DEBUG-seeded game world. Force-disabled in production
 // builds so a stray `true` can't ship — flip the raw constant below to
 // re-enable locally.
-export const SKIP_LOBBY = true
+export const SKIP_LOBBY = false
 
 // --- Event scheduler -------------------------------------------------------
 // Centralised cadence for the recurring scripted events. The scheduler
