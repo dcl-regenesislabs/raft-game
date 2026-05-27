@@ -1,3 +1,4 @@
+import { Color4 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
@@ -13,8 +14,9 @@ import {
   SYSTEM_BUTTON_RIGHT_DESKTOP
 } from '../theme'
 
-const NOTE_COLOR = { r: 0.3, g: 0.18, b: 0.1, a: 1 }
-const NOTE_MUTED_COLOR = { r: 0.55, g: 0.4, b: 0.3, a: 0.6 }
+const NOTE_COLOR = Color4.create(0.3, 0.18, 0.1, 1)
+const NOTE_MUTED_COLOR = Color4.create(0.55, 0.4, 0.3, 0.6)
+const SLASH_COLOR = Color4.create(0.85, 0.15, 0.15, 0.9)
 
 export function LobbyMusicButton(): ReactEcs.JSX.Element {
   const muted = isMusicMuted()
@@ -47,12 +49,26 @@ export function LobbyMusicButton(): ReactEcs.JSX.Element {
         onMouseDown={toggleMusicMuted}
       >
         <Label
-          value={muted ? '♪ X' : '♪'}
+          value="♪"
           fontSize={40}
           color={muted ? NOTE_MUTED_COLOR : NOTE_COLOR}
           textAlign="middle-center"
           uiTransform={{ width: '100%', height: '100%' }}
         />
+        {muted ? (
+          <Label
+            value="/"
+            fontSize={56}
+            color={SLASH_COLOR}
+            textAlign="middle-center"
+            uiTransform={{
+              positionType: 'absolute',
+              position: { top: 0, left: 0 },
+              width: '100%',
+              height: '100%'
+            }}
+          />
+        ) : undefined}
       </UiEntity>
     </UiEntity>
   )

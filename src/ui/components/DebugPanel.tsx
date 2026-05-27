@@ -26,12 +26,11 @@ export function DebugPanel(): ReactEcs.JSX.Element | null {
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: 0, right: 0 },
+        position: { top: 0, left: 0 },
         width: PANEL_WIDTH + 48,
         height: '100%',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: { bottom: '11%' }
+        justifyContent: 'center'
       }}
     >
       <Panel

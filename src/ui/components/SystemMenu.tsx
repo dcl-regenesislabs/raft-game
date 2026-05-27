@@ -1,9 +1,9 @@
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
-import { isMusicMuted, toggleMusicMuted } from '../../audio/music'
 import { requestLoad, requestSave, requestWipe } from '../../client/saveClient'
 import { returnToLobby } from '../../runtime/sceneFlow'
+import { CloseButton as XButton } from './CloseButton'
 import { Panel } from '../panel'
 import {
   getSystemConfirm,
@@ -22,19 +22,14 @@ import {
   CRAFT_TEXT_DIM_COLOR
 } from '../theme'
 
-// Modal sized to fit the four primary actions in a column with breathing
-// room for a status line and an optional confirm step. Centered with the
-// rest of the panel-style modals (death screen, craft menu).
-const PANEL_WIDTH = 560
-const PANEL_HEIGHT = 580
+const PANEL_WIDTH = 480
+const PANEL_HEIGHT = 460
 const BACKDROP_COLOR = Color4.create(0, 0, 0, 0.55)
 
-// Wider, full-width-feeling buttons for the system menu. We render the red
-// button texture as nine-slices so the painted side bevels keep their
-// pixel size at any width — only the red center stretches.
-const SYSTEM_BUTTON_W = 320
+const SYSTEM_BUTTON_W = 200
 const SYSTEM_BUTTON_H = CRAFT_BUTTON_H
-const SYSTEM_BUTTON_INLINE_W = 200
+const SYSTEM_BUTTON_INLINE_W = 160
+const SYSTEM_BUTTON_GAP = 12
 const SYSTEM_BUTTON_SLICE = { top: 0.2, right: 0.16, bottom: 0.2, left: 0.16 }
 
 export function SystemMenu(): ReactEcs.JSX.Element | null {
@@ -60,29 +55,39 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'flex-start',
-          padding: { top: 48, bottom: 32, left: 24, right: 24 }
+          padding: { top: 36, bottom: 24, left: 24, right: 24 }
         }}
       >
+        <UiEntity
+          uiTransform={{
+            positionType: 'absolute',
+            position: { top: -8, right: -8 }
+          }}
+        >
+          <XButton onPress={() => setSystemMenuOpen(false)} />
+        </UiEntity>
         <Label
           value="SYSTEM"
-          fontSize={36}
+          fontSize={32}
           color={CRAFT_TEXT_COLOR}
           textAlign="middle-center"
-          uiTransform={{ width: '100%', height: 56 }}
+          uiTransform={{ width: '100%', height: 44 }}
         />
         <Label
           value="Save, reload, return to the lobby, or wipe and start over."
-          fontSize={16}
+          fontSize={14}
           color={CRAFT_TEXT_DIM_COLOR}
           textAlign="middle-center"
-          uiTransform={{ width: '100%', height: 44, margin: { top: 8 } }}
+          uiTransform={{ width: '100%', height: 32, margin: { top: 4 } }}
         />
+        <UiEntity uiTransform={{ flexGrow: 1 }} />
         {confirm === null ? (
           <ActionColumn />
         ) : (
           <ConfirmColumn kind={confirm} />
         )}
         <StatusLine status={status} />
+        <UiEntity uiTransform={{ flexGrow: 1 }} />
         <CloseButton />
       </Panel>
     </UiEntity>
@@ -90,47 +95,55 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
 }
 
 function ActionColumn(): ReactEcs.JSX.Element {
-  const musicLabel = isMusicMuted() ? 'MUSIC: OFF' : 'MUSIC: ON'
   return (
     <UiEntity
       uiTransform={{
         width: '100%',
-        height: 340,
-        flexDirection: 'column',
-        alignItems: 'center',
+        flexDirection: 'row',
         justifyContent: 'center',
         margin: { top: 16 }
       }}
     >
-      <SystemActionButton
-        label="SAVE"
-        onPress={() => {
-          setSystemMenuOpen(false)
-          void requestSave()
+      <UiEntity
+        uiTransform={{
+          flexDirection: 'column',
+          alignItems: 'center',
+          margin: { right: SYSTEM_BUTTON_GAP }
         }}
-      />
-      <SystemActionButton
-        label="LOAD"
-        onPress={() => {
-          setSystemConfirm('load')
+      >
+        <SystemActionButton
+          label="SAVE"
+          onPress={() => {
+            setSystemMenuOpen(false)
+            void requestSave()
+          }}
+        />
+        <SystemActionButton
+          label="LOAD"
+          onPress={() => {
+            setSystemConfirm('load')
+          }}
+        />
+      </UiEntity>
+      <UiEntity
+        uiTransform={{
+          flexDirection: 'column',
+          alignItems: 'center'
         }}
-      />
-      <SystemActionButton
-        label="BACK TO LOBBY"
-        onPress={() => {
-          setSystemConfirm('lobby')
-        }}
-      />
-      <SystemActionButton
-        label="RESTART"
-        onPress={() => {
-          setSystemConfirm('restart')
-        }}
-      />
-      <SystemActionButton
-        label={musicLabel}
-        onPress={toggleMusicMuted}
-      />
+      >
+        <SystemActionButton
+          label="LOBBY"
+          onPress={() => {
+            setSystemConfirm('lobby')
+          }}
+        />
+        <SystemActionButton
+          label="RESTART"
+          onPress={() => {
+            setSystemConfirm('restart')
+          }}
+        />
+      </UiEntity>
     </UiEntity>
   )
 }
@@ -242,7 +255,7 @@ function SystemActionButton(props: {
 }): ReactEcs.JSX.Element {
   const inline = props.inline === true
   const width = inline ? SYSTEM_BUTTON_INLINE_W : SYSTEM_BUTTON_W
-  const margin = inline ? { left: 12, right: 12 } : { top: 8 }
+  const margin = inline ? { left: 12, right: 12 } : { top: 40 }
   return (
     <UiEntity
       uiTransform={{
@@ -278,7 +291,7 @@ function StatusLine(props: { status: SystemStatus }): ReactEcs.JSX.Element {
       fontSize={14}
       color={CRAFT_TEXT_DIM_COLOR}
       textAlign="middle-center"
-      uiTransform={{ width: '100%', height: 28, margin: { top: 12 } }}
+      uiTransform={{ width: '100%', height: 24, margin: { top: 4 } }}
     />
   )
 }
@@ -304,30 +317,12 @@ function describeStatus(status: SystemStatus): string {
   }
 }
 
+
 function CloseButton(): ReactEcs.JSX.Element {
   return (
-    <UiEntity
-      uiTransform={{
-        width: SYSTEM_BUTTON_W,
-        height: SYSTEM_BUTTON_H,
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: { top: 16 }
-      }}
-      uiBackground={{
-        textureMode: 'nine-slices',
-        texture: { src: CRAFT_BUTTON_TEXTURE },
-        textureSlices: SYSTEM_BUTTON_SLICE
-      }}
-      onMouseDown={() => setSystemMenuOpen(false)}
-    >
-      <Label
-        value="CLOSE"
-        fontSize={18}
-        color={CRAFT_BUTTON_FG}
-        textAlign="middle-center"
-        uiTransform={{ width: '100%', height: '100%' }}
-      />
-    </UiEntity>
+    <SystemActionButton
+      label="CLOSE"
+      onPress={() => setSystemMenuOpen(false)}
+    />
   )
 }

@@ -172,6 +172,7 @@ function ui(): ReactEcs.JSX.Element {
           insets regardless of platform. */}
       <SystemMenu />
       <SafeArea>
+        {isSystemMenuOpen() && <LobbyMusicButton />}
         <DebugPanel />
       </SafeArea>
     </UiEntity>

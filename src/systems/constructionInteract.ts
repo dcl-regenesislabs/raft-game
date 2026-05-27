@@ -12,7 +12,6 @@ import { actionButtonJustPressed } from '../ui/actionButton'
 import { grabCookOutput } from '../ui/cookGrab'
 import { openCookMenu } from '../ui/cookToggle'
 import {
-  addCollected,
   getCollectedCount,
   getSelectedSlot,
   isSelectionPointerLockoutActive,
@@ -20,8 +19,8 @@ import {
   transmuteContainerSlot
 } from '../ui/inventoryState'
 import { isInventoryActionLocked } from '../ui/inventoryToggle'
-import { notifyItemReceived } from '../ui/itemReceivedNotification'
 import { showNotification } from '../ui/notification'
+import { restoreStat } from '../ui/statsBars'
 import { openStorageMenu } from '../ui/storageToggle'
 import { consumeWorldClick } from '../ui/worldClickGate'
 import { getLookAtTarget } from './lookAtTarget'
@@ -41,13 +40,9 @@ import { addFuelToPurifier } from './purifierProcess'
 //     swaps the button to the grill icon and opens the cook menu).
 //
 // Per-kind behaviour:
-//   purifier — E pours a salt-water cup into the centre bowl (cup
-//     becomes empty), OR collects fresh water from the right bowl
-//     into an empty cup. F adds wood, which buys burn time so the
-//     processing system can convert salt → fresh while the fire
-//     lasts. Routing lives in `handlePurifierPrimary` /
-//     `handlePurifierFuel` below; the actual draining + flame sprite
-//     are owned by `purifierProcessSystem`.
+//   purifier — E drinks directly from the fresh bowl (restoring
+//     thirst by its fill %), OR pours a salt-water cup into the
+//     centre bowl when the fresh bowl is empty. F adds wood.
 //   grill    — opens the cook menu.
 //
 // Either way the click is marked consumed so a global handler (e.g.
@@ -132,56 +127,37 @@ export function constructionInteractSystem(_dt: number): void {
   }
 }
 
-// E-press routing for a purifier. The same key serves two opposite
-// operations depending on what the player is holding and what's in the
-// bowls:
-//   - salt-water cup + empty input bowl → pour: cup becomes empty,
-//     centre bowl fills to 1.0
-//   - empty cup + full output bowl → collect: cup transmutes to fresh
-//     water, right bowl drains to 0, +1 sea_salt as byproduct
-// Anything else just shows a hint so the player learns the loop.
+// E-press routing for a purifier. Two operations share the same key:
+//   - freshAmount > 0 → drink: restore thirst by freshAmount, drain bowl
+//   - freshAmount == 0 + holding salt-water cup → pour: cup becomes empty,
+//     salt bowl fills to 100%
 function handlePurifierPrimary(platform: import('@dcl/sdk/ecs').Entity): void {
   const state = PurifierState.getMutableOrNull(platform)
   if (state === null) return
+
+  if (state.freshAmount > 0) {
+    const FULL_CUP_RESTORE = 0.30
+    restoreStat('thirst', state.freshAmount * FULL_CUP_RESTORE)
+    showNotification('Drank purified water.')
+    state.freshAmount = 0
+    return
+  }
+
   const heldKind = getHeldItemKind()
   const heldId = getHeldFoodId()
   const slot = getSelectedSlot()
-
   const holdingSaltCup = heldKind === 'cup' && heldId === 'saltWater'
-  const holdingEmptyCup = heldKind === 'cup' && heldId === 'cup'
 
   if (holdingSaltCup) {
-    // One pour = 50% of the centre bowl (2 cups needed to fill it
-    // fully). Reject once the bowl is at 100% so the player can't
-    // overpour and silently waste cups.
     if (state.saltAmount >= 1) {
       showNotification('Centre bowl is full — light the fire.')
       return
     }
-    state.saltAmount = Math.min(1, state.saltAmount + 0.5)
+    state.saltAmount = Math.min(1, state.saltAmount + 1)
     transmuteContainerSlot(slot, 'cup')
     return
   }
 
-  if (holdingEmptyCup) {
-    if (state.freshAmount < 1) {
-      showNotification('Add wood and wait for fresh water.')
-      return
-    }
-    state.freshAmount = 0
-    transmuteContainerSlot(slot, 'freshWater')
-    // Salt evaporates out as a usable byproduct (matches the legacy
-    // per-cycle reward so cooking recipes that consume sea_salt still
-    // get fed at the same rate).
-    addCollected('sea_salt', 1)
-    notifyItemReceived('sea_salt', 1)
-    return
-  }
-
-  if (state.freshAmount >= 1) {
-    showNotification('Equip an empty cup to collect fresh water.')
-    return
-  }
   showNotification('Equip a salt-water cup to pour in.')
 }
 

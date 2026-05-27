@@ -1,5 +1,6 @@
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
+import { isMobile } from '@dcl/sdk/platform'
 
 import {
   CRAFTABLE_ITEMS,
@@ -66,8 +67,14 @@ const craftActionPulse = createPressPulse()
 // the row is free to claim the whole canvas.
 //
 // Renders nothing while closed.
+const MOBILE_CRAFT_OFFSET_X = -40
+const MOBILE_CRAFT_LIST_HEIGHT = 650
+
 export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
   if (!isCraftOpen()) return null
+  const mobile = isMobile()
+  const offsetX = mobile ? MOBILE_CRAFT_OFFSET_X : CRAFT_PANEL_OFFSET_X
+  const listHeight = mobile ? MOBILE_CRAFT_LIST_HEIGHT : CRAFT_LIST_HEIGHT
   return (
     <UiEntity
       uiTransform={{
@@ -78,7 +85,8 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
-        padding: { left: CRAFT_PANEL_OFFSET_X }
+        padding: { left: offsetX > 0 ? offsetX : 0 },
+        margin: { left: offsetX < 0 ? offsetX : 0 }
       }}
     >
       <AggregatedInventoryGrid
@@ -86,19 +94,19 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
         filter={(item) => isCraftMaterial(item.id)}
       />
       <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
-      <CraftItemList />
+      <CraftItemList listHeight={listHeight} />
       <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
       <CraftDetails />
     </UiEntity>
   )
 }
 
-function CraftItemList(): ReactEcs.JSX.Element {
+function CraftItemList(props: { listHeight: number }): ReactEcs.JSX.Element {
   return (
     <Panel
       uiTransform={{
         width: CRAFT_LIST_WIDTH,
-        height: CRAFT_LIST_HEIGHT,
+        height: props.listHeight,
         flexDirection: 'column',
         padding: {
           top: CRAFT_PANEL_PADDING_TOP,

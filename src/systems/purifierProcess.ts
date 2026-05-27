@@ -6,7 +6,6 @@ import { setPurifierHoverPrompt } from '../factories/construction'
 import { createFlameSprite } from '../factories/cookingSprites'
 
 const PROMPT_ADD_SALT = 'Add salt water'
-const PROMPT_GRAB_FRESH = 'Grab purified water'
 
 // Tracks the last hover signature written to each purifier child so the
 // system only re-emits PointerEvents on actual transitions. Keyed by
@@ -16,8 +15,11 @@ const PROMPT_GRAB_FRESH = 'Grab purified water'
 // either re-emits.
 const lastPromptByChild = new Map<Entity, string>()
 
-function pickPrimaryPrompt(saltAmount: number, freshAmount: number): string {
-  if (freshAmount >= 1) return PROMPT_GRAB_FRESH
+function pickPrimaryPrompt(freshAmount: number): string {
+  if (freshAmount > 0) {
+    const pct = Math.round(freshAmount * 100)
+    return `Drink purified water ${pct}%`
+  }
   return PROMPT_ADD_SALT
 }
 
@@ -96,7 +98,7 @@ export function purifierProcessSystem(dt: number): void {
     // `syncPurifierPrompt` no-ops when nothing changed.
     syncPurifierPrompt(
       pc.child,
-      pickPrimaryPrompt(state.saltAmount, state.freshAmount),
+      pickPrimaryPrompt(state.freshAmount),
       state.fireSec <= 0
     )
   }
