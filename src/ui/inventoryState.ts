@@ -3,6 +3,7 @@
 // every tap so mobile users get clear feedback.
 
 import { InputAction, inputSystem } from '@dcl/sdk/ecs'
+import { isMobile } from '@dcl/sdk/platform'
 
 import {
   type HeldItemKind,
@@ -238,12 +239,12 @@ export function tickInventoryAnim(dt: number): void {
   }
   // Clear the pointer lockout the first frame the player is no longer
   // holding the pointer — i.e. the click that triggered the selection has
-  // ended. From the next press onward, normal fire/throw behavior resumes.
-  if (
-    pointerLockoutFromSelection &&
-    !inputSystem.isPressed(InputAction.IA_POINTER)
-  ) {
-    pointerLockoutFromSelection = false
+  // ended. On mobile, IA_POINTER maps to screen touches which may linger
+  // (joystick, hold gestures), so skip the check and clear after one frame.
+  if (pointerLockoutFromSelection) {
+    if (isMobile() || !inputSystem.isPressed(InputAction.IA_POINTER)) {
+      pointerLockoutFromSelection = false
+    }
   }
 }
 
