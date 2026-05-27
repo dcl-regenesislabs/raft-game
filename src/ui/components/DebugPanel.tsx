@@ -2,6 +2,7 @@ import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
 import { DEBUG_MODE } from '../../config/gameConfig'
+import { isDebugRun } from '../../runtime/sceneFlow'
 import { forceIslandSpawn } from '../../systems/islandSpawner'
 import { triggerSharkAttack } from '../../systems/sharkDirector'
 import { armBoatChefEvent } from '../../systems/boatChefDirector'
@@ -21,7 +22,7 @@ const BUTTON_W = 240
 const BUTTON_SLICE = { top: 0.2, right: 0.16, bottom: 0.2, left: 0.16 }
 
 export function DebugPanel(): ReactEcs.JSX.Element | null {
-  if (!DEBUG_MODE || !isSystemMenuOpen()) return null
+  if (isDebugRun() || !isSystemMenuOpen()) return null
   return (
     <UiEntity
       uiTransform={{
