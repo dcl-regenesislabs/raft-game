@@ -1,12 +1,4 @@
-import {
-  Entity,
-  InputAction,
-  PointerEventType,
-  PointerEvents,
-  Transform,
-  engine,
-  inputSystem
-} from '@dcl/sdk/ecs'
+import { Entity, PointerEvents, Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
@@ -36,10 +28,7 @@ import {
 import { bankGarbageKind } from '../factories/garbageBank'
 import { isHeldViewmodelHidden } from '../factories/heldItem'
 import { WATER_LEVEL } from '../factories/sceneLevels'
-import {
-  actionButtonJustPressed,
-  isActionButtonPressed
-} from '../ui/actionButton'
+import { isToolFirePressed, toolFireJustPressed } from './toolFire'
 import { isPointerLocked } from '../ui/cursorLock'
 import { isAnchorInFlight } from './anchorThrower'
 import { isFishingLineActive } from './fishingRod'
@@ -170,31 +159,25 @@ export function hookThrowerSystem(dt: number): void {
   tickCharge(dt, handPos)
 }
 
-// Charge state machine: PET_DOWN starts charging; held → bar fills; full
-// bar auto-throws; release before full throws at the partial strength. On
-// mobile the on-screen action button is the canonical fire input — touches
-// elsewhere also fire IA_POINTER but we ignore them so the player can still
-// look around with one finger and throw with the other.
+// Charge state machine: fire press starts charging; held → bar fills;
+// full bar auto-throws; release before full throws at the partial
+// strength. The fire input comes from the toolFire seam (IA_POINTER /
+// native pointer button / legacy action button).
 function tickCharge(dt: number, handPos: Vector3): void {
-  const mobile = isMobile()
-  const justPressed = mobile
-    ? actionButtonJustPressed()
-    : inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)
-  const stillHeld = mobile
-    ? isActionButtonPressed()
-    : inputSystem.isPressed(InputAction.IA_POINTER)
+  const justPressed = toolFireJustPressed()
+  const stillHeld = isToolFirePressed()
 
   if (!charging) {
     // Skip the press that selected this slot — otherwise the equip-click
     // immediately starts a throw charge.
     if (justPressed && !isSelectionPointerLockoutActive()) {
-      // Mobile: the action button is shared with the direct grab
-      // path — when the player tapped it to grab a floating item, the
-      // grab system set the world-click-consumed flag this frame so
+      // Mobile: the fire press can land on the same frame as a direct
+      // grab (both routed off a screen tap) — when the grab system
+      // banked a floating item it set the world-click-consumed flag so
       // we don't ALSO charge a hook on top of the grab. Desktop uses
       // IA_POINTER (mouse) for the charge and IA_PRIMARY (E) for the
       // grab, so this guard is a no-op there.
-      if (mobile && isWorldClickConsumed()) return
+      if (isMobile() && isWorldClickConsumed()) return
       charging = true
       chargeT = 0
     }
@@ -497,3 +480,5 @@ function followGrabbedItems(): void {
   }
 }
 
+
+export function cancelHookCharge(): void { cancelCharge() }

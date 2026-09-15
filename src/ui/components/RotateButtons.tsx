@@ -1,3 +1,5 @@
+import { beginUiTouch } from '../mobileControlsState'
+import { UI_CELL, UI_INK } from '../visualTheme'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { isMobile } from '@dcl/sdk/platform'
 
@@ -33,9 +35,9 @@ export function RotateButtons(): ReactEcs.JSX.Element | null {
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: ROTATE_BUTTON_TOP },
-        width: '100%',
-        height: ROTATE_BUTTON_SIZE,
+        position: isMobile() ? { top: 166, right: 160 } : { top: ROTATE_BUTTON_TOP },
+        width: isMobile() ? 136 : '100%',
+        height: isMobile() ? 56 : ROTATE_BUTTON_SIZE,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center'
@@ -64,16 +66,15 @@ function RotateArrow(props: {
   return (
     <UiEntity
       uiTransform={{
-        width: ROTATE_BUTTON_SIZE,
-        height: ROTATE_BUTTON_SIZE,
+        width: isMobile() ? 56 : ROTATE_BUTTON_SIZE,
+        height: isMobile() ? 56 : ROTATE_BUTTON_SIZE,
         alignItems: 'center',
         justifyContent: 'center'
       }}
       uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: ROTATE_BUTTON_TEXTURE }
+        color: UI_CELL
       }}
-      onMouseDown={props.onPress}
+      onMouseDown={isMobile() ? beginUiTouch : props.onPress} onMouseUp={isMobile() ? props.onPress : undefined}
     >
       <Label
         value={props.label}

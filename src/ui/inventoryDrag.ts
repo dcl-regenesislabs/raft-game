@@ -15,7 +15,7 @@
 // won't immediately cancel its own selection. The flag is cleared once
 // per frame by `dragResetSystem`.
 
-import { getSelectedSlot, refreshHeldForSelectedSlot } from './inventoryState'
+import { remapEquippedSlot } from './inventoryState'
 import { getInventorySlot, swapInventorySlots } from './items'
 
 let selectedSlot: number | null = null
@@ -42,12 +42,7 @@ export function pressSlot(i: number): void {
     return
   }
   swapInventorySlots(selectedSlot, i)
-  // If the swap moved a new def into the equipped slot, refresh the
-  // held viewmodel so the hand reflects what's now under the selection.
-  const equipped = getSelectedSlot()
-  if (equipped === selectedSlot || equipped === i) {
-    refreshHeldForSelectedSlot()
-  }
+  remapEquippedSlot(selectedSlot, i)
   selectedSlot = null
 }
 

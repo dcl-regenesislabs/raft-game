@@ -1,11 +1,5 @@
-import {
-  InputAction,
-  PointerEventType,
-  Transform,
-  inputSystem
-} from '@dcl/sdk/ecs'
+import { Transform } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 
 import {
   getHeldFoodId,
@@ -13,8 +7,8 @@ import {
   getHeldItemKind,
   getHeldItemRest
 } from '../factories/heldItem'
-import { actionButtonJustPressed } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
+import { toolFireJustPressed } from './toolFire'
 import { getFoodEffect } from '../ui/foodEffects'
 import {
   consumeFoodById,
@@ -85,8 +79,8 @@ export function foodEatSystem(dt: number): void {
   const isEdibleHeld = isFoodHeld || isDrinkContainerHeld
 
   // Single-press fire — chew/drink runs to completion regardless of whether
-  // the button stays held. Mobile uses the action-button edge flag, desktop
-  // uses IA_POINTER PET_DOWN with the pointer captured. We also bail when
+  // the button stays held. The press comes from the toolFire seam with
+  // the pointer captured (always "captured" on mobile). We also bail when
   // an in-world entity already handled this frame's click (e.g. tapping
   // the purifier with salt water held — we want the purify session, not
   // a swig from the cup).
@@ -94,13 +88,8 @@ export function foodEatSystem(dt: number): void {
     !isInventoryActionLocked() &&
     !isSelectionPointerLockoutActive() &&
     !isWorldClickConsumed() &&
-    (actionButtonJustPressed() ||
-      (!isMobile() &&
-        isPointerLocked() &&
-        inputSystem.isTriggered(
-          InputAction.IA_POINTER,
-          PointerEventType.PET_DOWN
-        )))
+    isPointerLocked() &&
+    toolFireJustPressed()
 
   if (
     isEdibleHeld &&

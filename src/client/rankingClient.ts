@@ -2,24 +2,21 @@ import { isStateSyncronized } from '@dcl/sdk/network'
 
 import { saveRoom } from '../shared/messages'
 import { showNotification } from '../ui/notification'
-import type { SceneMode } from '../runtime/sceneMode'
 import type { RankingEntry } from '../shared/rankingTypes'
 
-const cachedRankings = new Map<string, RankingEntry[]>()
+let cachedRankings: RankingEntry[] | null = null
 let listenersRegistered = false
 let loading = true
 let lastSyncState = false
 let probeFired = false
-let pendingMode: SceneMode | null = null
 
-export function initRankingClient(mode: SceneMode): void {
+export function initRankingClient(): void {
   if (listenersRegistered) return
   listenersRegistered = true
-  pendingMode = mode
 
   saveRoom.onMessage('rankingsResult', (data) => {
     const entries: RankingEntry[] = parseRankingEntries(data.entries)
-    cachedRankings.set(data.mode, entries)
+    cachedRankings = entries
     loading = false
   })
 
@@ -36,30 +33,30 @@ export function initRankingClient(mode: SceneMode): void {
 export function rankingClientTickSystem(_dt: number): void {
   const synced = isStateSyncronized()
   if (synced && !lastSyncState) {
-    if (!probeFired && pendingMode !== null) {
+    if (!probeFired && listenersRegistered) {
       probeFired = true
-      requestRankings(pendingMode)
+      requestRankings()
     }
   }
   lastSyncState = synced
 }
 
-export function requestRankings(mode: SceneMode): void {
+export function requestRankings(): void {
   if (!isStateSyncronized()) return
   loading = true
-  saveRoom.send('requestRankings', { mode })
+  saveRoom.send('requestRankings', {})
 }
 
-export function submitScore(mode: SceneMode, timeS: number, debug: boolean): void {
+export function submitScore(timeS: number, debug: boolean): void {
   if (!isStateSyncronized()) {
     showNotification('Not connected — score could not be submitted.')
     return
   }
-  saveRoom.send('submitScore', { mode, timeS, debug })
+  saveRoom.send('submitScore', { timeS, debug })
 }
 
-export function getRankings(mode: SceneMode): RankingEntry[] | null {
-  return cachedRankings.get(mode) ?? null
+export function getRankings(): RankingEntry[] | null {
+  return cachedRankings
 }
 
 export function isRankingsLoading(): boolean {

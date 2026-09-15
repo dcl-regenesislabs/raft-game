@@ -1,3 +1,4 @@
+import { isMobile } from '@dcl/sdk/platform'
 import { InputAction, PointerEventType, inputSystem } from '@dcl/sdk/ecs'
 
 import { selectSlot, tickInventoryAnim } from '../ui/inventoryState'
@@ -12,6 +13,7 @@ const SLOT_KEYS: (InputAction | null)[] = [
 
 export function inventoryInputSystem(dt: number): void {
   tickInventoryAnim(dt)
+  if (isMobile()) return
   for (let i = 0; i < SLOT_KEYS.length; i++) {
     const key = SLOT_KEYS[i]
     if (key === null) continue

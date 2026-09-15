@@ -12,18 +12,16 @@ import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 // import { VideoPlayer } from '@dcl/sdk/ecs' // re-enable when switching back to MP4 water
 
 import { WaterScroll } from '../components'
-import { WATER_LEVEL } from './sceneLevels'
+import { PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from './sceneLevels'
 
-const PARCEL_GRID = 5
-const PARCEL_SIZE = 16
-const TOTAL_SIZE = PARCEL_GRID * PARCEL_SIZE // 80 m
+const TOTAL_SIZE = PARCEL_GRID * PARCEL_SIZE_M
 const WATER_TEXTURE = 'assets/scene/water/water-tile.png'
 const WATER_BUMP_TEXTURE = 'assets/scene/water/water-bump.png'
 const WATER_Y = WATER_LEVEL
 const WATER_ALPHA = 0.95
 // One tile per parcel (16 m of world = one image repeat). Bigger = blurrier;
 // smaller = more visible repetition. Tune as needed.
-const TILE_COUNT = 5
+const TILE_COUNT = PARCEL_GRID
 
 export function createWaterFloorV1(): Entity {
   const entity = engine.addEntity()

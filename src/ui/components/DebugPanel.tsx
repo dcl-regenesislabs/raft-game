@@ -1,3 +1,4 @@
+import { UI_ACCENT, UI_CELL, UI_INK } from '../visualTheme'
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
@@ -90,9 +91,7 @@ function DebugButton(props: {
         margin: { top: 8 }
       }}
       uiBackground={{
-        textureMode: 'nine-slices',
-        texture: { src: CRAFT_BUTTON_TEXTURE },
-        textureSlices: BUTTON_SLICE
+        color: UI_ACCENT,
       }}
       onMouseDown={props.onPress}
     >

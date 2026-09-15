@@ -36,8 +36,8 @@ import {
 // clockwise with v=0 at bottom of source.
 export function StatsBars(): ReactEcs.JSX.Element | null {
   if (isCraftOpen()) return null
-  const top = isMobile() ? STATS_ORB_TOP : STATS_ORB_TOP_DESKTOP
-  const left = isMobile() ? STATS_ORB_LEFT : STATS_ORB_LEFT_DESKTOP
+  const top = isMobile() ? 8 : STATS_ORB_TOP_DESKTOP
+  const left = isMobile() ? 12 : STATS_ORB_LEFT_DESKTOP
   return (
     <UiEntity
       uiTransform={{

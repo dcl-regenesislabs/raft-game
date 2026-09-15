@@ -1,3 +1,4 @@
+import { UI_PAPER, UI_BORDER, UI_CELL } from '../visualTheme'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 
@@ -211,10 +212,9 @@ export function BottomBarSurface(props: {
   const height = Math.round(width * (BAR_HEIGHT / BAR_WIDTH))
   return (
     <UiEntity
-      uiTransform={{ width, height }}
+      uiTransform={{ width, height, borderRadius: 12 }}
       uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: BAR_TEXTURE }
+        color: UI_PAPER
       }}
     >
       {Array.from({ length: BOTTOM_BAR_SLOT_COUNT }, (_, i) => (
@@ -283,11 +283,13 @@ function Slot(props: {
       uiTransform={{
         positionType: 'absolute',
         position: { top: slotTop, left: leftPx },
+        borderRadius: 8, borderWidth: 1, borderColor: UI_BORDER,
         width: slotSize,
         height: slotSize,
         alignItems: 'center',
         justifyContent: 'center'
       }}
+      uiBackground={{ color: UI_CELL }}
       onMouseDown={() => {
         if (isCookOpen()) {
           if (display !== null) pickIngredient(display.id)

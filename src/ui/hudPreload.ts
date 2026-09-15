@@ -8,9 +8,12 @@
 // is warm. The component is left in place for the rest of the session
 // so the renderer keeps the assets resident.
 
+import { MAIN_ACTION_ICON_ASSETS } from './mainActionIcons'
+
 import { AssetLoad, engine } from '@dcl/sdk/ecs'
 
 const HUD_PRELOAD_ASSETS: readonly string[] = [
+  ...MAIN_ACTION_ICON_ASSETS,
   // Splash
   'images/raft_game_logo.png',
 

@@ -28,10 +28,7 @@ import {
   buildSaveBlob,
   parseSaveBlob
 } from '../shared/saveSchema'
-import { getSceneMode } from '../runtime/sceneMode'
-import type { SceneMode } from '../runtime/sceneMode'
 
-let cachedMode: SceneMode | null = null
 let listenersRegistered = false
 let probeFired = false
 let lastSyncState = false
@@ -46,11 +43,6 @@ let suppressLoadNotification = false
 // the player still gets to choose NEW GAME or LOAD LAST GAME.
 let saveProbeInFlight = false
 
-async function ensureMode(): Promise<SceneMode> {
-  if (cachedMode !== null) return cachedMode
-  cachedMode = await getSceneMode()
-  return cachedMode
-}
 
 export function initSaveClient(): void {
   if (listenersRegistered) return
@@ -139,9 +131,8 @@ export function saveClientTickSystem(_dt: number): void {
 }
 
 async function sendSaveProbe(): Promise<void> {
-  const mode = await ensureMode()
   saveProbeInFlight = true
-  saveRoom.send('load', { mode })
+  saveRoom.send('load', {})
 }
 
 export async function requestSave(): Promise<void> {
@@ -153,11 +144,10 @@ export async function requestSave(): Promise<void> {
     showNotification('Connecting — try again in a moment.')
     return
   }
-  const mode = await ensureMode()
   setSystemStatus({ kind: 'saving' })
   showNotification('Saving…')
-  const blob = buildSaveBlob(mode)
-  saveRoom.send('save', { mode, payload: JSON.stringify(blob) })
+  const blob = buildSaveBlob()
+  saveRoom.send('save', { payload: JSON.stringify(blob) })
 }
 
 // `silent` drops the in-flight "Loading…" status so the auto-load on
@@ -176,13 +166,12 @@ export async function requestLoad(silent: boolean = false): Promise<void> {
     }
     return
   }
-  const mode = await ensureMode()
   if (!silent) {
     setSystemStatus({ kind: 'loading' })
     showNotification('Loading…')
   }
   suppressLoadNotification = silent
-  saveRoom.send('load', { mode })
+  saveRoom.send('load', {})
 }
 
 export async function requestWipe(): Promise<void> {

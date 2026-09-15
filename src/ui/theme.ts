@@ -1,3 +1,4 @@
+import { UI_INK, UI_MUTED, UI_ACCENT } from './visualTheme'
 // All visual constants the HUD reads — colors, sizes, insets, anchor
 // percentages — live here so a designer can retune the look of the scene
 // from one file. State and behaviour stay in their respective ui/ modules.
@@ -194,16 +195,16 @@ export const CRAFT_PANEL_OFFSET_X = 160
 // than vertical so labels and counts don't crowd the painted left/right
 // frame; top padding is larger than bottom so the header sits visibly
 // inside the wood frame instead of hugging the top bevel.
-export const CRAFT_PANEL_PADDING_X = 40
-export const CRAFT_PANEL_PADDING_TOP = 48
-export const CRAFT_PANEL_PADDING_BOTTOM = 32
+export const CRAFT_PANEL_PADDING_X = 24
+export const CRAFT_PANEL_PADDING_TOP = 24
+export const CRAFT_PANEL_PADDING_BOTTOM = 24
 // Dark brown text reads against the cream panel center; the cream variant
 // is for rows with a dark inset (selected craftable).
-export const CRAFT_TEXT_COLOR = Color4.create(0.3, 0.18, 0.1, 1)
-export const CRAFT_TEXT_DIM_COLOR = Color4.create(0.45, 0.3, 0.18, 1)
-export const CRAFT_TEXT_LIGHT_COLOR = Color4.create(0.97, 0.92, 0.78, 1)
+export const CRAFT_TEXT_COLOR = UI_INK
+export const CRAFT_TEXT_DIM_COLOR = UI_MUTED
+export const CRAFT_TEXT_LIGHT_COLOR = Color4.White()
 export const CRAFT_DIVIDER_COLOR = Color4.create(0.3, 0.18, 0.1, 0.5)
-export const CRAFT_ROW_SELECTED_BG = Color4.create(0, 0, 0, 0.55)
+export const CRAFT_ROW_SELECTED_BG = UI_ACCENT
 export const CRAFT_BUTTON_TEXTURE = 'images/hud/red_button.png'
 export const CRAFT_BUTTON_FG = Color4.White()
 // Source art is 324×152 (aspect ≈2.13). Rendered size keeps that ratio so
@@ -399,3 +400,5 @@ export const STAT_ICON_TEXTURES: Record<StatKind, string> = {
 export const STATS_ORB_ICON_INSET_PCT = 14
 // Order drives the visual row left → right.
 export const STATS_ORDER: readonly StatKind[] = ['life', 'hunger', 'thirst']
+
+export const HANDS_ICON = 'images/hud/hands.png'

@@ -1,3 +1,6 @@
+import { getMobileLayout } from '../mobileLayout'
+import { beginUiTouch } from '../mobileControlsState'
+import { UI_ACCENT, UI_CELL, UI_INK, UI_MUTED, UI_GLASS, UI_GOLD } from '../visualTheme'
 import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
@@ -9,6 +12,7 @@ import {
   getCookInput,
   getMatchingRecipe,
   getPickedIngredient,
+  pickIngredient,
   placeInFuelCell,
   placeInInputCell,
   removeFromFuelCell,
@@ -16,11 +20,11 @@ import {
 } from '../cookSlots'
 import { type CookableItem, getCookableById } from '../cookableItems'
 import { closeCookMenu, isCookOpen } from '../cookToggle'
-import { getCatalogItem } from '../items'
+import { getInventorySlot, getItemDisplayName, getCatalogItem } from '../items'
 import { getLearnedRecipeIds } from '../learnedRecipes'
 import { Panel } from '../panel'
 import { createPressPulse } from '../pressPulse'
-import { getCombinedCount } from '../storageSession'
+import { collectStorageItemIds, getCombinedCount } from '../storageSession'
 import {
   COOK_DETAILS_HEIGHT,
   COOK_DETAILS_WIDTH,
@@ -102,17 +106,14 @@ export function CookMenu(): ReactEcs.JSX.Element | null {
         flexDirection: 'row'
       }}
     >
-      <AggregatedInventoryGrid
-        size={CRAFT_INVENTORY_SIZE}
-        filter={(item) => item.ingredient}
-      />
+      <CookSupplies />
       {/* COOK_PANEL_GAP is applied as a left margin on the cook panel
           wrapper. Negative values pull the cook panel left so its
           painted wood frame overlaps the inventory's right edge — the
           two surfaces read as one cooking station. (A negative WIDTH
           spacer would just be clamped to 0 by the layout engine, so
           margin is the only knob that works here.) */}
-      <UiEntity uiTransform={{ margin: { left: COOK_PANEL_GAP } }}>
+      <UiEntity uiTransform={{ margin: { left: 12 } }}>
         <CookPanel />
       </UiEntity>
       {/* Recipes list — same overlap trick as the cook panel so the
@@ -130,7 +131,7 @@ function CookPanel(): ReactEcs.JSX.Element {
     <Panel
       uiTransform={{
         width: COOK_DETAILS_WIDTH,
-        height: COOK_DETAILS_HEIGHT,
+        height: Math.min(COOK_DETAILS_HEIGHT, getMobileLayout().height - 32),
         flexDirection: 'column',
         alignItems: 'center',
         padding: {
@@ -150,8 +151,22 @@ function CookPanel(): ReactEcs.JSX.Element {
         }}
         uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
       />
+      <Label
+        value="Choose a recipe, or pick ingredients and tap + to experiment."
+        fontSize={15}
+        color={UI_MUTED}
+        textAlign="middle-left"
+        uiTransform={{ width: '100%', height: 44 }}
+      />
       <CookRecipeLayout />
       <UiEntity uiTransform={{ height: 12, width: 1 }} />
+      <Label
+        value={cookHint()}
+        fontSize={14}
+        color={canStartCook() ? UI_GOLD : UI_MUTED}
+        textAlign="middle-left"
+        uiTransform={{ width: '100%', height: 48 }}
+      />
       <CookActionRow />
     </Panel>
   )
@@ -177,8 +192,8 @@ function CookHeader(): ReactEcs.JSX.Element {
       <UiEntity
         uiTransform={{
           margin: {
-            top: CLOSE_BUTTON_COOK_MARGIN_TOP,
-            right: CLOSE_BUTTON_COOK_MARGIN_RIGHT
+            top: 0,
+            right: 0
           }
         }}
       >
@@ -202,11 +217,35 @@ function CookRecipeLayout(): ReactEcs.JSX.Element {
         height: COOK_LAYOUT_HEIGHT
       }}
       uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: COOK_LAYOUT_TEXTURE }
+        color: UI_CELL
       }}
     >
-      {COOK_INPUT_CENTERS_PCT.map((center, i) => (
+      <Label
+        value="INGREDIENTS"
+        fontSize={11}
+        color={UI_MUTED}
+        uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: 164, height: 20 }}
+      />
+      <Label
+        value="MEAL"
+        fontSize={11}
+        color={UI_MUTED}
+        uiTransform={{ positionType: 'absolute', position: { top: 0, right: 0 }, width: 90, height: 20 }}
+      />
+      <Label
+        value="WOOD / FUEL"
+        fontSize={11}
+        color={UI_MUTED}
+        uiTransform={{ positionType: 'absolute', position: { top: 164, left: 8 }, width: 140, height: 20 }}
+      />
+      {(
+        [
+          [14, 23],
+          [40, 23],
+          [14, 52],
+          [40, 52]
+        ] as const
+      ).map((center, i) => (
         <CookInputCell key={i} index={i} centerPct={center} recipe={recipe} />
       ))}
       <CookFuelCellOverlay recipe={recipe} />
@@ -220,14 +259,10 @@ function CookRecipeLayout(): ReactEcs.JSX.Element {
 // when there's nothing to flag — empty cell, no recipe matched, or
 // inventory is already sufficient — so the cell stays clean in the
 // common case.
-function shortageBadge(
-  itemId: string | null,
-  recipe: CookableItem | null
-): { text: string } | null {
+function shortageBadge(itemId: string | null, recipe: CookableItem | null): { text: string } | null {
   if (itemId === null || recipe === null) return null
   const ing = recipe.ingredients.find((i) => i.itemId === itemId)
-  const required =
-    ing?.amount ?? (recipe.fuel.itemId === itemId ? recipe.fuel.amount : 0)
+  const required = ing?.amount ?? (recipe.fuel.itemId === itemId ? recipe.fuel.amount : 0)
   if (required <= 0) return null
   // Aggregated across player + every storage so the shortage indicator
   // matches what the inventory overview shows. The COOK button still
@@ -248,7 +283,7 @@ function CookInputCell(props: {
   return (
     <CookCellOverlay
       centerPct={props.centerPct}
-      sizePct={COOK_INPUT_ICON_SIZE_PCT}
+      sizePct={20}
       texture={idToTexture(id)}
       shortage={shortageBadge(id, props.recipe)}
       onPress={() => {
@@ -262,14 +297,12 @@ function CookInputCell(props: {
   )
 }
 
-function CookFuelCellOverlay(props: {
-  recipe: CookableItem | null
-}): ReactEcs.JSX.Element {
+function CookFuelCellOverlay(props: { recipe: CookableItem | null }): ReactEcs.JSX.Element {
   const id = getCookFuel()
   return (
     <CookCellOverlay
-      centerPct={COOK_FUEL_CENTER_PCT}
-      sizePct={COOK_FUEL_ICON_SIZE_PCT}
+      centerPct={[27, 86]}
+      sizePct={20}
       texture={idToTexture(id)}
       shortage={shortageBadge(id, props.recipe)}
       onPress={() => {
@@ -286,12 +319,10 @@ function CookFuelCellOverlay(props: {
 // Output cell is non-interactive — it just previews what the placed
 // cells WILL produce. Faded when no recipe matches so the player
 // understands "this is what you're about to make" vs "this is empty".
-function CookOutputCellOverlay(props: {
-  previewTexture: string | null
-}): ReactEcs.JSX.Element {
+function CookOutputCellOverlay(props: { previewTexture: string | null }): ReactEcs.JSX.Element {
   return (
     <CookCellOverlay
-      centerPct={COOK_OUTPUT_CENTER_PCT}
+      centerPct={[80, 36]}
       sizePct={COOK_OUTPUT_ICON_SIZE_PCT}
       texture={props.previewTexture}
       shortage={null}
@@ -323,10 +354,21 @@ function CookCellOverlay(props: {
         positionType: 'absolute',
         position: { top, left },
         width: w,
-        height: w
+        height: w,
+        borderRadius: 8
       }}
-      onMouseDown={props.onPress}
+      uiBackground={{ color: UI_GLASS }}
+      onMouseDown={beginUiTouch}
+      onMouseUp={props.onPress}
     >
+      {props.texture === null && (
+        <Label
+          value={props.onPress ? '+' : '?'}
+          fontSize={26}
+          color={UI_MUTED}
+          uiTransform={{ width: '100%', height: '100%' }}
+        />
+      )}
       {props.texture !== null && (
         <UiEntity
           uiTransform={{ width: '100%', height: '100%' }}
@@ -349,12 +391,7 @@ function CookCellOverlay(props: {
           }}
           uiBackground={{ color: COOK_SHORTAGE_BG }}
         >
-          <Label
-            value={props.shortage.text}
-            fontSize={12}
-            color={COOK_SHORTAGE_FG}
-            textAlign="middle-center"
-          />
+          <Label value={props.shortage.text} fontSize={12} color={COOK_SHORTAGE_FG} textAlign="middle-center" />
         </UiEntity>
       )}
     </UiEntity>
@@ -399,15 +436,12 @@ function CookActionButton(): ReactEcs.JSX.Element {
           justifyContent: 'center'
         }}
         uiBackground={{
-          textureMode: 'stretch',
-          texture: { src: CRAFT_BUTTON_TEXTURE },
           // Dim the button when no recipe matches so the player gets a
           // visual cue that pressing it won't start a cook.
-          color: enabled
-            ? Color4.create(1, 1, 1, 1)
-            : Color4.create(1, 1, 1, 0.45)
+          color: enabled ? UI_ACCENT : UI_CELL
         }}
-        onMouseDown={() => {
+        onMouseDown={beginUiTouch}
+        onMouseUp={() => {
           if (!enabled) return
           cookActionPulse.press()
           startCook()
@@ -415,8 +449,8 @@ function CookActionButton(): ReactEcs.JSX.Element {
       >
         <Label
           value="COOK"
-          fontSize={13}
-          color={CRAFT_BUTTON_FG}
+          fontSize={17}
+          color={enabled ? CRAFT_BUTTON_FG : UI_INK}
           textAlign="middle-center"
           uiTransform={{ width: '100%', height: '100%' }}
         />
@@ -444,7 +478,7 @@ function CookRecipeList(): ReactEcs.JSX.Element {
     <Panel
       uiTransform={{
         width: COOK_LIST_WIDTH,
-        height: COOK_LIST_HEIGHT,
+        height: Math.min(COOK_LIST_HEIGHT, getMobileLayout().height - 32),
         flexDirection: 'column',
         padding: {
           top: CRAFT_PANEL_PADDING_TOP,
@@ -494,13 +528,7 @@ function CookRecipeList(): ReactEcs.JSX.Element {
           learnedIds.map((id) => {
             const recipe = getCookableById(id)
             if (recipe === null) return null
-            return (
-              <CookRecipeRow
-                key={id}
-                recipe={recipe}
-                selected={matchedId === id}
-              />
-            )
+            return <CookRecipeRow key={id} recipe={recipe} selected={matchedId === id} />
           })
         )}
       </UiEntity>
@@ -514,11 +542,7 @@ function CookRecipeList(): ReactEcs.JSX.Element {
 // ingredients (and fuel) into their cells, so the player can cook it
 // straight away when they have everything, or see exactly which
 // ingredients are missing via the existing shortage badges.
-function CookRecipeRow(props: {
-  recipe: CookableItem
-  selected: boolean
-  key?: string
-}): ReactEcs.JSX.Element {
+function CookRecipeRow(props: { recipe: CookableItem; selected: boolean; key?: string }): ReactEcs.JSX.Element {
   const recipe = props.recipe
   let owned = 0
   for (const ing of recipe.ingredients) {
@@ -536,9 +560,7 @@ function CookRecipeRow(props: {
         margin: { bottom: 4 },
         padding: { left: 6, right: 6 }
       }}
-      uiBackground={
-        props.selected ? { color: CRAFT_ROW_SELECTED_BG } : undefined
-      }
+      uiBackground={props.selected ? { color: CRAFT_ROW_SELECTED_BG } : undefined}
       onMouseDown={() => applyRecipeToCells(recipe)}
     >
       <UiEntity
@@ -560,8 +582,106 @@ function CookRecipeRow(props: {
         fontSize={12}
         color={enough ? CRAFT_HAVE_OK_COLOR : CRAFT_HAVE_LOW_COLOR}
         textAlign="middle-right"
-        uiTransform={{ height: '100%' }}
+        uiTransform={{ width: 40, flexShrink: 0, height: '100%' }}
       />
     </UiEntity>
+  )
+}
+
+function cookHint(): string {
+  const recipe = getMatchingRecipe()
+  if (!recipe) return 'Select a known recipe, or combine ingredients to discover one.'
+  const needs = [...recipe.ingredients, recipe.fuel].filter((i) => getCombinedCount(i.itemId) < i.amount)
+  if (needs.length)
+    return `Missing: ${needs.map((i) => `${i.amount - getCombinedCount(i.itemId)} ${i.itemId}`).join(', ')}`
+  if (getCookFuel() !== recipe.fuel.itemId) return 'Pick wood from your supplies, then tap the fuel slot.'
+  return `Ready: ${recipe.name}. Collect it from the grill when cooked.`
+}
+
+function CookSupplies(): ReactEcs.JSX.Element {
+  const ids = new Set<string>(collectStorageItemIds())
+  for (let i = 0; i < 30; i++) {
+    const item = getInventorySlot(i)
+    if (item) ids.add(item.id)
+  }
+  const items = Array.from(ids)
+    .map(getCatalogItem)
+    .filter((item) => item?.ingredient && getCombinedCount(item.id) > 0)
+  return (
+    <Panel
+      uiTransform={{
+        width: 240,
+        height: Math.min(540, getMobileLayout().height - 32),
+        padding: 16,
+        flexDirection: 'column'
+      }}
+    >
+      <Label
+        value="SUPPLIES"
+        fontSize={20}
+        color={UI_INK}
+        textAlign="middle-left"
+        uiTransform={{ width: '100%', height: 36 }}
+      />
+      <Label
+        value="Pick an ingredient, then tap an empty slot."
+        fontSize={13}
+        color={UI_MUTED}
+        textAlign="top-left"
+        uiTransform={{ width: '100%', height: 48 }}
+      />
+      <UiEntity uiTransform={{ width: '100%', flexGrow: 1, flexDirection: 'column', overflow: 'scroll' }}>
+        {items.length === 0 && (
+          <Label
+            value="No ingredients yet. Fish or search barrels for food."
+            fontSize={15}
+            color={UI_MUTED}
+            textAlign="top-left"
+            uiTransform={{ width: '100%', height: 80 }}
+          />
+        )}
+        {items.map(
+          (item) =>
+            item && (
+              <UiEntity
+                key={item.id}
+                uiTransform={{
+                  width: '100%',
+                  height: 48,
+                  flexShrink: 0,
+                  margin: { bottom: 4 },
+                  padding: 4,
+                  borderRadius: 6,
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}
+                uiBackground={{ color: getPickedIngredient() === item.id ? UI_ACCENT : UI_CELL }}
+                onMouseDown={beginUiTouch}
+                onMouseUp={() => {
+                  pickIngredient(item.id)
+                }}
+              >
+                <UiEntity
+                  uiTransform={{ width: 32, height: 32 }}
+                  uiBackground={{ textureMode: 'stretch', texture: { src: item.texture } }}
+                />
+                <Label
+                  value={getItemDisplayName(item)}
+                  fontSize={13}
+                  color={UI_INK}
+                  textAlign="middle-left"
+                  uiTransform={{ width: 124, height: 40, margin: { left: 4 } }}
+                />
+                <Label
+                  value={`${getCombinedCount(item.id)}`}
+                  fontSize={13}
+                  color={UI_MUTED}
+                  uiTransform={{ width: 36, height: 40 }}
+                />
+              </UiEntity>
+            )
+        )}
+      </UiEntity>
+    </Panel>
   )
 }

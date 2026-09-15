@@ -1,3 +1,9 @@
+import { BuilderHint } from './components/BuilderHint'
+import { ProximityActions } from './components/ProximityActions'
+import { Color4 } from '@dcl/sdk/math'
+import { MobileHud } from './components/MobileHud'
+import { getMobileLayout } from './mobileLayout'
+import { Tutorial } from './components/Tutorial'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs, { ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
@@ -30,7 +36,7 @@ import { isCrafting } from './craftSession'
 import { isCraftOpen } from './craftToggle'
 import { isGameOver } from './gameOver'
 import { isWinActive } from './winScreen'
-import { isInventoryOpen } from './inventoryToggle'
+import { isEquipmentPickerOpen, isInventoryOpen } from './inventoryToggle'
 import { isStartupGateActive } from './startupGate'
 import { isStorageOpen } from './storageToggle'
 import { isSystemMenuOpen } from './systemSession'
@@ -39,8 +45,9 @@ import { isSystemMenuOpen } from './systemSession'
 // of pixel constants in `theme.ts` lays out the HUD on every aspect
 // ratio — proportional scaling fills the viewport in both directions.
 // See `.agents/skills/local/mobile-ui-scaling/SKILL.md`.
+// Insets are applied explicitly below; SDK 7.28 otherwise adds a second device wrapper.
 export function setupUi(): void {
-  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1600, virtualHeight: 720 })
+  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1600, virtualHeight: 720, screenInset: 'none' })
 }
 
 // Mobile is the only platform with hardware insets (notch / home indicator)
@@ -60,11 +67,7 @@ function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs
       </UiEntity>
     )
   }
-  const insets = UiCanvasInformation.getOrNull(engine.RootEntity)?.interactableArea
-  const top = insets?.top ?? 0
-  const left = insets?.left ?? 0
-  const right = insets?.right ?? 0
-  const bottom = insets?.bottom ?? 0
+  const { top, left, right, bottom } = getMobileLayout()
   return (
     <UiEntity
       uiTransform={{
@@ -131,6 +134,7 @@ function ui(): ReactEcs.JSX.Element {
 
   return (
     <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
+      {anyPanel && !isEquipmentPickerOpen() && <UiEntity uiTransform={{ positionType: 'absolute', width: '100%', height: '100%' }} uiBackground={{ color: Color4.create(0.01, 0.04, 0.06, 0.55) }} />}
       <SafeArea>
         <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
           {/* No conditional fullscreen onMouseDown here. We used to attach
@@ -145,36 +149,37 @@ function ui(): ReactEcs.JSX.Element {
               prompt, no click). Cancel paths that still work: click the
               same slot to deselect, click another slot to swap, or close
               the inventory (which runs cancelSelection internally). */}
-          <DestroyBanner />
+          {!anyPanel && !isMobile() && <DestroyBanner />}
           {/* All standalone HUD elements hide while ANY panel is up —
               each panel renders its own relevant sub-elements. */}
-          {!anyPanel && <BottomBar />}
-          {!anyPanel && <StatsBars />}
-          {!anyPanel && <ActionButton />}
-          {!anyPanel && <ModeToggleButton />}
-          {!anyPanel && <InventoryButton />}
-          {!anyPanel && <CraftButton />}
-          {!anyPanel && <SystemButton />}
+          {!anyPanel && !isMobile() && <Tutorial />}
+          {!anyPanel && !isMobile() && <BottomBar />}
+          {!anyPanel && !isMobile() && <StatsBars />}
+          {!anyPanel && !isMobile() && <ActionButton />}
+          {!anyPanel && !isMobile() && <ModeToggleButton />}
+          {!anyPanel && !isMobile() && <InventoryButton />}
+          {!anyPanel && !isMobile() && <CraftButton />}
+          {!anyPanel && !isMobile() && <SystemButton />}
           <InventoryPanel />
           <CraftDoubleMenu />
           <CookMenu />
           <StorageMenu />
-          {!anyPanel && <RotateButtons />}
-          <ChargeReticle />
+          {!anyPanel && !isMobile() && <RotateButtons />}
+
           <NotificationOverlay />
           <ItemReceivedOverlay />
         </UiEntity>
       </SafeArea>
+      {(!anyPanel || isEquipmentPickerOpen()) && isMobile() && <MobileHud />}
+      {!anyPanel && <ChargeReticle />}
+      {!anyPanel && <ProximityActions />}
+      {!anyPanel && isMobile() && <BuilderHint />}
       {/* System (settings) menu sits OUTSIDE SafeArea so its dark backdrop
           covers the full viewport — on mobile the notch / home-indicator
           strips would otherwise show the live scene through the gaps. The
           modal's own contents are centered, so they stay clear of the
           insets regardless of platform. */}
       <SystemMenu />
-      <SafeArea>
-        {isSystemMenuOpen() && <LobbyMusicButton />}
-        <DebugPanel />
-      </SafeArea>
     </UiEntity>
   )
 }

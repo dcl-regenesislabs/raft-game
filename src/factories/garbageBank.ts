@@ -1,3 +1,4 @@
+import { recordTutorialAction } from '../ui/tutorialState'
 import { addCollected } from '../ui/inventoryState'
 import { notifyItemReceived } from '../ui/itemReceivedNotification'
 import { randInt } from '../utils/math'
@@ -27,6 +28,7 @@ const BARREL_POOL = [
 // (`systems/hookThrower.ts`) and the direct look-grab path
 // (`systems/garbageGrab.ts`).
 export function bankGarbageKind(kind: string): void {
+  recordTutorialAction('collect')
   if (kind === 'barrel') {
     // Always: a bit of wood for fuel continuity + a rope roll.
     const woodCount = randInt(1, 2)

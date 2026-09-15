@@ -2,7 +2,7 @@
 // out of `index.ts` so the SystemMenu can call `returnToLobby()` without
 // pulling in a circular import on the entry module.
 //
-// The boot sequence in `index.ts` calls `bootstrapSceneFlow(mode, parcelGrid)`
+// The boot sequence in `index.ts` calls `bootstrapSceneFlow(parcelGrid)`
 // once, which:
 //   1) caches the resolved deployment so the lobby can be rebuilt later
 //   2) arms the lobby portal-trigger handler — picking a portal fades the
@@ -26,7 +26,7 @@ import { resetPlayTimer, startPlayTimer, stopPlayTimer } from '../systems/playTi
 import { resetWinState } from '../ui/winScreen'
 import { clearRankingPanelRefs } from '../factories/rankingPanel'
 import { resetRankingPanelRefreshState } from '../systems/rankingPanelRefresh'
-import { SHARK_INITIAL_COUNT, SHARK_INITIAL_RADIUS } from '../config/gameConfig'
+import { DEBUG_MODE, SHARK_INITIAL_COUNT, SHARK_INITIAL_RADIUS } from '../config/gameConfig'
 import {
   GRID_ORIGIN,
   createAvatarHideArea,
@@ -46,7 +46,7 @@ import {
   getLobbyArrivalPosition,
   teardownLobby
 } from '../factories/lobby'
-import { DEMO_PARCEL_GRID, LOBBY_RAFT_Y } from '../factories/sceneLevels'
+import { PARCEL_GRID, LOBBY_RAFT_Y } from '../factories/sceneLevels'
 import { setLobbyExitHandler } from '../systems/lobbyPortalSystem'
 import { resetBoatChefEventState } from '../systems/boatChefDirector'
 import { resetEventScheduler } from '../systems/eventScheduler'
@@ -70,10 +70,8 @@ import {
 import { closeStorageMenu } from '../ui/storageToggle'
 import { setSystemMenuOpen } from '../ui/systemSession'
 import { applyDebugSeeds } from './debugSeeds'
-import type { SceneMode } from './sceneMode'
 
-let cachedSceneMode: SceneMode | null = null
-let cachedParcelGrid = DEMO_PARCEL_GRID
+let cachedParcelGrid = PARCEL_GRID
 let gameWorldBuilt = false
 let debugRun = false
 
@@ -81,11 +79,10 @@ export function isDebugRun(): boolean {
   return debugRun
 }
 
-// One-time call from `main()` once the deployment mode + parcel grid are
-// known. Captures both for the BACK TO LOBBY path (which has to be
+// One-time call from `main()` once the parcel grid are
+// known. Captures it for the BACK TO LOBBY path (which has to be
 // synchronous) and arms the portal-trigger handler.
-export function bootstrapSceneFlow(mode: SceneMode, parcelGrid: number): void {
-  cachedSceneMode = mode
+export function bootstrapSceneFlow(parcelGrid: number): void {
   cachedParcelGrid = parcelGrid
   armLobbyExit()
 }
@@ -105,7 +102,7 @@ function armLobbyExit(): void {
       startPlayTimer()
       setMusicTrack('game')
       startAmbience()
-      // mirrors the parcel-centre coords used in the demo's scene.json
+      // mirrors the parcel-centre coords used in scene.json
       // spawn point; using movePlayerTo (not Transform mutation) is
       // the only way SDK7 will move the camera as well.
       void movePlayerTo({
@@ -120,16 +117,13 @@ function armLobbyExit(): void {
   })
 }
 
-// Dev-only fast-boot path. Bypasses lobby creation and the startup gate
-// entirely, builds the game world, drops the player onto the main raft,
-// and applies the DEBUG seed (inventory + 8-platform ring with grill,
-// purifier, and stocked storage). Gated by SKIP_LOBBY in gameConfig.ts —
-// force-disabled in production builds.
-export function skipLobbyToDebug(parcelGrid: number): void {
-  debugRun = true
+// Direct entry respects the debug flag so preview reloads retain the test setup.
+export function startGameDirectly(parcelGrid: number): void {
+  debugRun = false
   dismissStartupGate()
   setHeldViewmodelHidden(false)
   buildGameWorld(parcelGrid)
+  applyConfiguredGameMode()
   resetPlayTimer()
   startPlayTimer()
   setMusicTrack('game')
@@ -141,7 +135,6 @@ export function skipLobbyToDebug(parcelGrid: number): void {
       z: GRID_ORIGIN.z
     }
   })
-  applyDebugSeeds()
 }
 
 // One-shot: builds the actual game world (seabed, animated water at
@@ -260,14 +253,11 @@ export function returnToLobby(): void {
   // and any equipped tool should be hidden until the player commits
   // to a portal.
   setHeldViewmodelHidden(true)
-  if (cachedSceneMode !== null) {
-    createLobby(cachedParcelGrid, cachedSceneMode)
-  }
+  createLobby(cachedParcelGrid)
   armLobbyExit()
   setMusicTrack('lobby')
   stopAmbience()
-  // Drop the player back at the lobby's bridge-tail spawn in both
-  // modes — the bridge is now visible in DEMO and FULL. Lobby rafts
+  // Drop the player back at the lobby's bridge-tail spawn. Lobby rafts
   // sit at LOBBY_RAFT_Y; +1 m gives a tiny drop onto the deck so the
   // player lands cleanly.
   const arrival = getLobbyArrivalPosition(GRID_ORIGIN.x, GRID_ORIGIN.z)
@@ -278,4 +268,15 @@ export function returnToLobby(): void {
       z: arrival.z
     }
   })
+}
+
+// Reuse the existing lobby DEBUG action from a running preview.
+export function activateDebugMode(): void {
+  if (!debugRun) runPortalAction('DEBUG')
+}
+
+// Call after clearing the world/inventory, including Restart and Play Again.
+// Do not use activateDebugMode's one-shot guard: the old seeds were removed.
+export function applyConfiguredGameMode(): void {
+  runPortalAction(DEBUG_MODE ? 'DEBUG' : 'NEW')
 }

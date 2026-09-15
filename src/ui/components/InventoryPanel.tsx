@@ -1,15 +1,18 @@
+import { equipInventorySlot } from '../../systems/nativeEquipment'
+import { isSlotSelectable } from '../inventoryState'
+import { beginUiTouch } from '../mobileControlsState'
+import { UI_PAPER, UI_BORDER, UI_CELL, UI_INK, UI_MUTED } from '../visualTheme'
+import { isMobile } from '@dcl/sdk/platform'
+import { getMobileLayout } from '../mobileLayout'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 
 import { isCookOpen } from '../cookToggle'
 import { getPickedIngredient, pickIngredient } from '../cookSlots'
 import { isCraftOpen } from '../craftToggle'
-import {
-  getSelectedDragSlot,
-  isSwapModeActive,
-  pressSlot
-} from '../inventoryDrag'
-import { isInventoryOpen, setInventoryOpen } from '../inventoryToggle'
+import { getSelectedDragSlot, isSwapModeActive, pressSlot } from '../inventoryDrag'
+import { ToolPicker } from './ToolPicker'
+import { openEquipmentPicker, isEquipmentPickerOpen, isInventoryOpen, setInventoryOpen } from '../inventoryToggle'
 import { getActiveStorage, isStorageOpen } from '../storageToggle'
 import { getStoragePicked, pressStorageSlot } from '../storageSession'
 import {
@@ -43,7 +46,7 @@ import { ItemCountBadge } from './ItemCountBadge'
 
 // Total cell count of the inventory-panel grid. Sourced from the shared
 // linear layout so adjusting `items.ts` flows through to the UI.
-const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_LAYOUT.length - BOTTOM_BAR_SLOT_COUNT
+const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_TOTAL_SLOTS
 
 // Bottom-center panel: 5×5 inventory grid stacked on top of the 5-slot
 // hot-bar. Anchored where the standalone `BottomBar` normally lives so the
@@ -52,38 +55,62 @@ const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_LAYOUT.length - BOTTOM_BAR_SLOT_COU
 // while the inventory is open so the bar shown here is the only one.
 // Renders nothing while the inventory is closed.
 export function InventoryPanel(): ReactEcs.JSX.Element | null {
-  if (!isInventoryOpen()) return null
-  // Close button overlaps the inventory's painted top-right wood frame
-  // so the player has a clear "close this panel" affordance without an
-  // added header bar — the inventory grid itself has no title space to
-  // share, unlike the craft and cook panels. Tune the offsets via
-  // CLOSE_BUTTON_INVENTORY_TOP / CLOSE_BUTTON_INVENTORY_RIGHT in theme.ts.
-  const selectedDrag = getSelectedDragSlot()
-  const selectedItem =
-    selectedDrag !== null ? getInventorySlot(selectedDrag) : null
+  if (!isInventoryOpen() || isEquipmentPickerOpen()) return null
+  const layout = getMobileLayout()
+  const size = Math.min(720, layout.width - 32, ((layout.height - 112) * 6) / 5)
+  const selected = getSelectedDragSlot()
+  const item = selected === null ? null : getInventorySlot(selected)
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { bottom: BAR_BOTTOM, left: '50%' },
-        margin: { left: -Math.round(INVENTORY_PANEL_SIZE / 2) }
+        position: { top: '50%', left: '50%' },
+        margin: { left: -size / 2, top: -((size * 5) / 6 + 80) / 2 },
+        width: size,
+        flexDirection: 'column'
       }}
     >
-      <InventoryWithBar />
-      {selectedItem !== null && (
-        <SelectedItemLabel value={getItemDisplayName(selectedItem)} />
-      )}
       <UiEntity
-        uiTransform={{
-          positionType: 'absolute',
-          position: {
-            top: CLOSE_BUTTON_INVENTORY_TOP,
-            right: CLOSE_BUTTON_INVENTORY_RIGHT
-          }
-        }}
+        uiTransform={{ width: size, height: 80, padding: 12, borderRadius: 10 }}
+        uiBackground={{ color: UI_PAPER }}
       >
-        <CloseButton onPress={() => setInventoryOpen(false)} />
+        <Label
+          value="BACKPACK"
+          fontSize={24}
+          color={UI_INK}
+          textAlign="middle-left"
+          uiTransform={{ width: size - 80, height: 30 }}
+        />
+        <Label
+          value={item ? getItemDisplayName(item) : 'Tap an item, then another slot to move it.'}
+          fontSize={14}
+          color={UI_MUTED}
+          textAlign="middle-left"
+          uiTransform={{ positionType: 'absolute', position: { top: 44, left: 12 }, width: size - 200, height: 24 }}
+        />
+        {selected !== null && isSlotSelectable(selected) && (
+          <UiEntity
+            uiTransform={{
+              positionType: 'absolute',
+              position: { right: 72, top: 24 },
+              width: 104,
+              height: 42,
+              borderRadius: 6
+            }}
+            uiBackground={{ color: UI_CELL }}
+            onMouseDown={beginUiTouch}
+            onMouseUp={() => {
+              equipInventorySlot(selected)
+            }}
+          >
+            <Label value="EQUIP" fontSize={16} color={UI_INK} uiTransform={{ width: '100%', height: '100%' }} />
+          </UiEntity>
+        )}
+        <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 12, right: 12 } }}>
+          <CloseButton onPress={() => setInventoryOpen(false)} />
+        </UiEntity>
       </UiEntity>
+      <InventoryGrid size={size} />
     </UiEntity>
   )
 }
@@ -93,13 +120,13 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
 // grid and the hot-bar so it reads as a caption tying the two halves
 // together. Rendered AFTER `InventoryWithBar` in the parent so it draws
 // on top of the bar's painted top frame instead of being occluded.
-function SelectedItemLabel(props: { value: string }): ReactEcs.JSX.Element {
+function SelectedItemLabel(props: { value: string; size: number }): ReactEcs.JSX.Element {
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: INVENTORY_PANEL_SIZE - 42, left: 0 },
-        width: INVENTORY_PANEL_SIZE,
+        position: { top: props.size - 42 + (isMobile() ? 64 : 0), left: 0 },
+        width: props.size,
         height: 24,
         alignItems: 'center',
         justifyContent: 'center'
@@ -120,36 +147,19 @@ function SelectedItemLabel(props: { value: string }): ReactEcs.JSX.Element {
   )
 }
 
-// 5×5 grid panel. Used both as the standalone inventory and as the smaller
-// reference grid pinned next to the craft / cook menus.
-//
-// `filter`, when set, switches the grid into "smart inventory" mode: the
-// 30-slot linear inventory is scanned and only matching items are
-// rendered, packed top-left into the grid in slot order. Non-matching
-// items aren't rendered at all — the player sees just what's relevant
-// for the current task. Without a filter the grid keeps its classic
-// behaviour: the 25 grid slots (`BOTTOM_BAR_SLOT_COUNT`..) map 1:1 to
-// UI cells and hot-bar slots are surfaced separately by `BottomBarSurface`.
-export function InventoryGrid(props: {
-  size?: number
-  filter?: (item: ItemDef) => boolean
-}): ReactEcs.JSX.Element {
+// Six columns by five rows: all thirty inventory slots, without a separate hotbar.
+export function InventoryGrid(props: { size?: number; filter?: (item: ItemDef) => boolean }): ReactEcs.JSX.Element {
   const size = props.size ?? INVENTORY_PANEL_SIZE
   const cells = buildGridCells(props.filter)
   return (
     <UiEntity
-      uiTransform={{ width: size, height: size }}
+      uiTransform={{ width: size, height: (size * 5) / 6, borderRadius: 14 }}
       uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: INVENTORY_PANEL_TEXTURE }
+        color: UI_PAPER
       }}
     >
       {cells.map((cell) => (
-        <InventoryCell
-          key={cell.uiIndex}
-          uiIndex={cell.uiIndex}
-          globalIndex={cell.globalIndex}
-        />
+        <InventoryCell key={cell.uiIndex} uiIndex={cell.uiIndex} globalIndex={cell.globalIndex} />
       ))}
     </UiEntity>
   )
@@ -160,16 +170,12 @@ interface GridCell {
   globalIndex: number
 }
 
-// Decide which (UI position, global slot) pairs to render this frame.
-// Without a filter the mapping is the historical one: UI cell `i` shows
-// global slot `BOTTOM_BAR_SLOT_COUNT + i`. With a filter we scan every
-// slot (including the hot-bar 0..4) and pack matching ones into UI
-// cells starting at the top-left.
+// An optional filter packs matching inventory items without changing their slot IDs.
 function buildGridCells(filter?: (item: ItemDef) => boolean): GridCell[] {
   if (filter === undefined) {
     return Array.from({ length: INVENTORY_GRID_TOTAL_CELLS }, (_, i) => ({
       uiIndex: i,
-      globalIndex: BOTTOM_BAR_SLOT_COUNT + i
+      globalIndex: i
     }))
   }
   const cells: GridCell[] = []
@@ -186,21 +192,11 @@ function buildGridCells(filter?: (item: ItemDef) => boolean): GridCell[] {
   return cells
 }
 
-function InventoryCell(props: {
-  uiIndex: number
-  globalIndex: number
-  key?: number | string
-}): ReactEcs.JSX.Element {
-  const col = props.uiIndex % INVENTORY_GRID_CELLS
-  const row = Math.floor(props.uiIndex / INVENTORY_GRID_CELLS)
-  // Position cells in percentages of the panel size, not absolute pixels.
-  // The panel itself can be flex-shrunk on tall-vs-narrow viewports
-  // (mobile especially), and a percentage-based layout tracks whatever
-  // final size the panel actually renders at — so the cells stay aligned
-  // with the painted background regardless of scaling.
-  const halfCell = INVENTORY_CELL_SIZE_PCT / 2
-  const leftPct = INVENTORY_CELL_CENTERS_PCT[col] - halfCell
-  const topPct = INVENTORY_CELL_CENTERS_PCT[row] - halfCell
+function InventoryCell(props: { uiIndex: number; globalIndex: number; key?: number | string }): ReactEcs.JSX.Element {
+  const col = props.uiIndex % 6
+  const row = Math.floor(props.uiIndex / 6)
+  const leftPct = col * (100 / 6) + 1.5
+  const topPct = row * 20 + 1.8
 
   const globalIndex = props.globalIndex
   const display = getInventorySlot(globalIndex)
@@ -209,39 +205,32 @@ function InventoryCell(props: {
   const storageOpen = isStorageOpen()
   const storagePicked = storageOpen ? getStoragePicked() : null
   const isStoragePickedHere =
-    storagePicked !== null &&
-    storagePicked.side === 'player' &&
-    storagePicked.index === globalIndex
+    storagePicked !== null && storagePicked.side === 'player' && storagePicked.index === globalIndex
   const swapActive = !cookOpen && !storageOpen && isSwapModeActive()
-  const isSwapSelected =
-    !cookOpen && !storageOpen && getSelectedDragSlot() === globalIndex
-  const isCookPicked =
-    cookOpen && display !== null && getPickedIngredient() === display.id
+  const isSwapSelected = !cookOpen && !storageOpen && getSelectedDragSlot() === globalIndex
+  const isCookPicked = cookOpen && display !== null && getPickedIngredient() === display.id
   const shouldShake =
     (swapActive && !isSwapSelected && display !== null) ||
     isCookPicked ||
-    (storageOpen &&
-      storagePicked !== null &&
-      !isStoragePickedHere &&
-      display !== null)
+    (storageOpen && storagePicked !== null && !isStoragePickedHere && display !== null)
 
   const inset =
-    isSwapSelected || isStoragePickedHere
-      ? INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED
-      : INVENTORY_ITEM_INSET_PCT
+    isSwapSelected || isStoragePickedHere ? INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED : INVENTORY_ITEM_INSET_PCT
 
-  const shake = shouldShake
-    ? shakeOffset(Date.now() / 1000)
-    : { x: 0, y: 0 }
+  const shake = shouldShake ? shakeOffset(Date.now() / 1000) : { x: 0, y: 0 }
 
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
         position: { top: `${topPct}%`, left: `${leftPct}%` },
-        width: `${INVENTORY_CELL_SIZE_PCT}%`,
-        height: `${INVENTORY_CELL_SIZE_PCT}%`
+        width: '13.6667%',
+        height: '16.4%',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: UI_BORDER
       }}
+      uiBackground={{ color: UI_CELL }}
       onMouseDown={() => {
         // Inventory grid is read-only while the craft menu is open — no
         // selection, no swap, the player just sees their materials and
@@ -284,12 +273,7 @@ function InventoryCell(props: {
               position: { top: '4%', bottom: '4%', left: '4%', right: '4%' }
             }}
             uiBackground={{
-              color: Color4.create(
-                GLOW_COLOR.r,
-                GLOW_COLOR.g,
-                GLOW_COLOR.b,
-                GLOW_ALPHA_PEAK_BONUS
-              )
+              color: Color4.create(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, GLOW_ALPHA_PEAK_BONUS)
             }}
           />
         )}
@@ -310,10 +294,7 @@ function InventoryCell(props: {
               // Dim non-ingredient icons while the cook menu is open so
               // the player sees at a glance which slots can be dropped
               // into a recipe and which can't.
-              color:
-                cookOpen && !display.ingredient
-                  ? COOK_NON_INGREDIENT_TINT
-                  : undefined
+              color: cookOpen && !display.ingredient ? COOK_NON_INGREDIENT_TINT : undefined
             }}
           />
         )}

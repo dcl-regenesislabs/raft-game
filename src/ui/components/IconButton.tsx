@@ -1,3 +1,6 @@
+import { UI_GLASS, UI_ACCENT } from '../visualTheme'
+import { isMobile } from '@dcl/sdk/platform'
+import { beginUiTouch } from '../mobileControlsState'
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 
 import {
@@ -45,18 +48,13 @@ export function IconButton(props: IconButtonProps): ReactEcs.JSX.Element {
         uiTransform={{
           width: scaledSize,
           height: scaledSize,
+          borderRadius: 12,
           alignItems: 'center',
           justifyContent: 'center'
         }}
-        uiBackground={{
-          textureMode: 'stretch',
-          texture: {
-            src: props.open
-              ? INVENTORY_BUTTON_TEXTURE_OPEN
-              : INVENTORY_BUTTON_TEXTURE
-          }
-        }}
-        onMouseDown={props.onPress}
+        uiBackground={{ color: props.open ? UI_ACCENT : UI_GLASS }}
+        onMouseDown={isMobile() ? beginUiTouch : props.onPress}
+        onMouseUp={isMobile() ? props.onPress : undefined}
       >
         <UiEntity
           uiTransform={{

@@ -44,13 +44,11 @@ import {
   serializeVitals,
   type VitalsSnapshot
 } from '../ui/statsBars'
-import type { SceneMode } from '../runtime/sceneMode'
 
 export const SAVE_BLOB_VERSION = 1
 
 export interface SaveBlob {
   version: number
-  mode: SceneMode
   savedAtMs: number
   inventory: {
     layout: string[]
@@ -69,11 +67,10 @@ export interface SaveBlob {
   playTimeS?: number
 }
 
-export function buildSaveBlob(mode: SceneMode): SaveBlob {
+export function buildSaveBlob(): SaveBlob {
   const position = serializePlayerPosition()
   return {
     version: SAVE_BLOB_VERSION,
-    mode,
     savedAtMs: Date.now(),
     inventory: {
       layout: serializeInventoryLayout(),
@@ -150,7 +147,6 @@ export function parseSaveBlob(raw: string): SaveBlob | null {
   if (typeof value !== 'object' || value === null) return null
   const v = value as Partial<SaveBlob>
   if (v.version !== SAVE_BLOB_VERSION) return null
-  if (typeof v.mode !== 'string') return null
   if (typeof v.savedAtMs !== 'number') return null
   if (typeof v.inventory !== 'object' || v.inventory === null) return null
   if (!Array.isArray(v.inventory.layout)) return null

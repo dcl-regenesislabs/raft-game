@@ -44,7 +44,7 @@ export function hasActiveIsland(): boolean {
 // Per-frame set of occupied grid cells, keyed by 32-bit packing of
 // (gridX, gridZ). Rebuilt at the top of every frame so newly placed or
 // destroyed rafts are picked up without an explicit dirty flag. Raft
-// counts are small (≤25 in demo, bounded by player builds in full) so
+// counts are bounded by player builds, so
 // the rebuild is O(N_rafts) with N tiny — cheaper than maintaining
 // a subscription on placement/destruction.
 const occupiedCells = new Set<number>()

@@ -1,3 +1,5 @@
+import { isMobile } from '@dcl/sdk/platform'
+import { recordTutorialAction } from '../../ui/tutorialState'
 import {
   Entity,
   engine,
@@ -239,7 +241,7 @@ function spawnMarkersForVacantNeighbours(): void {
 // hoverEnter/Leave callbacks needed.
 function attachPlacementClick(clickArea: Entity, gx: number, gz: number): void {
   pointerEventsSystem.onPointerDown(
-    { entity: clickArea, opts: PLACE_OPTS },
+    { entity: clickArea, opts: { ...PLACE_OPTS, showFeedback: !isMobile() } },
     () => {
       if (isInventoryActionLocked()) return
       const now = Date.now()
@@ -264,6 +266,7 @@ function placeRaft(gridX: number, gridZ: number): void {
     gridZ,
     yawDeg: getPlacementRotationDeg()
   })
+  recordTutorialAction('expand')
   triggerHammerSwing()
   playSfx('hammerPlace')
   removeAllMarkers()

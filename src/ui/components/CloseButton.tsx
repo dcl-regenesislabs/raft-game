@@ -1,4 +1,7 @@
-import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
+import { UI_INK, UI_CELL } from '../visualTheme'
+import { isMobile } from '@dcl/sdk/platform'
+import { beginUiTouch } from '../mobileControlsState'
+import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
 import { CLOSE_BUTTON_SIZE, CLOSE_BUTTON_TEXTURE } from '../theme'
 
@@ -14,12 +17,12 @@ export function CloseButton(props: {
   const size = props.size ?? CLOSE_BUTTON_SIZE
   return (
     <UiEntity
-      uiTransform={{ width: size, height: size }}
+      uiTransform={{ width: size, height: size, borderRadius: 10 }}
       uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: CLOSE_BUTTON_TEXTURE }
+        color: UI_CELL
       }}
-      onMouseDown={props.onPress}
-    />
+      onMouseDown={isMobile() ? beginUiTouch : props.onPress}
+        onMouseUp={isMobile() ? props.onPress : undefined}
+    ><Label value="×" fontSize={28} color={UI_INK} uiTransform={{ width: '100%', height: '100%' }} /></UiEntity>
   )
 }

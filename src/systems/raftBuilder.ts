@@ -1,3 +1,4 @@
+import { beginUiTouch } from '../ui/mobileControlsState'
 import {
   Entity,
   InputAction,
@@ -7,7 +8,7 @@ import {
 import { isMobile } from '@dcl/sdk/platform'
 
 import { GRID_ORIGIN, RAFT_SIZE } from '../factories/platform'
-import { actionButtonJustPressed } from '../ui/actionButton'
+import { toolFireJustPressed } from './toolFire'
 import { isPointerLocked } from '../ui/cursorLock'
 import {
   getSelectedSlot,
@@ -90,32 +91,35 @@ export function raftBuilderSystem(dt: number): void {
   if (mode === 'placing') tickPlacing(dt)
   if (mode === 'destroying') tickDestroying(dt)
 
-  // Desktop E/F rotate the previewed raft. Mobile uses the top-middle
-  // Left/Right buttons. Only active during placing — destroying doesn't
-  // care about orientation.
-  if (mode === 'placing' && !isMobile()) {
+  // Small alternate-tool button switches mode; the large POINTER performs it.
+  if (isMobile() && mode !== 'idle' && !isInventoryActionLocked() && !isSelectionPointerLockoutActive() && inputSystem.isTriggered(InputAction.IA_ACTION_3, PointerEventType.PET_DOWN)) {
+    toggleRaftBuilderMode()
+    beginUiTouch()
+  }
+  if (mode === 'placing' && !isInventoryActionLocked() && !isSelectionPointerLockoutActive()) {
     if (inputSystem.isTriggered(InputAction.IA_PRIMARY, PointerEventType.PET_DOWN)) {
       rotatePlacementLeft()
+      beginUiTouch()
     }
     if (inputSystem.isTriggered(InputAction.IA_SECONDARY, PointerEventType.PET_DOWN)) {
       rotatePlacementRight()
+      beginUiTouch()
     }
   }
 
-  // Commit from the global input each frame, mirroring how spear/hook fire:
-  // mobile uses the on-screen action button, desktop reads IA_POINTER PET_DOWN
-  // directly. Per-entity pointerEventsSystem.onPointerDown is also wired up
-  // (inside placement/destruction) to drive hover text and as a fallback,
-  // but the camera-forward raycast is the source of truth for the click.
+  // Commit from the global input each frame, mirroring how spear/hook
+  // fire through the toolFire seam. Per-entity
+  // pointerEventsSystem.onPointerDown is also wired up (inside
+  // placement/destruction) to drive hover text and as a fallback, but
+  // the camera-forward raycast is the source of truth for the click.
   if (
     !isInventoryActionLocked() &&
     (mode === 'placing' || mode === 'destroying')
   ) {
-    const firePressed = isMobile()
-      ? actionButtonJustPressed()
-      : isPointerLocked() &&
-        !isSelectionPointerLockoutActive() &&
-        inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)
+    const firePressed =
+      isPointerLocked() &&
+      !isSelectionPointerLockoutActive() &&
+      toolFireJustPressed()
     if (firePressed) {
       if (mode === 'placing') commitPlaceFromHover()
       else commitDestroyFromHover()
@@ -172,3 +176,5 @@ function exitMode(prev: Mode): void {
 
 // Re-export so callers don't need to reach into the factory.
 export { GRID_ORIGIN, RAFT_SIZE }
+
+export function cancelRaftPreview(): void { setMode('idle'); lastHammerSlot = -1 }

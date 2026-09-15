@@ -9,15 +9,15 @@ import {
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
-import { DEMO_PARCEL_GRID, PARCEL_SIZE_M, SEABED_Y } from './sceneLevels'
+import { PARCEL_GRID, PARCEL_SIZE_M, SEABED_Y } from './sceneLevels'
 
 const SAND_TEXTURE = 'assets/scene/seabed/sand.png'
 // Sand grain reads as fine detail, so we keep ~2 repeats per parcel
-// regardless of scene size (10 tiles for 5x5; 100 tiles for 50x50).
+// across the scene (100 tiles for the 50×50 world).
 const TILES_PER_PARCEL = 2
 
 export function createSeabed(
-  parcelGrid: number = DEMO_PARCEL_GRID,
+  parcelGrid: number = PARCEL_GRID,
   yOverride?: number
 ): Entity {
   const totalSize = parcelGrid * PARCEL_SIZE_M

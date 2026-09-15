@@ -1,12 +1,9 @@
 import {
   Entity,
   GltfContainer,
-  InputAction,
-  PointerEventType,
   Transform,
   VisibilityComponent,
-  engine,
-  inputSystem
+  engine
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
@@ -36,7 +33,7 @@ import { getPlatformExtent } from '../factories/platformExtent'
 import { createRopeEntity, hideRope, updateRopeBetween } from '../factories/rope'
 import { getHeldItemKind, isHeldViewmodelHidden } from '../factories/heldItem'
 import { WATER_LEVEL } from '../factories/sceneLevels'
-import { actionButtonJustPressed, isActionButtonPressed } from '../ui/actionButton'
+import { isToolFirePressed, toolFireJustPressed } from './toolFire'
 import { isPointerLocked } from '../ui/cursorLock'
 import { isFishingLineActive } from './fishingRod'
 import { isHookInFlight } from './hookThrower'
@@ -172,13 +169,8 @@ export function anchorThrowerSystem(dt: number): void {
 }
 
 function tickCharge(dt: number, handPos: Vector3): void {
-  const mobile = isMobile()
-  const justPressed = mobile
-    ? actionButtonJustPressed()
-    : inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)
-  const stillHeld = mobile
-    ? isActionButtonPressed()
-    : inputSystem.isPressed(InputAction.IA_POINTER)
+  const justPressed = toolFireJustPressed()
+  const stillHeld = isToolFirePressed()
 
   if (!charging) {
     if (justPressed && !isSelectionPointerLockoutActive()) {
@@ -286,11 +278,7 @@ function advanceAnchor(dt: number, handPos: Vector3): void {
       const islandY = island ? Transform.get(island).position.y + ANCHOR_ON_ISLAND_Y_OFFSET : WATER_LEVEL
       transform.position = Vector3.create(anchorPos.x, islandY, anchorPos.z)
       if (onRaft && getHeldItemKind() === 'anchor') {
-        const mobile = isMobile()
-        const justPressed = mobile
-          ? actionButtonJustPressed()
-          : inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)
-        if (justPressed && isAnchored()) {
+        if (toolFireJustPressed() && isAnchored()) {
           releaseAnchor()
           anchorPhase = 'reeling'
         }
@@ -435,3 +423,5 @@ function computeHandPos(): Vector3 | null {
     cam.position.z + localOffset.z
   )
 }
+
+export function cancelAnchorCharge(): void { cancelCharge() }

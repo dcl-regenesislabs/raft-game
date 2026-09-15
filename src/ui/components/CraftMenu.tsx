@@ -1,3 +1,5 @@
+import { getMobileLayout } from '../mobileLayout'
+import { UI_ACCENT, UI_CELL, UI_INK } from '../visualTheme'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
@@ -73,8 +75,8 @@ const MOBILE_CRAFT_LIST_HEIGHT = 650
 export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
   if (!isCraftOpen()) return null
   const mobile = isMobile()
-  const offsetX = mobile ? MOBILE_CRAFT_OFFSET_X : CRAFT_PANEL_OFFSET_X
-  const listHeight = mobile ? MOBILE_CRAFT_LIST_HEIGHT : CRAFT_LIST_HEIGHT
+  const offsetX = mobile ? 0 : CRAFT_PANEL_OFFSET_X
+  const listHeight = mobile ? Math.min(650, getMobileLayout().height - 32) : CRAFT_LIST_HEIGHT
   return (
     <UiEntity
       uiTransform={{
@@ -89,10 +91,10 @@ export function CraftDoubleMenu(): ReactEcs.JSX.Element | null {
         margin: { left: offsetX < 0 ? offsetX : 0 }
       }}
     >
-      <AggregatedInventoryGrid
+      {!mobile && <AggregatedInventoryGrid
         size={CRAFT_INVENTORY_SIZE}
         filter={(item) => isCraftMaterial(item.id)}
-      />
+      />}
       <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
       <CraftItemList listHeight={listHeight} />
       <UiEntity uiTransform={{ width: CRAFT_PANEL_GAP, height: 1 }} />
@@ -145,9 +147,11 @@ function CraftItemList(props: { listHeight: number }): ReactEcs.JSX.Element {
         }}
         uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
       />
+      <UiEntity uiTransform={{ width: '100%', flexGrow: 1, flexDirection: 'column', overflow: 'scroll' }}>
       {CRAFTABLE_ITEMS.map((item) => (
         <CraftItemRow key={item.id} item={item} />
       ))}
+      </UiEntity>
     </Panel>
   )
 }
@@ -161,6 +165,7 @@ function CraftItemRow(props: {
     <UiEntity
       uiTransform={{
         height: 50,
+        flexShrink: 0,
         flexDirection: 'row',
         alignItems: 'center',
         margin: { bottom: 4 },
@@ -233,8 +238,8 @@ function CraftDetails(): ReactEcs.JSX.Element | null {
         <UiEntity
           uiTransform={{
             margin: {
-              top: CLOSE_BUTTON_CRAFT_MARGIN_TOP,
-              right: CLOSE_BUTTON_CRAFT_MARGIN_RIGHT
+              top: 0,
+              right: 0
             }
           }}
         >
@@ -269,7 +274,7 @@ function CraftDetails(): ReactEcs.JSX.Element | null {
           fontSize={16}
           color={CRAFT_TEXT_COLOR}
           textAlign="middle-left"
-          uiTransform={{ height: '100%' }}
+          uiTransform={{ width: 100, height: '100%' }}
         />
         <CraftActionButton item={item} />
       </UiEntity>
@@ -298,19 +303,19 @@ function CraftActionButton(props: {
     >
       <UiEntity
         uiTransform={{
+          borderRadius: 10,
           width: w,
           height: h,
           alignItems: 'center',
           justifyContent: 'center'
         }}
         uiBackground={{
-          textureMode: 'stretch',
-          texture: { src: CRAFT_BUTTON_TEXTURE },
+
           // Dim the button when materials are short so the player gets a
           // visual cue that pressing it won't start a craft.
           color: enabled
-            ? Color4.create(1, 1, 1, 1)
-            : Color4.create(1, 1, 1, 0.45)
+            ? UI_ACCENT
+            : UI_CELL
         }}
         onMouseDown={() => {
           if (!enabled) return
@@ -321,7 +326,7 @@ function CraftActionButton(props: {
         <Label
           value="CRAFT"
           fontSize={13}
-          color={CRAFT_BUTTON_FG}
+          color={enabled ? CRAFT_BUTTON_FG : UI_INK}
           textAlign="middle-center"
           uiTransform={{ width: '100%', height: '100%' }}
         />
@@ -372,7 +377,7 @@ function CraftCostRow(props: {
         fontSize={15}
         color={enough ? CRAFT_HAVE_OK_COLOR : CRAFT_HAVE_LOW_COLOR}
         textAlign="middle-right"
-        uiTransform={{ height: '100%' }}
+        uiTransform={{ width: 100, height: '100%' }}
       />
     </UiEntity>
   )

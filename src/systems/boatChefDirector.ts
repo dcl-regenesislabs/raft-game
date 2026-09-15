@@ -35,7 +35,6 @@ import {
   BOAT_CHEF_TIER4_DIALOG_LINES
 } from './chefDialog'
 import { triggerWin } from '../ui/winScreen'
-import { getSceneMode } from '../runtime/sceneMode'
 
 // Boat-chef visitor event director. One singleton state machine
 // (module-level — same pattern as `sharkDirector.ts`) that owns the
@@ -285,7 +284,7 @@ function tickInteracting(): void {
   const chefState = ChefNpc.get(visitor.chef)
   if (chefState.dialogLineIndex >= chefState.dialogLines.length) {
     if (wasTier4Visit) {
-      void getSceneMode().then((mode) => triggerWin(mode))
+      triggerWin()
     }
     setBoatChefPose(visitor.chef, CHEF_THANKS_CLIP)
     phase = 'LINGER'

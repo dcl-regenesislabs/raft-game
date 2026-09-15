@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Forces `IS_PRODUCTION = true` in src/config/env.ts.
 //
-// Wired into the `deploy:demo` / `deploy:full` npm scripts so any deploy
+// Wired into the `deploy` npm script so any deploy
 // (CI or manual) ships with debug aids disabled, regardless of what the
 // committed source has. Devs can keep `IS_PRODUCTION = false` locally for
 // `npm run start` without it ever leaking into a deployed world.

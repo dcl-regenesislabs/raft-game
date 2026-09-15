@@ -1,9 +1,10 @@
-import {
-  InputAction,
-  PointerEventType,
-  engine,
-  inputSystem
-} from '@dcl/sdk/ecs'
+import { getRaftBuilderMode } from './raftBuilder'
+import { getConstructionPlacementMode } from './constructionPlacement'
+import { resolveMobileControls } from './touchControls'
+import { isInventoryOpen } from '../ui/inventoryToggle'
+import { beginUiTouch } from '../ui/mobileControlsState'
+import { recordTutorialAction } from '../ui/tutorialState'
+import { Entity, InputAction, PointerEventType, engine, inputSystem } from '@dcl/sdk/ecs'
 
 import { ActiveCook, CookStatus, PlatformConstruction, PurifierState } from '../components'
 import { getHeldFoodId, getHeldItemKind } from '../factories/heldItem'
@@ -22,32 +23,15 @@ import { showNotification } from '../ui/notification'
 import { restoreStat } from '../ui/statsBars'
 import { openStorageMenu } from '../ui/storageToggle'
 import { consumeWorldClick } from '../ui/worldClickGate'
-import { getLookAtTarget } from './lookAtTarget'
+import { getProximityConstruction, getLookAtTarget, getLookAtPointerHit } from './lookAtTarget'
 import { addFuelToPurifier } from './purifierProcess'
 
-// Handles E-key (or mobile action button) presses landing on a placed
-// PURIFIER / GRILL / STORAGE via two paths each frame:
-//   - Direct entity-targeted IA_PRIMARY PET_DOWN on the construction's
-//     child mesh (desktop E press while hovering, mobile direct tap).
-//     Switched off IA_POINTER (mouse click) so left-click stays free
-//     for the held-tool primary action.
-//   - Mobile action button press while the camera-forward raycast is
-//     currently aimed at a construction of that kind. This is what
-//     lets the contextual icon swap on the action button (e.g. salt
-//     water + purifier in view → button shows the purifier icon and
-//     pressing it kicks off the purify session; aiming at a grill
-//     swaps the button to the grill icon and opens the cook menu).
-//
-// Per-kind behaviour:
-//   purifier — E drinks directly from the fresh bowl (restoring
-//     thirst by its fill %), OR pours a salt-water cup into the
-//     centre bowl when the fresh bowl is empty. F adds wood.
-//   grill    — opens the cook menu.
-//
-// Either way the click is marked consumed so a global handler (e.g.
-// the food-eat drink path) doesn't also fire on the same press.
-
+// Structure buttons use entity-targeted SDK proximity input. The renderer
+// selects one nearby structure; native E/F therefore cannot activate a
+// different structure through a parallel camera-ray fallback.
+// Legacy scene action buttons use the same renderer-selected target.
 export function constructionInteractSystem(_dt: number): void {
+  if (getRaftBuilderMode() !== 'idle' || getConstructionPlacementMode() !== 'idle') return
   if (isInventoryActionLocked()) return
   if (isSelectionPointerLockoutActive()) return
   // No `isPointerLocked()` gate here on purpose. The entity-targeted
@@ -61,21 +45,12 @@ export function constructionInteractSystem(_dt: number): void {
 
   for (const [platform, pc] of engine.getEntitiesWith(PlatformConstruction)) {
     const child = pc.child
-    const tapped = inputSystem.isTriggered(
-      InputAction.IA_PRIMARY,
-      PointerEventType.PET_DOWN,
-      child
-    )
+    const tapped = inputSystem.isTriggered(InputAction.IA_PRIMARY, PointerEventType.PET_DOWN, child)
     // F-key fuels a purifier with wood. Only the purifier listens; grills
     // and storage stay E-only so a stray F-press while facing them does
     // nothing.
     const fueled =
-      pc.kind === 'purifier' &&
-      inputSystem.isTriggered(
-        InputAction.IA_SECONDARY,
-        PointerEventType.PET_DOWN,
-        child
-      )
+      pc.kind === 'purifier' && inputSystem.isTriggered(InputAction.IA_SECONDARY, PointerEventType.PET_DOWN, child)
     if (fueled) {
       handlePurifierFuel(platform)
       consumeWorldClick()
@@ -83,46 +58,69 @@ export function constructionInteractSystem(_dt: number): void {
     }
     const buttonHits =
       actionButton &&
+      getLookAtPointerHit()?.entity === child &&
       ((pc.kind === 'purifier' && lookTarget === 'purifier') ||
         (pc.kind === 'grill' && lookTarget === 'grill') ||
         (pc.kind === 'storage' && lookTarget === 'storage'))
     if (!tapped && !buttonHits) continue
 
-    if (pc.kind === 'grill') {
-      // Route by cook state: empty grill opens the menu, ready /
-      // burned grill grabs the output, cooking grill is a no-op
-      // (the ingredient sprites already communicate "in progress").
-      const cook = ActiveCook.getOrNull(platform)
-      if (cook === null) {
-        openCookMenu(platform)
-        consumeWorldClick()
-        return
-      }
-      if (cook.status === CookStatus.Ready) {
-        grabCookOutput(platform, cook.recipeId)
-        consumeWorldClick()
-        return
-      }
-      if (cook.status === CookStatus.Burned) {
-        grabCookOutput(platform, 'coal')
-        consumeWorldClick()
-        return
-      }
-      consumeWorldClick()
-      return
-    }
+    performConstructionPrimary(platform)
+    return
+  }
+}
 
-    if (pc.kind === 'purifier') {
-      handlePurifierPrimary(platform)
-      consumeWorldClick()
-      return
-    }
+// UI presses deliberately bypass the release gate that their own touch sets,
+// but must still match the currently selected proximity entity and live action.
+export function pressProximityAction(platform: Entity, secondary: boolean): void {
+  if (getRaftBuilderMode() !== 'idle' || getConstructionPlacementMode() !== 'idle') return
+  const nearby = getProximityConstruction()
+  if (!nearby || nearby.platform !== platform || isInventoryOpen()) return
+  const controls = resolveMobileControls()
+  if (!(secondary ? controls.f.visible : controls.e.visible)) return
+  beginUiTouch()
+  consumeWorldClick()
+  if (secondary) {
+    if (nearby.kind === 'purifier') handlePurifierFuel(platform)
+  } else performConstructionPrimary(platform)
+}
 
-    if (pc.kind === 'storage') {
-      openStorageMenu(platform)
+function performConstructionPrimary(platform: Entity): void {
+  const pc = PlatformConstruction.getOrNull(platform)
+  if (!pc) return
+  if (pc.kind === 'grill') {
+    // Route by cook state: empty grill opens the menu, ready /
+    // burned grill grabs the output, cooking grill is a no-op
+    // (the ingredient sprites already communicate "in progress").
+    const cook = ActiveCook.getOrNull(platform)
+    if (cook === null) {
+      openCookMenu(platform)
       consumeWorldClick()
       return
     }
+    if (cook.status === CookStatus.Ready) {
+      grabCookOutput(platform, cook.recipeId)
+      consumeWorldClick()
+      return
+    }
+    if (cook.status === CookStatus.Burned) {
+      grabCookOutput(platform, 'coal')
+      consumeWorldClick()
+      return
+    }
+    consumeWorldClick()
+    return
+  }
+
+  if (pc.kind === 'purifier') {
+    handlePurifierPrimary(platform)
+    consumeWorldClick()
+    return
+  }
+
+  if (pc.kind === 'storage') {
+    openStorageMenu(platform)
+    consumeWorldClick()
+    return
   }
 }
 
@@ -135,9 +133,11 @@ function handlePurifierPrimary(platform: import('@dcl/sdk/ecs').Entity): void {
   if (state === null) return
 
   if (state.freshAmount > 0) {
-    const FULL_CUP_RESTORE = 0.30
+    const FULL_CUP_RESTORE = 0.3
     restoreStat('thirst', state.freshAmount * FULL_CUP_RESTORE)
     showNotification('Drank purified water.')
+    recordTutorialAction('freshWater')
+    recordTutorialAction('drink')
     state.freshAmount = 0
     return
   }

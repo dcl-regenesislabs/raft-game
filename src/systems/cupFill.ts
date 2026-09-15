@@ -1,3 +1,4 @@
+import { mobileInteractionJustPressed } from './toolFire'
 import {
   Entity,
   InputAction,
@@ -81,7 +82,7 @@ export function cupFillSystem(_dt: number): void {
     water
   )
   const actionButtonFire =
-    actionButtonJustPressed() &&
+    (actionButtonJustPressed() || mobileInteractionJustPressed(InputAction.IA_POINTER) || mobileInteractionJustPressed(InputAction.IA_PRIMARY)) &&
     getLookAtTarget() === 'water' &&
     isPlayerWithinFillRange(water)
   if (!tappedWater && !actionButtonFire) return

@@ -1,3 +1,5 @@
+import { beginUiTouch } from '../ui/mobileControlsState'
+import { recordTutorialAction } from '../ui/tutorialState'
 import {
   ColliderLayer,
   Entity,
@@ -23,7 +25,7 @@ import {
   showSpectralConstructionAt,
   tickSpectralConstructionBlink
 } from '../factories'
-import { actionButtonJustPressed } from '../ui/actionButton'
+import { toolFireJustPressed } from './toolFire'
 import { isPointerLocked } from '../ui/cursorLock'
 import {
   getCollectedCount,
@@ -105,15 +107,15 @@ export function constructionPlacementSystem(dt: number): void {
 
   if (mode === 'idle') return
 
-  // E rotates left, F rotates right. Desktop only — mobile uses the
-  // top-middle Left/Right buttons. Edge-triggered so a held key doesn't
-  // spin the preview.
-  if (!isMobile()) {
+  // E/F rotate on desktop and native touch controls, once per press.
+  if (!isInventoryActionLocked() && !isSelectionPointerLockoutActive()) {
     if (inputSystem.isTriggered(InputAction.IA_PRIMARY, PointerEventType.PET_DOWN)) {
       rotatePlacementLeft()
+      beginUiTouch()
     }
     if (inputSystem.isTriggered(InputAction.IA_SECONDARY, PointerEventType.PET_DOWN)) {
       rotatePlacementRight()
+      beginUiTouch()
     }
   }
 
@@ -129,12 +131,7 @@ export function constructionPlacementSystem(dt: number): void {
 }
 
 function firePressed(): boolean {
-  return (
-    actionButtonJustPressed() ||
-    (!isMobile() &&
-      isPointerLocked() &&
-      inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN))
-  )
+  return isPointerLocked() && toolFireJustPressed()
 }
 
 function computeMode(): Mode {
@@ -302,8 +299,11 @@ function commitPlacement(): void {
 
   subtractCollected(mode, 1)
   createConstruction(platform, mode, getPlacementRotationDeg())
+  if (mode === 'purifier' || mode === 'grill') recordTutorialAction(mode)
   playSfx('constructionPlace')
   // Hover stays the same target; the platform now carries a
   // PlatformConstruction so the next frame's raycast result will mark
   // hoverValid = false and the green ghost will swap to red.
 }
+
+export function cancelConstructionPreview(): void { transitionMode('idle') }

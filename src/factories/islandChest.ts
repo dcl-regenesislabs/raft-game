@@ -17,6 +17,10 @@ const CHEST_SRC = 'assets/scene/chest.glb'
 const CHEST_SCALE = Vector3.create(1.0, 1.0, 1.0)
 // Y above the root entity where the chest sits (island surface)
 const CHEST_Y = 0.5
+// Interact reach of the "Open Chest" prompt. Exported so the mobile
+// touch-controls director can match the native E button's visibility
+// to the same range.
+export const CHEST_INTERACT_MAX_DISTANCE = 6
 
 export function createIslandChest(rootEntity: Entity): Entity {
   const entity = engine.addEntity()
@@ -46,7 +50,7 @@ export function createIslandChest(rootEntity: Entity): Entity {
         eventInfo: {
           button: InputAction.IA_PRIMARY,
           hoverText: 'Open Chest',
-          maxDistance: 6,
+          maxDistance: CHEST_INTERACT_MAX_DISTANCE,
           showFeedback: true
         }
       }

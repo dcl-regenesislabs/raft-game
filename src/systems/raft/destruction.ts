@@ -1,3 +1,4 @@
+import { isMobile } from '@dcl/sdk/platform'
 import {
   Entity,
   GltfContainer,
@@ -161,7 +162,7 @@ export function commitDestroyFromHover(): boolean {
 
 function attachDestroyClick(entity: Entity): void {
   pointerEventsSystem.onPointerDown(
-    { entity, opts: DESTROY_OPTS },
+    { entity, opts: { ...DESTROY_OPTS, showFeedback: !isMobile() } },
     () => {
       if (isInventoryActionLocked()) return
       if (MainPlatform.getOrNull(entity) !== null) return

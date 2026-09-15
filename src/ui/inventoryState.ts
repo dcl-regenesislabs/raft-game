@@ -1,3 +1,4 @@
+import { recordTutorialAction } from './tutorialState'
 // State for the bottom-bar inventory: which slot is selected and how recently
 // each slot was pressed. The press timer drives a short scale/glow pulse on
 // every tap so mobile users get clear feedback.
@@ -9,7 +10,8 @@ import {
   type HeldItemKind,
   setHeldCup,
   setHeldFood,
-  setHeldItem
+  setHeldItem,
+  setHeldViewmodelHidden
 } from '../factories/heldItem'
 import { getFoodEffect } from './foodEffects'
 import { isInventoryOpen } from './inventoryToggle'
@@ -41,7 +43,8 @@ const FOOD_WARNINGS: Record<string, string> = {
 
 // The bottom bar shows the first BOTTOM_BAR_SLOT_COUNT entries of the
 // linear INVENTORY_LAYOUT defined in `items.ts`.
-export const SLOT_COUNT = BOTTOM_BAR_SLOT_COUNT
+export const HANDS_SLOT = -1
+export const SLOT_COUNT = INVENTORY_TOTAL_SLOTS
 // Total duration of the press feedback animation, seconds.
 export const PRESS_DURATION = 0.32
 
@@ -93,6 +96,14 @@ export function getSelectedSlot(): number {
 }
 
 export function selectSlot(i: number): void {
+  if (i === HANDS_SLOT) {
+    if (isInventoryOpen()) return
+    selected = HANDS_SLOT
+    selectedAtMs = Date.now()
+    pointerLockoutFromSelection = true
+    setHeldViewmodelHidden(true)
+    return
+  }
   if (i < 0 || i >= SLOT_COUNT) return
   // Tool switching is disabled while the inventory panel is open.
   if (isInventoryOpen()) return
@@ -109,6 +120,7 @@ export function selectSlot(i: number): void {
   if (def === null) return
   const warning = FOOD_WARNINGS[def.id]
   if (warning !== undefined) showNotification(warning)
+  setHeldViewmodelHidden(false)
   applyHeldFromDef(def)
 }
 
@@ -121,12 +133,14 @@ export function selectSlot(i: number): void {
 // since drag swaps happen while the panel is open.
 export function refreshHeldForSelectedSlot(): void {
   const def = slotDef(selected)
+  setHeldViewmodelHidden(def === null || !def.selectable)
   if (def === null) return
   if (!def.selectable) return
   applyHeldFromDef(def)
 }
 
 function applyHeldFromDef(def: ItemDef): void {
+  if (isMobile()) setHeldViewmodelHidden(def.heldKind === null)
   // Consumables (food) equip as a textured plane held in front of the
   // camera. The actual eating is deferred to `systems/foodEat.ts`,
   // which watches for the fire input and runs the consume animation.
@@ -161,6 +175,7 @@ export function drinkContainerSlot(
   if (def.id !== containerId) return false
   const effect = getFoodEffect(containerId)
   if (!transmuteContainerSlot(slotIndex, 'cup')) return false
+  if (containerId === 'freshWater') recordTutorialAction('drink')
   if (effect !== null) {
     const hunger = (effect.hunger ?? 0) / 100
     const hungerBonus = (effect.hungerBonus ?? 0) / 100
@@ -186,6 +201,7 @@ export function consumeFoodById(id: string): boolean {
   if (taken === 0) return false
   const effect = getFoodEffect(id)
   if (effect === null) return true
+  if ((effect.hunger ?? 0) > 1) recordTutorialAction('eat')
   const hunger = (effect.hunger ?? 0) / 100
   const hungerBonus = (effect.hungerBonus ?? 0) / 100
   const thirst = (effect.thirst ?? 0) / 100
@@ -220,6 +236,7 @@ export function getBottomBarSelectedLabel(): string | null {
   const elapsedSec = (Date.now() - selectedAtMs) / 1000
   if (elapsedSec > BOTTOM_BAR_LABEL_DURATION) return null
   const def = slotDef(selected)
+  if (selected === HANDS_SLOT) return 'Hands'
   if (def === null) return null
   return getItemDisplayName(def)
 }
@@ -305,7 +322,7 @@ export function subtractCollected(kind: string, count: number = 1): number {
 // don't track durability (empty, stackable, or a durability-less tool
 // like the building hammer). When the budget hits 0 the slot is
 // cleared — the player's tool "breaks" — and if it was the currently
-// equipped slot the selection snaps back to slot 0 with a fresh held
+// equipped slot the selection falls back to remaining equipment with a fresh held
 // viewmodel, mirroring the cascade that `clearEmptyStackableSlot`
 // runs for consumed stackables. Returns true iff a use was consumed.
 export function consumeSlotDurability(slotIndex: number): boolean {
@@ -315,33 +332,11 @@ export function consumeSlotDurability(slotIndex: number): boolean {
   const itemLabel = def !== null ? getItemDisplayName(def) : 'Tool'
   const next = decrementSlotDurability(slotIndex, 1)
   if (next > 0) return true
-  // Hit zero — destroy the tool. Capture the held kind before clearing
-  // so the snap-back can decide whether to refresh the viewmodel.
-  const heldKind = def?.heldKind ?? null
   clearInventorySlot(slotIndex)
   showNotification(`${itemLabel} broke!`)
   if (slotIndex === selected) {
-    selected = 0
-    // Drop any sprite-based held kind (food/cup). Tool kinds (hook,
-    // hammer, spear, fishingRod) all map to a GLB the next equip
-    // call will swap in; defaulting to 'hook' matches the existing
-    // fallback in `clearEmptyStackableSlot`. If slot 0 still holds a
-    // real tool, refresh the viewmodel to match.
-    if (heldKind === 'food' || heldKind === 'cup') {
-      setHeldItem('hook')
-    } else {
-      const slot0 = getInventorySlot(0)
-      if (slot0 !== null && slot0.selectable) {
-        // Lean on the existing refresh path so cups/foods/tools all
-        // pick the right held representation.
-        refreshHeldForSelectedSlot()
-      } else {
-        // Slot 0 is empty (player destroyed the last starter hook
-        // before crafting another). Park on the hook GLB as a sane
-        // visual default — same behavior as the death-screen reset.
-        setHeldItem('hook')
-      }
-    }
+    selected = findFallbackEquipment()
+    refreshHeldForSelectedSlot()
   }
   return true
 }
@@ -351,16 +346,11 @@ function clearEmptyStackableSlot(id: string): void {
     const def = getInventorySlot(i)
     if (def !== null && def.id === id) {
       const wasSelected = i === selected
-      const heldKind = def.heldKind
       clearInventorySlot(i)
-      // If the slot the player had equipped is now empty, snap back to
-      // slot 0 and drop the sprite viewmodel so a consumed food/cup
-      // doesn't keep floating in front of the camera.
+      // Select remaining equipment and refresh the held item on every platform.
       if (wasSelected) {
-        selected = 0
-        if (heldKind === 'food' || heldKind === 'cup') {
-          setHeldItem('hook')
-        }
+        selected = findFallbackEquipment()
+        refreshHeldForSelectedSlot()
       }
       return
     }
@@ -398,7 +388,7 @@ export function serializeSelectedSlot(): number {
 }
 
 export function hydrateSelectedSlot(index: number): void {
-  if (index < 0 || index >= SLOT_COUNT) return
+  if (!Number.isInteger(index) || index < HANDS_SLOT || index >= SLOT_COUNT) return
   selected = index
 }
 
@@ -430,6 +420,7 @@ export function transmuteContainerSlot(
   const oldDef = getInventorySlot(slotIndex)
   if (oldDef === null) return false
   if (!transmuteSlot(slotIndex, newId)) return false
+  if (newId === 'saltWater' || newId === 'freshWater') recordTutorialAction(newId)
   const oldCount = collectedCounts.get(oldDef.id) ?? 0
   collectedCounts.set(oldDef.id, Math.max(0, oldCount - 1))
   collectedCounts.set(newId, (collectedCounts.get(newId) ?? 0) + 1)
@@ -440,4 +431,15 @@ export function transmuteContainerSlot(
     }
   }
   return true
+}
+
+export function getEquippableSlots(): number[] {
+  return Array.from({ length: INVENTORY_TOTAL_SLOTS }, (_, i) => i).filter(isSlotSelectable)
+}
+function findFallbackEquipment(): number { return getEquippableSlots()[0] ?? 0 }
+// Inventory order never changes which item is equipped.
+export function remapEquippedSlot(a: number, b: number): void {
+  if (selected === a) selected = b
+  else if (selected === b) selected = a
+  refreshHeldForSelectedSlot()
 }

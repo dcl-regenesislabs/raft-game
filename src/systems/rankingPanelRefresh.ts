@@ -4,14 +4,8 @@ import { getRankings, isRankingsLoading } from '../client/rankingClient'
 import { getRankingEntryEntities } from '../factories/rankingPanel'
 import { formatTimeS } from '../shared/rankingTypes'
 import { isStartupGateActive } from '../ui/startupGate'
-import type { SceneMode } from '../runtime/sceneMode'
 
 let lastWrittenKey = ''
-let cachedMode: SceneMode = 'demo'
-
-export function setRankingPanelMode(mode: SceneMode): void {
-  cachedMode = mode
-}
 
 export function rankingPanelRefreshSystem(_dt: number): void {
   if (!isStartupGateActive()) return
@@ -19,7 +13,7 @@ export function rankingPanelRefreshSystem(_dt: number): void {
   const entities = getRankingEntryEntities()
   if (entities.length === 0) return
 
-  const rankings = getRankings(cachedMode)
+  const rankings = getRankings()
   const loading = isRankingsLoading()
 
   const key = loading

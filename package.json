@@ -1,25 +1,22 @@
 {
   "name": "raft-game",
   "version": "1.0.0",
-  "description": "Raft Game — survive on a raft in Decentraland: fish, scavenge, craft, and build.",
+  "description": "Raft Game \u2014 survive on a raft in Decentraland: fish, scavenge, craft, and build.",
   "scripts": {
     "start": "sdk-commands start",
-    "deploy": "sdk-commands deploy",
+    "deploy": "npm run prepare:scene && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org --multi-scene",
     "build": "sdk-commands build",
-    "prepare:demo": "node scripts/build-scene-json.mjs --target=demo",
-    "prepare:full": "node scripts/build-scene-json.mjs --target=full",
     "check:textures": "python3 scripts/check_gltf_textures.py",
     "fix:textures": "python3 scripts/check_gltf_textures.py --fix",
-    "deploy:demo": "npm run prepare:demo && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org --multi-scene",
-    "deploy:full": "npm run prepare:full && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org --multi-scene",
     "upgrade-sdk": "npm install --save-dev @dcl/sdk@latest",
     "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next",
-    "server-logs": "sdk-commands sdk-server-logs"
+    "server-logs": "sdk-commands sdk-server-logs",
+    "prepare:scene": "node scripts/build-scene-json.mjs"
   },
   "devDependencies": {
     "@dcl/asset-packs": "latest",
-    "@dcl/js-runtime": "7.23.2-25521226778.commit-1828100",
-    "@dcl/sdk": "7.23.2-25521226778.commit-1828100"
+    "@dcl/js-runtime": "7.28.0",
+    "@dcl/sdk": "^7.28.0"
   },
   "engines": {
     "node": ">=16.0.0",
@@ -30,5 +27,8 @@
     "singleQuote": true,
     "printWidth": 120,
     "trailingComma": "none"
+  },
+  "dependencies": {
+    "@dcl/ecs": "^7.28.0"
   }
 }

@@ -22,7 +22,7 @@ Sources: cited `file:line` for every scene constant. Raft numbers from the offic
 | `DRIFT_SPEED` | 1.8 m/s (± 0.3 jitter) along flow | 35–36 |
 | `MAP_EDGE_SPAWN_MARGIN` | 4 m no-spawn band inside parcel edge | 41 |
 
-Effective throughput: **5 items / 30 s = 10 items/min**, gated by parcel size — in 5×5 demo most lateral slots clamp tight, in 50×50 the full upstream band is available.
+Effective throughput: **5 items / 30 s = 10 items/min**, in the 50×50 world, where the full upstream band is available.
 
 ### 1.2 Debris pool
 
@@ -252,8 +252,8 @@ Numbers, not implementations. Each row is a one-line code change in the cited fi
 
 ## 7. Open questions
 
-- **Difficulty modes.** Raft has Easy ×0.6 / Normal ×1.0 / Hard ×1.5 multipliers on hunger/thirst. Worth exposing for the demo (kid mode) vs. full (standard)?
-- **DEMO vs FULL scaling.** Should `SPAWN_INTERVAL_S` or `GROUP_SIZE` scale with parcel area? In the 50×50 FULL build a constant cadence may starve the lateral band; in the 5×5 DEMO it may flood the deck.
+- **Difficulty modes.** Raft has Easy ×0.6 / Normal ×1.0 / Hard ×1.5 multipliers on hunger/thirst. Consider exposing these as player difficulty settings.
+- **Spawn density.** In the 50×50 world, a constant cadence may starve the lateral band; evaluate the spawn interval and group size.
 - **Sail / movement penalty.** If a sail ever ships, mirroring Raft's "moving = less debris" needs a design call — either copy it or explicitly reject it.
 - **Recipe discoverability.** With or without intermediates, the craft panel currently shows everything from t=0. Raft gates recipes via the Research Table. Same hackathon scope question: lock or unlock?
 

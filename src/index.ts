@@ -1,4 +1,6 @@
+import { mobileUiInputSystem } from './ui/mobileControlsState'
 import { engine } from '@dcl/sdk/ecs'
+import { isMobile } from '@dcl/sdk/platform'
 import { ambienceTickSystem } from './audio/ambience'
 import { musicTickSystem, setMusicTrack } from './audio/music'
 import { sfxTickSystem } from './audio/sfx'
@@ -23,9 +25,8 @@ import {
 } from './factories'
 import { SKIP_LOBBY } from './config/gameConfig'
 import { createLobby } from './factories/lobby'
-import { DEMO_PARCEL_GRID, FULL_PARCEL_GRID } from './factories/sceneLevels'
-import { bootstrapSceneFlow, skipLobbyToDebug } from './runtime/sceneFlow'
-import { getSceneMode } from './runtime/sceneMode'
+import { PARCEL_GRID } from './factories/sceneLevels'
+import { bootstrapSceneFlow, startGameDirectly } from './runtime/sceneFlow'
 import { constructionInteractSystem } from './systems/constructionInteract'
 import { constructionPlacementSystem } from './systems/constructionPlacement'
 import { cupFillSystem } from './systems/cupFill'
@@ -56,9 +57,8 @@ import { chefIdleStarterSystem } from './systems/chefIdleStarter'
 import { chefDialogSystem } from './systems/chefDialog'
 import { lobbyButtonHoverSystem } from './systems/lobbyButtonHover'
 import { lobbyPortalSystem } from './systems/lobbyPortalSystem'
-import { portalPulseSystem } from './systems/portalPulse'
-import { portalUvSwirlSystem } from './systems/portalUvSwirl'
 import { lookAtTargetSystem } from './systems/lookAtTarget'
+import { initTouchControls, touchControlsSystem } from './systems/touchControls'
 import { raftBuilderSystem } from './systems/raftBuilder'
 import { sharkAttackSystem } from './systems/sharkAttack'
 import { sharkDirectorSystem } from './systems/sharkDirector'
@@ -67,7 +67,7 @@ import { sharkPointerEventsSystem } from './systems/sharkPointerEvents'
 import { spearAttackSystem } from './systems/spearAttack'
 import { survivalDrainSystem } from './systems/survivalDrain'
 import { playTimerSystem } from './systems/playTimer'
-import { rankingPanelRefreshSystem, setRankingPanelMode } from './systems/rankingPanelRefresh'
+import { rankingPanelRefreshSystem } from './systems/rankingPanelRefresh'
 import { waterScrollSystem } from './systems/waterScroll'
 import { setupUi } from './ui'
 import { actionButtonResetSystem } from './ui/actionButton'
@@ -94,18 +94,18 @@ export async function main(): Promise<void> {
   //   runServer()
   //   return
   // }
-  // Detect which deployment we're running in. raft.dcl.eth is the FULL
-  // 50x50 game; everything else (italy2026 demo, local preview) gets the
-  // 5x5 demo layout. configureGridOrigin must run before any factory below
-  // because gridCellToWorld and the raft-builder system read GRID_ORIGIN.
-  const mode = await getSceneMode()
-  const parcelGrid = mode === 'full' ? FULL_PARCEL_GRID : DEMO_PARCEL_GRID
+  // Use the same full-sized world in production and local previews.
+  const parcelGrid = PARCEL_GRID
   configureGridOrigin(parcelGrid)
 
   // Kick off HUD texture preload as early as possible so the renderer
   // warms its cache while the startup gate is up. Fire-and-forget — no
   // gameplay system blocks on it.
   preloadHudAssets()
+
+  // Baseline native touch-gamepad declutter (hide 1-4 / pointer / E / F)
+  // so touch clients boot clean. Desktop clients ignore the component.
+  initTouchControls()
 
   createFirstPersonArea(parcelGrid)
   createHeldItem('hook')
@@ -117,6 +117,7 @@ export async function main(): Promise<void> {
   engine.addSystem(musicTickSystem)
   engine.addSystem(ambienceTickSystem)
   engine.addSystem(firstPersonItemSwaySystem)
+  engine.addSystem(inventoryInputSystem)
   engine.addSystem(spearAttackSystem)
   engine.addSystem(hammerSwingSystem)
   // lookAtTargetSystem owns the camera-forward raycast that classifies
@@ -124,6 +125,11 @@ export async function main(): Promise<void> {
   // Must run before `constructionInteract` and `cupFill` so they read a
   // fresh target this frame.
   engine.addSystem(lookAtTargetSystem)
+  // Keeps the native touch buttons (E / F / pointer) in sync with what
+  // the player can currently do. Mobile-only: the component is a no-op
+  // on desktop, so skip the per-frame recompute there. Registered right
+  // after lookAtTargetSystem to read the freshest classification.
+  if (isMobile()) engine.addSystem(touchControlsSystem)
   // Construction + cup-fill must run BEFORE foodEat so they can mark
   // this frame's click as consumed (via worldClickGate) — otherwise a
   // tap on the purifier with salt water held would also drain the cup.
@@ -142,8 +148,6 @@ export async function main(): Promise<void> {
   engine.addSystem(sharkAttackSystem)
   engine.addSystem(sharkPointerEventsSystem)
   engine.addSystem(lobbyPortalSystem)
-  engine.addSystem(portalPulseSystem)
-  engine.addSystem(portalUvSwirlSystem)
   engine.addSystem(lobbyButtonHoverSystem)
   // Director MUST run before chefDialogSystem — on the WAITING → INTERACTING
   // click frame it swaps the chef's dialog script and resets
@@ -185,10 +189,10 @@ export async function main(): Promise<void> {
   engine.addSystem(constructionPlacementSystem)
   engine.addSystem(hookThrowerSystem)
   engine.addSystem(fishingRodSystem)
-  engine.addSystem(inventoryInputSystem)
   engine.addSystem(craftSessionTickSystem)
   engine.addSystem(purifierProcessSystem)
   engine.addSystem(purifierFillSystem)
+  engine.addSystem(mobileUiInputSystem)
   engine.addSystem(inventoryToggleResetSystem)
   engine.addSystem(craftToggleResetSystem)
   engine.addSystem(storageToggleResetSystem)
@@ -216,25 +220,23 @@ export async function main(): Promise<void> {
   // TODO: re-enable once @dcl/sdk/network is available
   // initSaveClient()
   // engine.addSystem(saveClientTickSystem)
-  // initRankingClient(mode)
+  // initRankingClient()
   // engine.addSystem(rankingClientTickSystem)
 
   // Build the lobby world (water at y=0, raft island, bridges, portals)
   // and arm the portal-trigger handler via the scene-flow runtime. The
   // handler runs the gate's exit fade, then on fade completion swaps the
   // lobby for the actual game world and runs the kind-specific bootstrap
-  // (load / debug / nothing). Bootstrap also caches mode/parcelGrid so the
+  // (load / debug / nothing). Bootstrap also caches parcelGrid so the
   // SystemMenu's BACK TO LOBBY can rebuild the same configuration.
   //
-  // SKIP_LOBBY (dev-only, force-disabled in production) jumps straight
-  // into the DEBUG-seeded game world. Bootstrap still runs so a later
-  // BACK TO LOBBY from the system menu can rebuild the lobby cleanly.
-  setRankingPanelMode(mode)
-  bootstrapSceneFlow(mode, parcelGrid)
+  // Direct entry starts a normal game. Keep the lobby configuration available
+  // for the optional BACK TO LOBBY action.
+  bootstrapSceneFlow(parcelGrid)
   if (SKIP_LOBBY) {
-    skipLobbyToDebug(parcelGrid)
+    startGameDirectly(parcelGrid)
   } else {
-    createLobby(parcelGrid, mode)
+    createLobby(parcelGrid)
     setMusicTrack('lobby')
   }
 

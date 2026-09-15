@@ -1,6 +1,6 @@
 // Wire-format messages exchanged between the client UI and the
 // authoritative server. The server uses Storage.player to persist a
-// single JSON-encoded SaveBlob per player per scene mode; everything
+// single JSON-encoded SaveBlob per player; everything
 // else (assembling/validating the blob) lives on the client side.
 //
 // The whole save payload travels as a single string field so the schema
@@ -8,18 +8,14 @@
 // SaveBlob `version` field gates migrations on the client.
 
 import { Schemas } from '@dcl/sdk/ecs'
-import { registerMessages } from '@dcl/sdk/network'
+import { registerMessagesShim } from './messagesShim'
 
 export const SAVE_MESSAGES = {
   save: Schemas.Map({
-    mode: Schemas.String,
     payload: Schemas.String
   }),
-  load: Schemas.Map({
-    mode: Schemas.String
-  }),
+  load: Schemas.Map({}),
   loadResult: Schemas.Map({
-    mode: Schemas.String,
     payload: Schemas.String,
     found: Schemas.Boolean
   }),
@@ -30,7 +26,6 @@ export const SAVE_MESSAGES = {
     error: Schemas.String
   }),
   submitScore: Schemas.Map({
-    mode: Schemas.String,
     timeS: Schemas.Number,
     debug: Schemas.Boolean
   }),
@@ -38,15 +33,14 @@ export const SAVE_MESSAGES = {
     ok: Schemas.Boolean,
     error: Schemas.String
   }),
-  requestRankings: Schemas.Map({
-    mode: Schemas.String
-  }),
+  requestRankings: Schemas.Map({}),
   rankingsResult: Schemas.Map({
-    mode: Schemas.String,
     entries: Schemas.String
   })
 }
 
 export type SaveMessages = typeof SAVE_MESSAGES
 
-export const saveRoom = registerMessages(SAVE_MESSAGES)
+// Shimmed no-op room while the messaging API is absent from the current
+// SDK snapshot — see ./messagesShim.ts.
+export const saveRoom = registerMessagesShim(SAVE_MESSAGES)

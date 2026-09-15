@@ -1,3 +1,4 @@
+import { recordTutorialAction } from './tutorialState'
 // Active crafting session. While a craft is in progress, the HUD hides
 // every interactive element except a centered progress bar and tool
 // systems are blocked through `isInventoryActionLocked`. Materials are
@@ -59,6 +60,7 @@ export function startCraft(id: string): boolean {
     // Instant craft — skip the session entirely so the HUD never locks.
     addCollected(id, 1)
     notifyItemReceived(id, 1)
+    if (id === 'rope' || id === 'hammer') recordTutorialAction(id)
     return true
   }
   activeId = id
@@ -74,6 +76,7 @@ export function craftSessionTickSystem(dt: number): void {
   if (elapsedSec >= activeDurationSec) {
     addCollected(activeId, 1)
     notifyItemReceived(activeId, 1)
+    if (activeId === 'rope' || activeId === 'hammer') recordTutorialAction(activeId)
     activeId = null
     elapsedSec = 0
   }

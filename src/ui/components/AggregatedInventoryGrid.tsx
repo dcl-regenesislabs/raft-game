@@ -1,3 +1,4 @@
+import { UI_PAPER, UI_BORDER, UI_CELL } from '../visualTheme'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
 import { getPickedIngredient, pickIngredient } from '../cookSlots'
@@ -54,10 +55,9 @@ export function AggregatedInventoryGrid(props: {
   const cells = buildAggregatedCells(props.filter)
   return (
     <UiEntity
-      uiTransform={{ width: size, height: size }}
+      uiTransform={{ width: size, height: size, borderRadius: 14 }}
       uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: INVENTORY_PANEL_TEXTURE }
+        color: UI_PAPER
       }}
     >
       {cells.map((cell, i) => (
@@ -137,8 +137,10 @@ function AggregatedInventoryCell(props: {
         positionType: 'absolute',
         position: { top: `${topPct}%`, left: `${leftPct}%` },
         width: `${INVENTORY_CELL_SIZE_PCT}%`,
-        height: `${INVENTORY_CELL_SIZE_PCT}%`
+        height: `${INVENTORY_CELL_SIZE_PCT}%`,
+        borderRadius: 8, borderWidth: 1, borderColor: UI_BORDER
       }}
+      uiBackground={{ color: UI_CELL }}
       onMouseDown={() => {
         if (isCraftOpen()) return
         if (isCookOpen()) pickIngredient(props.item.id)

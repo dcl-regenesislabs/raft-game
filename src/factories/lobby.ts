@@ -24,13 +24,9 @@ import {
   LobbyButton,
   LobbyButtonHover,
   LobbyTag,
-  LobbyTeleport,
-  PortalPulse,
-  PortalUvSwirl
 } from '../components'
 import { CHEF_ALL_CLIPS, CHEF_IDLE_CLIP, createChef } from './chef'
 import { LOBBY_CHEF_DIALOG_LINES } from '../systems/chefDialog'
-import { SceneMode } from '../runtime/sceneMode'
 import {
   GRID_ORIGIN,
   PLATFORM_SIZE_Y,
@@ -53,9 +49,6 @@ import { createWaterFloorV2 } from './water2'
 //   - clicks one of the three buttons on the central information panel
 //     (NEW WORLD / LOAD WORLD / NEW WORLD - DEBUG) → fires the gate's
 //     exit fade and runs the matching bootstrap.
-//   - in DEMO mode only, walks into / clicks the single cross-realm
-//     portal → triggers `changeRealm({ realm: 'raft.dcl.eth' })` so
-//     the explorer prompts the user to jump to the FULL game.
 //
 // Every entity created here carries a `LobbyTag` so `teardownLobby`
 // can sweep them away in one pass when the player commits to entering
@@ -66,7 +59,7 @@ const BRIDGE_REACH = 10
 const CELL = RAFT_SIZE
 const LOBBY_DECK_Y = LOBBY_RAFT_Y + PLATFORM_SIZE_Y
 // World-meter Z nudge applied to every lobby element (island, bridge,
-// walls, decor, portal, campfire, fishing). Positive shifts toward the
+// walls, decor, campfire, fishing). Positive shifts toward the
 // north bridge (+Z); seabed and water remain centred since they cover
 // the whole parcel footprint.
 const LOBBY_Z_OFFSET = 0.9
@@ -117,16 +110,8 @@ const WALL_HEIGHT = 30
 const WALL_THICKNESS = 0.4
 const WALL_CENTER_Y = LOBBY_DECK_Y + WALL_HEIGHT / 2
 
-// Distance at which the cross-realm portal trigger fires on player
-// walk-in. Smaller than the visual ring so the player has to step into
-// the centre, not graze the edge.
-export const PORTAL_TRIGGER_RADIUS_M = 1.5
-export const PORTAL_TRIGGER_RADIUS_SQ = PORTAL_TRIGGER_RADIUS_M * PORTAL_TRIGGER_RADIUS_M
-
 const WELCOME_GLB = 'assets/scene/structures/welcome.glb'
-const PORTAL_GLB = 'assets/scene/structures/portal_ring.glb'
 const PANEL_GLB = 'assets/scene/structures/information_panel.glb'
-const PORTAL_TEXTURE = 'assets/scene/structures/portal_texture_square.png'
 const BUTTON_TEXTURE = 'images/hud/red_button.png'
 
 // Decoration GLBs reused from the survival-game pack.
@@ -146,21 +131,16 @@ const WELCOME_SCALE = 3
 // on the deck — original 1.7 lift at scale 2 becomes 2.55 at scale 3.
 const WELCOME_LIFT = 2.55
 const PANEL_LIFT = 2.1
-const PORTAL_LIFT = 1.5
 // barrel.glb is centre-pivot too (~1.91 m tall, half-height ~0.95).
 // Lift = half-height * scale so the barrel base lands on the deck
 // instead of sinking through it.
 const BARREL_LIFT_FULL = 0.8    // scale 1.0
 const BARREL_LIFT_CAMPFIRE = 0.7  // scale 0.9
 const BARREL_LIFT_BUCKET = 0.4  // scale 0.55
-// Cross-realm destination for the demo's teleport portal. Hard-coded
-// rather than read from config because the demo's whole purpose is to
-// drive players to the FULL world.
-export const FULL_GAME_REALM = 'raft.dcl.eth'
 
 export type LobbyButtonKind = 'NEW' | 'LOAD' | 'DEBUG'
 
-export function createLobby(parcelGrid: number, mode: SceneMode): void {
+export function createLobby(parcelGrid: number): void {
   const cx = GRID_ORIGIN.x
   const cz = GRID_ORIGIN.z + LOBBY_Z_OFFSET
 
@@ -185,15 +165,12 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
   buildIslandRafts(cx, cz)
   buildSideWingRafts(cx, cz)
   buildBridge(cx, cz)
-  buildBlockerWalls(cx, cz, mode, parcelGrid)
+  buildBlockerWalls(cx, cz)
   buildDecor(cx, cz)
   buildActionPanel(cx, cz)
   buildRankingPanel(GRID_ORIGIN.x, GRID_ORIGIN.z)
-  if (mode === 'demo') {
-    spawnTeleportPortal(cx + 4.5, cz - 6)
-  }
-  buildCampfireZone(cx - 10.5, cz, mode)
-  buildFishingCorner(cx + 10.5, cz, mode)
+  buildCampfireZone(cx - 10.5, cz)
+  buildFishingCorner(cx + 10.5, cz)
   buildPerimeterProps(cx, cz)
   // Lobby chef stands a couple of metres east-and-north of the
   // information kiosk so the welcome animations read as the kiosk's
@@ -207,8 +184,7 @@ export function createLobby(parcelGrid: number, mode: SceneMode): void {
 // World-space position the player teleports to on lobby entry: the
 // NORTH end of the only bridge into the central island. Lifted into a
 // helper so `runtime/sceneFlow.ts` can drop the avatar here on the BACK
-// TO LOBBY path without re-deriving the bridge geometry. Used in both
-// DEMO and FULL — the bridge is built in both modes.
+// TO LOBBY path without re-deriving the bridge geometry.
 const BRIDGE_REACH_M = BRIDGE_REACH * CELL
 const ISLAND_HALF_M = ISLAND_HALF * CELL
 // Half-cell north of the bridge's northernmost row so the marker sits
@@ -251,8 +227,7 @@ function buildIslandRafts(cx: number, cz: number): void {
 }
 
 // Single north-facing bridge connecting the central island to the
-// scene's northern parcel border. Built in both DEMO and FULL modes;
-// in DEMO the player spawns at the bridge's northern tip and walks
+// arrival point. The player spawns at the bridge's northern tip and walks
 // south under the welcome arch onto the island. One cell wide (3 m),
 // aligned to the cell-grid X line at `BRIDGE_GX` so it shares an X
 // edge with the island's middle north cell — the connection looks
@@ -286,10 +261,7 @@ function tagged(entity: Entity): Entity {
 function buildBlockerWalls(
   cx: number,
   cz: number,
-  mode: SceneMode,
-  parcelGrid: number
 ): void {
-  void parcelGrid
   const cells: Array<[number, number]> = [
     ...mainIslandCells(),
     ...ISLAND_TABS.map(([gx, gz]) => [gx, gz] as [number, number]),
@@ -345,13 +317,8 @@ function buildBlockerWalls(
   const bridgeMidOffset = ISLAND_HALF * CELL + bridgeReachM / 2
   spawnWall(bridgeCx + halfCell, cz + bridgeMidOffset, WALL_THICKNESS, bridgeReachM)
   spawnWall(bridgeCx - halfCell, cz + bridgeMidOffset, WALL_THICKNESS, bridgeReachM)
-  // North cap at the bridge tip. In DEMO 5x5 the bridge tip sits at the
-  // north parcel border, so we drop this wall to let the player walk
-  // off the tip; in FULL mode the cap stays in place since the bridge
-  // ends in mid-scene with open water beyond.
-  if (mode !== 'demo') {
-    spawnWall(bridgeCx, cz + ISLAND_HALF * CELL + bridgeReachM, CELL, WALL_THICKNESS)
-  }
+  // Cap the bridge where it ends over open water.
+  spawnWall(bridgeCx, cz + ISLAND_HALF * CELL + bridgeReachM, CELL, WALL_THICKNESS)
 }
 
 function spawnWall(
@@ -583,128 +550,6 @@ export function applyLobbyButtonMaterial(entity: Entity, enabled: boolean): void
   })
 }
 
-// Single cross-realm portal. Visible only in DEMO. Walking into it OR
-// clicking it asks the explorer to swap realms via `changeRealm`,
-// which surfaces its own confirmation dialog — no scene-side modal
-// needed.
-function spawnTeleportPortal(worldX: number, worldZ: number): void {
-  const ring = engine.addEntity()
-  Transform.create(ring, {
-    position: Vector3.create(worldX, LOBBY_DECK_Y + PORTAL_LIFT - 0.15, worldZ),
-    scale: Vector3.create(1.8, 1.8, 1.8)
-  })
-  GltfContainer.create(ring, {
-    src: PORTAL_GLB,
-    visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS
-  })
-  PointerEvents.create(ring, {
-    pointerEvents: [
-      {
-        eventType: PointerEventType.PET_DOWN,
-        eventInfo: {
-          button: InputAction.IA_POINTER,
-          hoverText: 'Travel to the FULL game',
-          maxDistance: 8
-        }
-      }
-    ]
-  })
-  LobbyTeleport.create(ring)
-  LobbyTag.create(ring)
-
-  spawnPortalInterior(worldX, worldZ)
-
-  // Red button plate behind the FULL GAME label, mirroring the NEW
-  // WORLD / LOAD WORLD buttons on the kiosk so the portal reads as a
-  // call-to-action of the same family. Static (no billboard): the
-  // plate's default plane normal points -Z, so we rotate 180° around Y
-  // to face +Z toward the player approaching from the north bridge,
-  // same convention as the kiosk buttons. The text is parented to the
-  // plate and inverse-scaled so glyphs render at their natural aspect
-  // ratio despite the parent's non-uniform stretch.
-  const PLATE_SCALE = 0.5
-  const PLATE_W = 2.7 * PLATE_SCALE
-  const PLATE_H = 0.9 * PLATE_SCALE
-  const plateY = LOBBY_DECK_Y + PORTAL_LIFT + 1.1
-  const plateZ = worldZ + 0.5
-  const plate = engine.addEntity()
-  Transform.create(plate, {
-    position: Vector3.create(worldX, plateY, plateZ),
-    rotation: Quaternion.fromEulerDegrees(0, 180, 0),
-    scale: Vector3.create(PLATE_W, PLATE_H, 1)
-  })
-  MeshRenderer.setPlane(plate)
-  applyLobbyButtonMaterial(plate, true)
-  LobbyTag.create(plate)
-
-  const text = engine.addEntity()
-  Transform.create(text, {
-    parent: plate,
-    position: Vector3.create(0, 0, -0.04),
-    scale: Vector3.create(1 / PLATE_W, 1 / PLATE_H, 1)
-  })
-  TextShape.create(text, {
-    text: 'FULL GAME',
-    fontSize: 4 * PLATE_SCALE,
-    textColor: Color4.create(1, 1, 1, 1),
-    outlineColor: Color3.create(0.05, 0.05, 0.05),
-    outlineWidth: 0.2,
-    textAlign: TextAlignMode.TAM_MIDDLE_CENTER
-  })
-  LobbyTag.create(text)
-}
-
-function spawnPortalInterior(worldX: number, worldZ: number): void {
-  const interior = engine.addEntity()
-  Transform.create(interior, {
-    position: Vector3.create(worldX, LOBBY_DECK_Y + PORTAL_LIFT, worldZ),
-    // Default plane normal is -Z; rotate so the swirling texture faces
-    // +Z toward the player approaching from the north bridge.
-    rotation: Quaternion.fromEulerDegrees(0, 180, 0),
-    scale: Vector3.create(2, 2.2, 1)
-  })
-  MeshRenderer.setPlane(interior, [
-    0, 0, 1, 0, 1, 1, 0, 1,
-    0, 0, 1, 0, 1, 1, 0, 1
-  ])
-  PortalUvSwirl.create(interior, {
-    speedU: 0.045,
-    speedV: 0.08,
-    offsetU: 0,
-    offsetV: 0,
-    rotSpeed: 0.6,
-    rotation: 0,
-    tileCount: 1
-  })
-  Material.setPbrMaterial(interior, {
-    texture: Material.Texture.Common({
-      src: PORTAL_TEXTURE,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_REPEAT
-    }),
-    emissiveTexture: Material.Texture.Common({
-      src: PORTAL_TEXTURE,
-      filterMode: TextureFilterMode.TFM_BILINEAR,
-      wrapMode: TextureWrapMode.TWM_REPEAT
-    }),
-    albedoColor: Color4.create(1, 1, 1, 1),
-    emissiveColor: Color3.create(1, 1, 1),
-    emissiveIntensity: 0.75,
-    specularIntensity: 0,
-    transparencyMode: MaterialTransparencyMode.MTM_OPAQUE,
-    castShadows: false,
-    roughness: 1,
-    metallic: 0
-  })
-  PortalPulse.create(interior, {
-    elapsed: 0,
-    speed: 3.5,
-    baseIntensity: 0.5,
-    pulseAmp: 0.12
-  })
-  LobbyTag.create(interior)
-}
-
 // East and west decoration wings — each a 1×2 cell strip extending off
 // the island's middle row. The barrel cluster sits on the west wing,
 // the fishing corner on the east wing. Two cells deep (in Z) so the
@@ -721,7 +566,7 @@ function buildSideWingRafts(cx: number, cz: number): void {
 
 // West wing — three barrels arranged in a circle. Reads as the
 // lobby's gathering nook.
-function buildCampfireZone(wingX: number, wingZ: number, _mode: SceneMode): void {
+function buildCampfireZone(wingX: number, wingZ: number): void {
   const barrelOffsets: Array<{ dx: number; dz: number; yawDeg: number }> = [
     { dx: 1.3, dz: 0, yawDeg: 30 },
     { dx: -0.65, dz: -1.1, yawDeg: 150 },
@@ -768,7 +613,7 @@ function buildLobbyChef(worldX: number, worldZ: number, yawDeg: number): void {
 // East wing — a small bucket (re-scaled barrel) on the deck. The rod
 // and plant tuft that used to flank it were removed; the lone bucket
 // keeps the wing from reading as empty.
-function buildFishingCorner(wingX: number, wingZ: number, _mode: SceneMode): void {
+function buildFishingCorner(wingX: number, wingZ: number): void {
   const bucket = engine.addEntity()
   Transform.create(bucket, {
     position: Vector3.create(wingX - 0.6, LOBBY_DECK_Y + BARREL_LIFT_BUCKET, wingZ + 0.6),

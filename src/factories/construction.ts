@@ -3,6 +3,8 @@ import {
   Entity,
   GltfContainer,
   InputAction,
+  InteractionType,
+  PBPointerEvents_Entry,
   Material,
   MaterialTransparencyMode,
   MeshRenderer,
@@ -112,8 +114,8 @@ export function createConstruction(
       eventInfo: {
         button: InputAction.IA_PRIMARY,
         hoverText: HOVER_TEXT[kind],
-        maxDistance: HOVER_MAX_DISTANCE,
-        showFeedback: true
+        maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
+        showFeedback: false
       }
     }
   ]
@@ -126,12 +128,12 @@ export function createConstruction(
       eventInfo: {
         button: InputAction.IA_SECONDARY,
         hoverText: 'Add wood',
-        maxDistance: HOVER_MAX_DISTANCE,
-        showFeedback: true
+        maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
+        showFeedback: false
       }
     })
   }
-  PointerEvents.create(child, { pointerEvents })
+  setConstructionEvents(child, pointerEvents)
   // Grills no longer carry an always-on flame; the flame and food
   // sprites are spawned by `cookSession.startCook` when the player
   // confirms a recipe and stored on the platform's `ActiveCook`
@@ -181,8 +183,8 @@ export function setPurifierHoverPrompt(
       eventInfo: {
         button: InputAction.IA_PRIMARY,
         hoverText: primaryText,
-        maxDistance: HOVER_MAX_DISTANCE,
-        showFeedback: true
+        maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
+        showFeedback: false
       }
     }
   ]
@@ -192,12 +194,12 @@ export function setPurifierHoverPrompt(
       eventInfo: {
         button: InputAction.IA_SECONDARY,
         hoverText: 'Add wood',
-        maxDistance: HOVER_MAX_DISTANCE,
-        showFeedback: true
+        maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
+        showFeedback: false
       }
     })
   }
-  PointerEvents.createOrReplace(child, { pointerEvents: events })
+  setConstructionEvents(child, events)
 }
 
 // Local-frame description of one bowl's water-fill geometry inside the
@@ -318,19 +320,17 @@ export function setConstructionPointerPrompt(
     if (PointerEvents.getOrNull(child) !== null) PointerEvents.deleteFrom(child)
     return
   }
-  PointerEvents.createOrReplace(child, {
-    pointerEvents: [
+  setConstructionEvents(child, [
       {
         eventType: PointerEventType.PET_DOWN,
         eventInfo: {
           button: InputAction.IA_PRIMARY,
           hoverText,
-          maxDistance: HOVER_MAX_DISTANCE,
-          showFeedback: true
+          maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
+          showFeedback: false
         }
       }
-    ]
-  })
+    ])
 }
 
 export function getConstructionDefaultHoverText(kind: ConstructionKind): string {
@@ -347,4 +347,16 @@ export function getConstructionVisualSize(kind: ConstructionKind): number {
 
 export function getConstructionDeckOffset(kind: ConstructionKind): number {
   return DECK_OFFSET_M[kind]
+}
+
+// Track the renderer-selected proximity target, including older Explorer hover events.
+function setConstructionEvents(child: Entity, entries: PBPointerEvents_Entry[]): void {
+  PointerEvents.createOrReplace(child, { pointerEvents: [
+    ...entries.map(entry => ({ ...entry, interactionType: InteractionType.PROXIMITY })),
+    ...[PointerEventType.PET_PROXIMITY_ENTER, PointerEventType.PET_PROXIMITY_LEAVE,
+      PointerEventType.PET_HOVER_ENTER, PointerEventType.PET_HOVER_LEAVE].map(eventType => ({
+      eventType, interactionType: InteractionType.PROXIMITY,
+      eventInfo: { button: InputAction.IA_ANY, maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE, showFeedback: false }
+    }))
+  ] })
 }

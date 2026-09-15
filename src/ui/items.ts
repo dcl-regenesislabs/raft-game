@@ -1,7 +1,7 @@
 // Single source of truth for every item the player can hold or collect.
-// The inventory is one linear 30-slot list: indices 0–4 are the bottom
-// hot-bar, 5–29 are the 5×5 inventory panel grid. Slots can be `null` for
-// empty placements.
+// The inventory is one shared 30-slot list. The desktop hotbar provides
+// shortcuts to its first five slots; the backpack displays every slot.
+// Empty slots are null.
 
 import type { HeldItemKind } from '../factories/heldItem'
 
@@ -199,14 +199,11 @@ const CRAFTED_CONTAINER = (id: string, texture: string): ItemDef => ({
   ingredient: false
 })
 
-// Linear inventory layout. First BOTTOM_BAR_SLOT_COUNT entries map to the
-// bottom bar in left-to-right order; the rest fill the inventory panel
-// grid in row-major order. Pad with null to keep the array length at
-// INVENTORY_TOTAL_SLOTS.
+// One 30-slot inventory. The desktop hotbar mirrors its first five slots;
+// item allocation and equipment selection do not depend on that shortcut row.
 export const BOTTOM_BAR_SLOT_COUNT = 5
 export const INVENTORY_TOTAL_SLOTS = 30
-export const INVENTORY_GRID_SLOT_COUNT =
-  INVENTORY_TOTAL_SLOTS - BOTTOM_BAR_SLOT_COUNT
+export const INVENTORY_GRID_SLOT_COUNT = INVENTORY_TOTAL_SLOTS
 
 // Shared hook def — referenced by both the starter loadout AND
 // `CRAFTED_CATALOG` so the player can re-craft a hook once the starter
@@ -483,21 +480,9 @@ function findFirstEmptySlot(start: number, end: number): number {
   return -1
 }
 
-// Pick the slot a new pickup lands in. Equippable items (selectable: true —
-// tools, foods, containers, placeables) prefer the bottom hot-bar so the
-// player can use them immediately, then spill into the grid when the bar
-// fills up. Non-selectable items (raw materials, knives, coal) skip the
-// hot-bar entirely — the bar is reserved for things the player can
-// actually equip, so wood from a sea pickup goes straight to the grid
-// (5–29) instead of clogging slot 0. Drag-and-drop can still place a
-// material in the hot-bar manually; this only governs auto-allocation.
-function findAutoAllocationSlot(def: ItemDef): number {
-  if (def.selectable) {
-    const barSlot = findFirstEmptySlot(0, BOTTOM_BAR_SLOT_COUNT)
-    if (barSlot !== -1) return barSlot
-    return findFirstEmptySlot(BOTTOM_BAR_SLOT_COUNT, layout.length)
-  }
-  return findFirstEmptySlot(BOTTOM_BAR_SLOT_COUNT, layout.length)
+// Every pickup uses the first empty slot in the shared 30-slot inventory.
+function findAutoAllocationSlot(_def: ItemDef): number {
+  return findFirstEmptySlot(0, layout.length)
 }
 
 // Place an item from the material/crafted catalog into the inventory.

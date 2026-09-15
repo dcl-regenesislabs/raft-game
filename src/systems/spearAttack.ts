@@ -1,14 +1,5 @@
-import {
-  Entity,
-  InputAction,
-  PointerEventType,
-  Transform,
-  engine,
-  inputSystem
-} from '@dcl/sdk/ecs'
+import { Entity, Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
-
-import { isMobile } from '@dcl/sdk/platform'
 
 import { SharkHittable } from '../components'
 import {
@@ -16,7 +7,7 @@ import {
   getHeldItemKind,
   isHeldViewmodelHidden
 } from '../factories/heldItem'
-import { actionButtonJustPressed } from '../ui/actionButton'
+import { toolFireJustPressed } from './toolFire'
 import { isPointerLocked } from '../ui/cursorLock'
 import {
   consumeSlotDurability,
@@ -83,11 +74,10 @@ export function spearAttackSystem(dt: number): void {
   const isSpearHeld = heldKind === 'spear'
 
   // Trigger a new stab when the spear is held, no animation is in flight,
-  // and the cooldown has elapsed. On mobile the on-screen action button is
-  // the canonical fire input — taps elsewhere also fire IA_POINTER but we
-  // ignore them so the button is the only way to stab. IA_POINTER is shared
-  // across tools — gating on held kind keeps clicks scoped to the active
-  // item.
+  // and the cooldown has elapsed. The fire press comes from the toolFire
+  // seam (mobile: native pointer button in native mode, the custom
+  // action button in legacy mode). IA_POINTER is shared across tools —
+  // gating on held kind keeps clicks scoped to the active item.
   // Block new triggers while the inventory is up — and for a moment after
   // close, since the click that closed the panel also fires IA_POINTER.
   // In-flight stabs are allowed to finish their animation/cooldown so the
@@ -96,11 +86,7 @@ export function spearAttackSystem(dt: number): void {
   // re-locks the canvas after pressing Esc fires IA_POINTER too, and we
   // don't want that to double as a stab.
   const firePressed =
-    !isInventoryActionLocked() &&
-    (isMobile()
-      ? actionButtonJustPressed()
-      : isPointerLocked() &&
-        inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN))
+    !isInventoryActionLocked() && isPointerLocked() && toolFireJustPressed()
   if (
     isSpearHeld &&
     attackElapsed === 0 &&

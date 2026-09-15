@@ -28,6 +28,7 @@ import {
   addCollected,
   getCollectedCount,
   getSelectedSlot,
+  remapEquippedSlot,
   refreshHeldForSelectedSlot,
   subtractCollected
 } from './inventoryState'
@@ -203,10 +204,7 @@ export function pressStorageSlot(
   if (picked.side === side) {
     if (side === 'player') {
       swapInventorySlots(picked.index, index)
-      const equipped = getSelectedSlot()
-      if (equipped === picked.index || equipped === index) {
-        refreshHeldForSelectedSlot()
-      }
+      remapEquippedSlot(picked.index, index)
     } else {
       swapStorageSlots(storage, picked.index, index)
     }
@@ -219,6 +217,7 @@ export function pressStorageSlot(
   } else {
     transferPlayerToStorage(storage, picked.index, index)
   }
+  refreshHeldForSelectedSlot()
   picked = null
 }
 
@@ -263,15 +262,8 @@ function transferPlayerToStorage(
       count: target.count + moving
     }
     subtractCollected(def.id, moving)
-    // Stackables are normally a "permanent reservation" (the slot
-    // stays even at count 0 so the layout doesn't reshuffle), but
-    // when the player moves the entire stack into storage that
-    // reservation is just a ghost icon. Drop it from the grid so a
-    // future pickup re-allocates a fresh slot. Bottom-bar slots
-    // (0..4) keep their reservation — those are the starter
-    // placeable slots (grill/purifier/storage) the layout depends on.
+    // Empty stacks release their slot regardless of its inventory position.
     if (
-      playerIdx >= BOTTOM_BAR_SLOT_COUNT &&
       getCollectedCount(def.id) === 0
     ) {
       clearInventorySlot(playerIdx)

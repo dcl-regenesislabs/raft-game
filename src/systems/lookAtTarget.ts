@@ -1,4 +1,4 @@
-import { Entity, Transform, engine } from '@dcl/sdk/ecs'
+import { Entity, Transform, engine, InputAction, PointerEventType, PointerEvents, inputSystem } from '@dcl/sdk/ecs'
 
 import { FloatingGarbage, PlatformConstruction, WaterScroll } from '../components'
 import { GRAB_MAX_DISTANCE } from '../factories/floatingGarbage'
@@ -48,6 +48,15 @@ const LOOK_MAX_DISTANCE = 8
 let waterEntityCached: Entity | null = null
 let raycasterActive = false
 let currentTarget: LookAtTarget = null
+let proximityChild: Entity | null = null
+
+export function getProximityConstruction() {
+  if (proximityChild === null || !PointerEvents.getOrNull(proximityChild)) return null
+  for (const [platform, pc] of engine.getEntitiesWith(PlatformConstruction)) {
+    if (pc.child === proximityChild) return { platform, ...pc }
+  }
+  return null
+}
 // Grill platform entity behind the current 'grill' classification, if
 // any. Lets readers (e.g. the action button icon swap) inspect that
 // grill's `ActiveCook` to pick the right contextual icon — empty grill
@@ -58,12 +67,37 @@ let currentGrillPlatform: Entity | null = null
 // mobile action button is tapped; the action-button icon swap reads
 // its `kind` to show the about-to-grab material.
 let currentGarbageEntity: Entity | null = null
+// Raw first hit of the camera-forward ray, kept alongside the
+// classification so readers can match entities the classifier doesn't
+// cover (chef clickboxes, island chests) — see touchControls. Null
+// whenever the raycaster is relinquished to a placement system.
+let currentHitEntity: Entity | null = null
+let currentHitLength = 0
 
 export function getLookAtTarget(): LookAtTarget {
+  const nearby = getProximityConstruction()
+  if (nearby) return nearby.kind as LookAtTarget
+  if (currentTarget === 'grill' || currentTarget === 'purifier' || currentTarget === 'storage') return null
   return currentTarget
 }
 
+// Entity + ray distance of whatever the camera-forward raycast hit this
+// frame, regardless of classification. Null when nothing is hit or a
+// placement system owns the raycaster (E/F touch buttons are hidden in
+// those modes anyway).
+export function getLookAtPointerHit(): {
+  entity: Entity
+  length: number
+} | null {
+  const nearby = getProximityConstruction()
+  if (nearby) return { entity: nearby.child, length: 0 }
+  if (currentHitEntity === null) return null
+  return { entity: currentHitEntity, length: currentHitLength }
+}
+
 export function getLookAtGrillPlatform(): Entity | null {
+  const nearby = getProximityConstruction()
+  if (nearby) return nearby.kind === 'grill' ? nearby.platform : null
   return currentTarget === 'grill' ? currentGrillPlatform : null
 }
 
@@ -99,6 +133,17 @@ export function publishLookAtHit(hitId: number | undefined): void {
 }
 
 export function lookAtTargetSystem(_dt: number): void {
+  // The renderer arbitrates proximity; do not approximate its facing/range rules.
+  for (const [, pc] of engine.getEntitiesWith(PlatformConstruction)) {
+    if (inputSystem.isTriggered(InputAction.IA_ANY, PointerEventType.PET_PROXIMITY_LEAVE, pc.child) ||
+        inputSystem.isTriggered(InputAction.IA_ANY, PointerEventType.PET_HOVER_LEAVE, pc.child)) {
+      if (proximityChild === pc.child) proximityChild = null
+    }
+  }
+  for (const [, pc] of engine.getEntitiesWith(PlatformConstruction)) {
+    if (inputSystem.isTriggered(InputAction.IA_ANY, PointerEventType.PET_PROXIMITY_ENTER, pc.child) ||
+        inputSystem.isTriggered(InputAction.IA_ANY, PointerEventType.PET_HOVER_ENTER, pc.child)) proximityChild = pc.child
+  }
   const water = findWaterEntity()
   if (water === null) return
   const otherOwnerActive =
@@ -108,7 +153,11 @@ export function lookAtTargetSystem(_dt: number): void {
   if (raycasterActive === shouldOwn) return
   if (shouldOwn) {
     registerCameraForwardRaycast(LOOK_MAX_DISTANCE, (result) => {
-      applyClassification(classifyHit(water, result.hits[0]?.entityId))
+      const hit = result.hits[0]
+      currentHitEntity =
+        hit?.entityId === undefined ? null : (hit.entityId as Entity)
+      currentHitLength = hit?.length ?? 0
+      applyClassification(classifyHit(water, hit?.entityId))
     })
     raycasterActive = true
   } else {
@@ -120,6 +169,7 @@ export function lookAtTargetSystem(_dt: number): void {
     // re-entered the mode. The placement system is expected to publish
     // its hits via publishLookAtHit so currentTarget stays fresh.
     raycasterActive = false
+    currentHitEntity = null
     applyClassification({ target: null })
   }
 }

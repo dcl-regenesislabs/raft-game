@@ -327,42 +327,6 @@ export const LobbyButton = engine.defineComponent('mystic-pond:lobby-button', {
   kind: Schemas.String
 })
 
-// Marker on the single cross-realm portal that sits in the demo lobby
-// and offers a jump to the FULL game (raft.dcl.eth). Triggered by
-// proximity OR click; the SDK's `changeRealm` call surfaces its own
-// confirmation dialog, so this marker just identifies the trigger
-// entity — no per-instance fields needed.
-export const LobbyTeleport = engine.defineComponent('mystic-pond:lobby-teleport', {})
-
-// Drives a slow sin-based color cycle on the lobby portal's interior
-// plane so the gateway reads as living energy rather than a static
-// emissive sheet. The system in `systems/portalPulse.ts` reads
-// `elapsed` (seconds since spawn), advances it by dt, and writes a
-// fresh `emissiveColor` + `emissiveIntensity` onto the entity's PBR
-// material every frame. `speed` is radians/second of the cycle;
-// `pulseAmp` is the +/- range applied to the base intensity.
-export const PortalPulse = engine.defineComponent('mystic-pond:portal-pulse', {
-  elapsed: Schemas.Number,
-  speed: Schemas.Number,
-  baseIntensity: Schemas.Number,
-  pulseAmp: Schemas.Number
-})
-
-// Combined UV scroll + rotation. Drives the lobby portal interior so
-// the texture drifts AND swirls each frame. Kept distinct from
-// `WaterScroll` so the water-floor system stays a pure scroll
-// without branching for an unused rotation field. `rotation` is the
-// accumulated angle in radians; `rotSpeed` is rad/second.
-export const PortalUvSwirl = engine.defineComponent('mystic-pond:portal-uv-swirl', {
-  speedU: Schemas.Number,
-  speedV: Schemas.Number,
-  offsetU: Schemas.Number,
-  offsetV: Schemas.Number,
-  rotSpeed: Schemas.Number,
-  rotation: Schemas.Number,
-  tileCount: Schemas.Number
-})
-
 // Per-button hover state for the lobby panel. Stores the click-target
 // plate's base scale (so the system can return to it on hover-leave),
 // the linked visual + text entities (both zoom in lockstep with the

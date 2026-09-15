@@ -1,3 +1,5 @@
+import { applyConfiguredGameMode } from '../runtime/sceneFlow'
+import { restartTutorial } from './tutorialState'
 // Owns the scene's "you died" state. When the player's life hits zero the
 // survival drain system flips this on; the UI then hides every regular HUD
 // element and renders the death overlay (see `components/DeathScreen.tsx`).
@@ -64,6 +66,7 @@ function clamp01(v: number): number {
 // Reset every gameplay store the death-screen flow exposes back to its
 // fresh-load baseline. Called from the Play Again button.
 export function playAgain(): void {
+  restartTutorial()
   destroyNonMainPlatforms()
   resetInventoryLayout()
   resetInventoryState()
@@ -82,6 +85,7 @@ export function playAgain(): void {
   // if the menu was already closed at death-time, the slots may still
   // hold whatever the player had picked, so wipe them explicitly.
   clearCookSlots()
+  applyConfiguredGameMode()
   dead = false
   elapsedSec = 0
 }

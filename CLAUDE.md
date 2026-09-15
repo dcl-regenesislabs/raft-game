@@ -8,12 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run start -- --mobile` — preview accessible on LAN for mobile testing
 - `npm run build` — compile TypeScript to `bin/index.js` (also runs automatically before deploy)
 - `npm run deploy` — deploy scene to Decentraland
-- `npm run deploy:demo` / `deploy:full` — prepare demo/full scene.json, force production, deploy to Worlds
+- `npm run deploy` — prepare raft.dcl.eth scene.json, force production, deploy to Worlds
 - `npm run upgrade-sdk` / `upgrade-sdk:next` — bump `@dcl/sdk` to latest / next
 
 ### Worlds deploys: always `--multi-scene`
 
-Both `deploy:demo` and `deploy:full` push to a shared Worlds name (`italy2026.dcl.eth`, `raft.dcl.eth`) that hosts **other people's scenes too**. Without `--multi-scene` the deployer prompts to DELETE every other scene in the world before publishing ours (60+ scenes in italy2026: Pompeii, Colosseum, Venetian Hunt, Amphitheater, claimable plots, etc.). The `deploy:demo` / `deploy:full` scripts in `package.json` bake `--multi-scene` into the `sdk-commands deploy` invocation — never strip it, and if you ever invoke `sdk-commands deploy` by hand against these worlds, pass `--multi-scene` yourself. Single-scene deploys are only acceptable on a Worlds name that you own outright and have decided to reset.
+The game deploys only to `raft.dcl.eth`. Keep `--multi-scene` in the deploy command to preserve any other scenes already hosted in that world; this flag is a deployment safeguard, not support for multiple worlds.
 
 There is no test runner configured in this project.
 

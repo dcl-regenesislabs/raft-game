@@ -1,3 +1,5 @@
+import { beginUiTouch, isMobileUiInputBlocked } from './mobileControlsState'
+import { recordTutorialAction } from './tutorialState'
 // Inventory open/close toggle button. Mirrors the press-animation shape used
 // by `actionButton` so the two HUD buttons feel consistent: a brief scale-up
 // on tap that decays with a squared-linear ease. The actual inventory panel
@@ -30,6 +32,16 @@ const PRESS_PEAK_BONUS = 0.18
 const POST_CLOSE_LOCKOUT_S = 1.0
 
 let open = false
+let equipmentPicker = false
+export function isEquipmentPickerOpen(): boolean { return open && equipmentPicker }
+export function openEquipmentPicker(): void {
+  if (!open) toggleInventory()
+  equipmentPicker = true
+}
+export function showBackpack(): void {
+  beginUiTouch()
+  equipmentPicker = false
+}
 let pressElapsedSec = PRESS_DURATION_S + 1
 let postCloseLockoutSec = 0
 // Tracks the last open-state we wrote to the player's InputModifier so we
@@ -51,6 +63,7 @@ export function isInventoryOpen(): boolean {
 // running.
 export function isInventoryActionLocked(): boolean {
   return (
+    isMobileUiInputBlocked() ||
     open ||
     postCloseLockoutSec > 0 ||
     isCraftOpen() ||
@@ -68,8 +81,11 @@ export function isInventoryActionLocked(): boolean {
 // actually clicked the inventory button, not when another button closed it.
 export function setInventoryOpen(target: boolean): void {
   if (open === target) return
+  beginUiTouch()
   const wasOpen = open
   open = target
+  if (!target) equipmentPicker = false
+  if (target) recordTutorialAction('inventory')
   if (wasOpen && !target) {
     postCloseLockoutSec = POST_CLOSE_LOCKOUT_S
     cancelSelection()

@@ -16,7 +16,7 @@ import {
   PlatformConstruction,
   PurifierState
 } from '../components'
-import { DEMO_PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from './sceneLevels'
+import { PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from './sceneLevels'
 
 export const PLATFORM_SIZE_X = 3
 export const PLATFORM_SIZE_Y = 0.3
@@ -47,13 +47,11 @@ export function computeGridOrigin(parcelGrid: number): Vector3 {
 
 // Scene-local center of grid cell (0, 0). Every other raft sits at
 // (GRID_ORIGIN.x + gridX * PLATFORM_SIZE_X, WATER_LEVEL, GRID_ORIGIN.z + gridZ * PLATFORM_SIZE_Z).
-// Defaults to the 5x5 demo origin (40, _, 40); main() reconfigures it
-// to (400, _, 400) when running on the 50x50 raft world. Exported as a
-// `let` so ESM consumers see the live binding after configuration.
-export let GRID_ORIGIN = computeGridOrigin(DEMO_PARCEL_GRID)
+// The 50 × 50 world is centered at (400, WATER_LEVEL, 400).
+export let GRID_ORIGIN = computeGridOrigin(PARCEL_GRID)
 export const RAFT_SIZE = PLATFORM_SIZE_X
 
-// Reconfigures the shared grid origin for the active scene mode. Must be
+// Reconfigures the shared grid origin for the scene. Must be
 // called from main() before any factory or system that reads GRID_ORIGIN.
 export function configureGridOrigin(parcelGrid: number): void {
   GRID_ORIGIN = computeGridOrigin(parcelGrid)

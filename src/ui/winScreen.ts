@@ -4,7 +4,6 @@ import { disableChefAfterWin } from '../systems/boatChefDirector'
 import { getPlayTimeS, stopPlayTimer } from '../systems/playTimer'
 import { submitScore } from '../client/rankingClient'
 import { isDebugRun } from '../runtime/sceneFlow'
-import type { SceneMode } from '../runtime/sceneMode'
 
 const FADE_BACKDROP_DURATION_S = 1.5
 const FADE_PANEL_DELAY_S = 1.0
@@ -14,7 +13,6 @@ let won = false
 let elapsedSec = 0
 let finalTimeS = 0
 let lastModifierApplied: boolean | null = null
-let cachedMode: SceneMode | null = null
 
 export function isWinActive(): boolean {
   return won
@@ -34,15 +32,14 @@ export function getWinTimeS(): number {
   return finalTimeS
 }
 
-export function triggerWin(mode: SceneMode): void {
+export function triggerWin(): void {
   if (won) return
   stopPlayTimer()
   finalTimeS = getPlayTimeS()
-  cachedMode = mode
   won = true
   elapsedSec = 0
   disableChefAfterWin()
-  submitScore(mode, finalTimeS, isDebugRun())
+  submitScore(finalTimeS, isDebugRun())
 }
 
 export function dismissWin(): void {

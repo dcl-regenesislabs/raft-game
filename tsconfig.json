@@ -13,5 +13,10 @@
     "assets/**/*.ts",
     "assets/**/*.tsx"
   ],
+  // src/server relies on the '@dcl/sdk/server' subpath, which the current
+  // controls-customization SDK snapshot does not ship. The server code is
+  // dormant (not in the bundle graph) but tsc checks everything under
+  // `include`, so keep it out until the server APIs return.
+  "exclude": ["src/server"],
   "extends": "@dcl/sdk/types/tsconfig.ecs7.json"
 }

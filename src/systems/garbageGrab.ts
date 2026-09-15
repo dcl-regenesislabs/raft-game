@@ -1,3 +1,4 @@
+import { mobileInteractionJustPressed } from './toolFire'
 import {
   Entity,
   InputAction,
@@ -71,7 +72,7 @@ export function garbageGrabSystem(_dt: number): void {
   // classification to pick the target. Desktop also surfaces this
   // path for free since the action button isn't shown there.
   if (!isMobile()) return
-  if (!actionButtonJustPressed()) return
+  if (!actionButtonJustPressed() && !mobileInteractionJustPressed(InputAction.IA_PRIMARY)) return
   const target = getLookAtGarbageEntity()
   if (target === null) return
   grabGarbage(target)

@@ -1,11 +1,4 @@
-import {
-  Entity,
-  InputAction,
-  PointerEventType,
-  Transform,
-  engine,
-  inputSystem
-} from '@dcl/sdk/ecs'
+import { Entity, Transform, engine } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
@@ -46,11 +39,9 @@ import { Platform } from '../components'
 import { GRID_ORIGIN, RAFT_SIZE } from '../factories'
 import { getItem } from '../ui/items'
 import { WATER_LEVEL } from '../factories/sceneLevels'
-import {
-  actionButtonJustPressed,
-  isActionButtonPressed
-} from '../ui/actionButton'
+import { actionButtonJustPressed } from '../ui/actionButton'
 import { isPointerLocked } from '../ui/cursorLock'
+import { isToolFirePressed, toolFireJustPressed } from './toolFire'
 import {
   addCollected,
   consumeSlotDurability,
@@ -125,6 +116,12 @@ export function isFishingLineReeling(): boolean {
 // the BACK TO LOBBY sweep is what actually destroys them. Mirrors
 // `resetHookThrowerState` so the post-sweep view of the world stays
 // internally consistent.
+// Equipment changes cancel the cast without awarding a fish.
+export function cancelFishingForEquipmentChange(): void {
+  cancelCharge()
+  despawnLine()
+}
+
 export function resetFishingRodState(): void {
   lineEntity = null
   ropeEntity = null
@@ -206,13 +203,8 @@ function rodEquipped(): boolean {
 }
 
 function tickCharge(dt: number, handPos: Vector3): void {
-  const mobile = isMobile()
-  const justPressed = mobile
-    ? actionButtonJustPressed()
-    : inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)
-  const stillHeld = mobile
-    ? isActionButtonPressed()
-    : inputSystem.isPressed(InputAction.IA_POINTER)
+  const justPressed = toolFireJustPressed()
+  const stillHeld = isToolFirePressed()
 
   if (!charging) {
     if (justPressed && !isSelectionPointerLockoutActive()) {
@@ -432,20 +424,16 @@ function advanceLine(dt: number, handPos: Vector3): void {
   }
 }
 
-// Bite-window catch press OR Idle-state retract press. Mobile reads the
-// on-screen action button edge; desktop accepts EITHER the action
-// button edge (the HUD button is also clickable on desktop while the
-// line is out) or IA_POINTER PET_DOWN (the standard click-to-fire).
-// Either way, the press only counts when the player isn't still
+// Bite-window catch press OR Idle-state retract press. The HUD action
+// button stays pressable while a line is out (its bite pulse doubles
+// as the catch cue on every platform), on top of the regular tool-fire
+// input. Either way, the press only counts when the player isn't still
 // holding over from the slot-selection click.
 function firePressedThisFrame(): boolean {
+  if (isInventoryActionLocked()) return false
   if (isSelectionPointerLockoutActive()) return false
   if (actionButtonJustPressed()) return true
-  if (isMobile()) return false
-  return inputSystem.isTriggered(
-    InputAction.IA_POINTER,
-    PointerEventType.PET_DOWN
-  )
+  return toolFireJustPressed()
 }
 
 function catchFish(): void {

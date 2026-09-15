@@ -10,7 +10,8 @@
 
 // --- Debug -----------------------------------------------------------------
 // Master debug switch. When true:
-//   - The DEBUG button is shown on the lobby information panel.
+//   - Direct entry starts with the existing debug inventory and structures.
+//   - Debug tools are available in the lobby and system menu.
 //   - Picking it pre-seeds the inventory with every craftable / material
 //     / food and spawns the 8-platform ring around the main raft (grill
 //     east, water purifier west, fully-stocked storage chest north).
@@ -19,11 +20,9 @@
 // NEW WORLD and LOAD WORLD visible to players.
 export const DEBUG_MODE = true
 
-// Dev-only fast-boot: bypass the lobby + startup gate and drop the player
-// straight into the DEBUG-seeded game world. Force-disabled in production
-// builds so a stray `true` can't ship — flip the raw constant below to
-// re-enable locally.
-export const SKIP_LOBBY = false
+// Start directly on the starter raft. Set false to restore the lobby.
+// DEBUG_MODE determines whether direct entry includes the debug test setup.
+export const SKIP_LOBBY = true
 
 // --- Event scheduler -------------------------------------------------------
 // Centralised cadence for the recurring scripted events. The scheduler

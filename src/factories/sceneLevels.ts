@@ -24,10 +24,8 @@ export const LOBBY_RAFT_Y = 0.3
 // World units per parcel side. Decentraland fixes this at 16 m.
 export const PARCEL_SIZE_M = 16
 
-// Parcel-grid extents per deployment target. The demo (italy2026.dcl.eth)
-// runs in 5x5; the FULL game on raft.dcl.eth runs in 50x50.
-export const DEMO_PARCEL_GRID = 5
-export const FULL_PARCEL_GRID = 50
+// The raft.dcl.eth scene occupies 50 × 50 parcels.
+export const PARCEL_GRID = 50
 
 // Visual sea-flow direction on the XZ plane. Derived from the WaterScroll
 // UV speeds in `factories/water2.ts` so floating debris drifts WITH the

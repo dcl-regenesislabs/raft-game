@@ -1,3 +1,5 @@
+import { getMobileLayout } from '../mobileLayout'
+import { UI_PAPER, UI_BORDER, UI_CELL, UI_MUTED } from '../visualTheme'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 
@@ -61,6 +63,7 @@ export function StorageMenu(): ReactEcs.JSX.Element | null {
   if (!isStorageOpen()) return null
   const active = getActiveStorage()
   if (active === null) return null
+  const size = Math.min(STORAGE_GRID_SIZE, (getMobileLayout().width - 64) / 2, (getMobileLayout().height - 112) / 1.192)
 
   return (
     <UiEntity
@@ -79,13 +82,14 @@ export function StorageMenu(): ReactEcs.JSX.Element | null {
           flexDirection: 'column',
           alignItems: 'center',
           padding: {
-            top: STORAGE_PANEL_PADDING_TOP,
+            top: 54,
             bottom: STORAGE_PANEL_PADDING_BOTTOM,
             left: STORAGE_PANEL_PADDING_X,
             right: STORAGE_PANEL_PADDING_X
           }
         }}
       >
+        <Label value="Tap an item, then a destination slot to move it." fontSize={16} color={UI_MUTED} textAlign="middle-left" uiTransform={{ positionType: 'absolute', position: { top: 12, left: 16 }, width: size * 2 - 56, height: 32 }} />
         <UiEntity
           uiTransform={{
             flexDirection: 'row',
@@ -93,23 +97,23 @@ export function StorageMenu(): ReactEcs.JSX.Element | null {
             justifyContent: 'center'
           }}
         >
-          <PaneLabel value="INVENTORY" width={STORAGE_GRID_SIZE}>
-            <InventoryWithBar size={STORAGE_GRID_SIZE} />
+          <PaneLabel value="INVENTORY" width={size}>
+            <InventoryWithBar size={size} />
           </PaneLabel>
           <UiEntity
             uiTransform={{
-              margin: { left: STORAGE_PANE_OVERLAP }
+              margin: { left: 12 }
             }}
           >
-            <PaneLabel value="STORAGE" width={STORAGE_GRID_SIZE}>
-              <StorageGrid size={STORAGE_GRID_SIZE} />
+            <PaneLabel value="STORAGE" width={size}>
+              <StorageGrid size={size} />
             </PaneLabel>
           </UiEntity>
         </UiEntity>
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
-            position: { top: -18, right: -18 }
+            position: { top: 8, right: 8 }
           }}
         >
           <CloseButton onPress={() => closeStorageMenu()} />
@@ -137,7 +141,7 @@ function PaneLabel(props: {
           height: 18,
           alignItems: 'center',
           justifyContent: 'center',
-          margin: { top: 14, bottom: -16 }
+          margin: { top: 0, bottom: 8 }
         }}
       >
         <Label value={props.value} fontSize={14} color={CRAFT_TEXT_COLOR} />
@@ -154,8 +158,7 @@ function StorageGrid(props: { size: number }): ReactEcs.JSX.Element {
     <UiEntity
       uiTransform={{ width: props.size, height: props.size }}
       uiBackground={{
-        textureMode: 'stretch',
-        texture: { src: INVENTORY_PANEL_TEXTURE }
+        color: UI_PAPER
       }}
     >
       {cells.map((index) => (
@@ -203,6 +206,7 @@ function StorageCell(props: {
         width: `${INVENTORY_CELL_SIZE_PCT}%`,
         height: `${INVENTORY_CELL_SIZE_PCT}%`
       }}
+      uiBackground={{ color: UI_CELL }}
       onMouseDown={() => {
         const a = getActiveStorage()
         if (a === null) return

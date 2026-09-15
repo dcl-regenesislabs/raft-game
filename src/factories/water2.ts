@@ -13,17 +13,17 @@ import {
 import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { WaterScroll } from '../components'
-import { DEMO_PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from './sceneLevels'
+import { PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from './sceneLevels'
 
 const WATER_TEXTURE = 'assets/scene/water/water-tile-v2.png'
 const WATER_BUMP_TEXTURE = 'assets/scene/water/water-bump.png'
 const WATER_Y = WATER_LEVEL
 const WATER_ALPHA = 0.95
 // One image repeat per parcel keeps a constant tile density across scene
-// sizes (5 tiles for the demo, 50 for the BIG raft world).
+// dimensions (50 tiles for the raft world).
 
 export function createWaterFloorV2(
-  parcelGrid: number = DEMO_PARCEL_GRID,
+  parcelGrid: number = PARCEL_GRID,
   yOverride?: number
 ): Entity {
   const totalSize = parcelGrid * PARCEL_SIZE_M

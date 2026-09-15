@@ -1,3 +1,4 @@
+import { UI_ACCENT, UI_CELL, UI_INK } from '../visualTheme'
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
@@ -112,9 +113,7 @@ function PlayAgainButton(props: { fade: number }): ReactEcs.JSX.Element {
           justifyContent: 'center'
         }}
         uiBackground={{
-          textureMode: 'stretch',
-          texture: { src: CRAFT_BUTTON_TEXTURE },
-          color: Color4.create(1, 1, 1, props.fade)
+          color: Color4.create(UI_ACCENT.r, UI_ACCENT.g, UI_ACCENT.b, props.fade)
         }}
         onMouseDown={() => {
           if (!interactive) return

@@ -117,6 +117,9 @@ export type RaycastHandler = (result: {
   hits: ReadonlyArray<{
     entityId?: number
     position?: { x: number; y: number; z: number }
+    // Distance from the ray origin to the hit, straight off the SDK's
+    // RaycastHit. Read by lookAtTarget to expose the raw hit reach.
+    length?: number
   }>
 }) => void
 

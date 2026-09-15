@@ -1,3 +1,5 @@
+import { beginUiTouch } from '../mobileControlsState'
+import { UI_CELL, UI_INK } from '../visualTheme'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
@@ -43,10 +45,10 @@ export function ModeToggleButton(): ReactEcs.JSX.Element | null {
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: `${ACTION_BUTTON_TOP_PCT}%`, right: MODE_TOGGLE_RIGHT },
-        margin: { top: -Math.round(ACTION_BUTTON_FRAME / 2) },
-        width: ACTION_BUTTON_FRAME,
-        height: ACTION_BUTTON_FRAME,
+        position: isMobile() ? { top: 166, right: 0 } : { top: `${ACTION_BUTTON_TOP_PCT}%`, right: MODE_TOGGLE_RIGHT },
+        margin: { top: isMobile() ? 0 : -Math.round(ACTION_BUTTON_FRAME / 2) },
+        width: isMobile() ? 136 : ACTION_BUTTON_FRAME,
+        height: isMobile() ? 48 : ACTION_BUTTON_FRAME,
         alignItems: 'center',
         justifyContent: 'center'
       }}
@@ -54,8 +56,8 @@ export function ModeToggleButton(): ReactEcs.JSX.Element | null {
       {!isMobile() && <ModeToggleHint value={hintText} />}
       <UiEntity
         uiTransform={{
-          width: ACTION_BUTTON_SIZE,
-          height: ACTION_BUTTON_SIZE,
+          width: isMobile() ? 136 : ACTION_BUTTON_SIZE,
+          height: isMobile() ? 48 : ACTION_BUTTON_SIZE,
           alignItems: 'center',
           justifyContent: 'center'
         }}
@@ -63,7 +65,7 @@ export function ModeToggleButton(): ReactEcs.JSX.Element | null {
           textureMode: 'stretch',
           texture: { src: ACTION_BUTTON_TEXTURE }
         }}
-        onMouseDown={toggleRaftBuilderMode}
+        onMouseDown={isMobile() ? beginUiTouch : toggleRaftBuilderMode} onMouseUp={isMobile() ? toggleRaftBuilderMode : undefined}
       >
         <Label
           value={buttonText}

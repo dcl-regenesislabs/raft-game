@@ -4,14 +4,16 @@
 //
 // The save layer here is intentionally thin — the server treats the
 // SaveBlob as an opaque string and only routes save / load / wipe per
-// player wallet, scoped by scene mode. All shape validation happens on
+// player wallet. All shape validation happens on
 // the client (parseSaveBlob in src/shared/saveSchema.ts).
 
 import { Storage } from '@dcl/sdk/server'
 
 import { saveRoom } from '../shared/messages'
 
-const VALID_MODES: ReadonlySet<string> = new Set(['full', 'demo'])
+// Preserve the existing production namespaces; there is only one game.
+const PROGRESS_KEY = 'progress:full'
+const RANKING_PREFIX = 'ranking:full:'
 
 export function runServer(): void {
   saveRoom.onMessage('save', async (data, ctx) => {
@@ -20,37 +22,22 @@ export function runServer(): void {
       replyAck(address, 'save', false, 'missing-sender')
       return
     }
-    const mode = normalizeMode(data.mode)
-    if (mode === null) {
-      replyAck(address, 'save', false, 'invalid-mode')
-      return
-    }
     try {
-      await Storage.player.set(address, storageKey(mode), data.payload)
+      await Storage.player.set(address, PROGRESS_KEY, data.payload)
       replyAck(address, 'save', true, '')
     } catch (error) {
       replyAck(address, 'save', false, errorMessage(error))
     }
   })
 
-  saveRoom.onMessage('load', async (data, ctx) => {
+  saveRoom.onMessage('load', async (_data, ctx) => {
     const address = ctx?.from
     if (address === undefined || address === '') return
-    const mode = normalizeMode(data.mode)
-    if (mode === null) {
-      saveRoom.send(
-        'loadResult',
-        { mode: data.mode, payload: '', found: false },
-        { to: [address] }
-      )
-      return
-    }
     try {
-      const raw = await Storage.player.get<string>(address, storageKey(mode))
+      const raw = await Storage.player.get<string>(address, PROGRESS_KEY)
       saveRoom.send(
         'loadResult',
         {
-          mode,
           payload: raw ?? '',
           found: raw !== undefined && raw !== null && raw !== ''
         },
@@ -59,7 +46,7 @@ export function runServer(): void {
     } catch {
       saveRoom.send(
         'loadResult',
-        { mode, payload: '', found: false },
+        { payload: '', found: false },
         { to: [address] }
       )
     }
@@ -69,8 +56,7 @@ export function runServer(): void {
     const address = ctx?.from
     if (address === undefined || address === '') return
     try {
-      await Storage.player.delete(address, storageKey('full'))
-      await Storage.player.delete(address, storageKey('demo'))
+      await Storage.player.delete(address, PROGRESS_KEY)
       replyAck(address, 'wipe', true, '')
     } catch (error) {
       replyAck(address, 'wipe', false, errorMessage(error))
@@ -83,18 +69,13 @@ export function runServer(): void {
       replySubmitScoreAck(address, false, 'missing-sender')
       return
     }
-    const mode = normalizeMode(data.mode)
-    if (mode === null) {
-      replySubmitScoreAck(address, false, 'invalid-mode')
-      return
-    }
     const entry = {
       address,
       timeS: data.timeS,
       debug: data.debug,
       submittedAtMs: Date.now()
     }
-    const key = `ranking:${mode}:${Date.now()}:${address}`
+    const key = `${RANKING_PREFIX}${Date.now()}:${address}`
     try {
       await Storage.set(key, JSON.stringify(entry))
       replySubmitScoreAck(address, true, '')
@@ -103,20 +84,11 @@ export function runServer(): void {
     }
   })
 
-  saveRoom.onMessage('requestRankings', async (data, ctx) => {
+  saveRoom.onMessage('requestRankings', async (_data, ctx) => {
     const address = ctx?.from
     if (address === undefined || address === '') return
-    const mode = normalizeMode(data.mode)
-    if (mode === null) {
-      saveRoom.send(
-        'rankingsResult',
-        { mode: data.mode, entries: '[]' },
-        { to: [address] }
-      )
-      return
-    }
     try {
-      const result = await Storage.getValues({ prefix: `ranking:${mode}:`, limit: 100 })
+      const result = await Storage.getValues({ prefix: RANKING_PREFIX, limit: 100 })
       const entries: Array<{ address: string; timeS: number; debug: boolean; submittedAtMs: number }> = []
       for (const item of result.data) {
         try {
@@ -142,13 +114,13 @@ export function runServer(): void {
       }))
       saveRoom.send(
         'rankingsResult',
-        { mode, entries: JSON.stringify(top10) },
+        { entries: JSON.stringify(top10) },
         { to: [address] }
       )
     } catch {
       saveRoom.send(
         'rankingsResult',
-        { mode, entries: '[]' },
+        { entries: '[]' },
         { to: [address] }
       )
     }
@@ -167,15 +139,6 @@ function replySubmitScoreAck(
 ): void {
   if (address === undefined || address === '') return
   saveRoom.send('submitScoreAck', { ok, error }, { to: [address] })
-}
-
-function storageKey(mode: 'full' | 'demo'): string {
-  return `progress:${mode}`
-}
-
-function normalizeMode(input: string): 'full' | 'demo' | null {
-  if (VALID_MODES.has(input)) return input as 'full' | 'demo'
-  return null
 }
 
 function replyAck(

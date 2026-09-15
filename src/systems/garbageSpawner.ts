@@ -24,7 +24,7 @@ const SPAWN_INTERVAL_MEAN_S = 3.5
 const SPAWN_INTERVAL_JITTER_S = 1.5
 // Desired upstream spawn distance from the platform's flow-axis footprint.
 // The system clamps this down per-spawn if the scene bounds don't allow it
-// (5x5 demo has tight upstream/downstream room on the corners).
+// Keep spawns inside the upstream/downstream parcel boundaries.
 const SPAWN_DISTANCE_MARGIN = 35
 // Lateral half-width of the spawn corridor, measured PERPENDICULAR to the
 // flow direction. Items sample uniformly in [-LATERAL_HALF_WIDTH,

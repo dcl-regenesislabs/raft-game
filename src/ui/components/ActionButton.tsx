@@ -20,6 +20,7 @@ import {
   pressActionButton,
   releaseActionButton
 } from '../actionButton'
+import { USE_NATIVE_POINTER } from '../../systems/toolFire'
 import { isCraftOpen } from '../craftToggle'
 import { getSelectedSlot, getSlotItem } from '../inventoryState'
 import { isInventoryOpen } from '../inventoryToggle'
@@ -35,21 +36,25 @@ import {
   ACTION_BUTTON_TOP_PCT
 } from '../theme'
 
-// Mobile-only fire button anchored to the middle-right of the safe area.
-// Hidden on desktop, while the inventory or craft panel is open, or while
-// the held tool has no associated action.
+// Custom on-screen action button anchored to the middle-right of the
+// safe area. In legacy mode (USE_NATIVE_POINTER off) it is mobile's
+// primary fire input; in native mode the native pointer button owns
+// firing and this button only survives as the fishing retract/catch
+// trigger with its bite pulse (still pressable — fishingRod accepts
+// the virtual edge on top of the toolFire seam on every platform).
 //
 // The frame is sized to the peak press scale so the button can grow with
 // its press animation without shifting the parent.
 export function ActionButton(): ReactEcs.JSX.Element | null {
-  // Desktop normally has no action button — fire is bound to mouse
-  // click. The fishing rod is the one exception: while a line is out,
-  // the player needs an explicit retract / catch press, so the button
-  // surfaces on desktop too. On a bite, the button screams (scale +
-  // texture flash) so the player can't miss the 2 s reaction window.
+  // Outside legacy mode the button only surfaces while a line is out:
+  // the player needs an explicit retract / catch press. On a bite, the
+  // button screams (scale + texture flash) so the player can't miss
+  // the 2 s reaction window.
+  if (isMobile() && USE_NATIVE_POINTER) return null
   const fishingActive = isFishingLineActive()
+  const buttonIsFireInput = isMobile() && !USE_NATIVE_POINTER
   if (
-    (!isMobile() && !fishingActive) ||
+    (!buttonIsFireInput && !fishingActive) ||
     !isActionButtonAvailable() ||
     isInventoryOpen() ||
     isCraftOpen() ||
