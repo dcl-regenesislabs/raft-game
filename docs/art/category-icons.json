@@ -1,0 +1,42 @@
+[
+  {
+    "id": "food-water",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-ce873327-35e6-4a7a-a862-ce90f027644c.png"
+  },
+  {
+    "id": "tools",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-e4e61470-b2b7-442f-ba6d-7a649d0811de.png"
+  },
+  {
+    "id": "weapons",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-601f5036-f000-4734-bedd-5c075762fbf9.png"
+  },
+  {
+    "id": "building",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-10f50f7c-1dd7-46a8-94b5-3b67028a6bd6.png"
+  },
+  {
+    "id": "stations",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-a1c93733-49db-433e-b246-bc77d9ff6488.png"
+  },
+  {
+    "id": "defenses",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-b9683588-4bb1-4885-bd31-ec7614513d35.png"
+  },
+  {
+    "id": "resources",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-551df4ae-3cd5-413c-9697-e08885b8a965.png"
+  },
+  {
+    "id": "navigation",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-4384efbf-45dd-49d4-b85f-a8ba30452593.png"
+  },
+  {
+    "id": "power-radio",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-ce77557e-99b4-49c7-ab09-55260f614bd9.png"
+  },
+  {
+    "id": "investigation",
+    "source": "/home/kuruk/.codex/generated_images/01a0a238-0aea-7933-971b-2e0a5cbb041e/exec-1c33790c-4b91-4d10-9190-492cf5c2d387.png"
+  }
+]

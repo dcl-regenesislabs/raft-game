@@ -1,72 +1,58 @@
-import { getMobileLayout } from '../mobileLayout'
+import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
 import { beginUiTouch } from '../mobileControlsState'
-import { UI_ACCENT, UI_CELL, UI_INK, UI_MUTED, UI_GLASS, UI_GOLD } from '../visualTheme'
-import { isMobile } from '@dcl/sdk/platform'
-import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
-import { Color4 } from '@dcl/sdk/math'
+import { getMobileLayout } from '../mobileLayout'
+import { UI_ACCENT,UI_CELL,UI_GLASS,UI_GOLD,UI_INK,UI_MUTED } from '../visualTheme'
+import { MenuList } from './MenuList'
 
-import { canStartCook, startCook } from '../cookSession'
+import { type CookableItem,getCookableById } from '../cookableItems'
+import { canStartCook,startCook } from '../cookSession'
 import {
-  applyRecipeToCells,
-  getCookFuel,
-  getCookInput,
-  getMatchingRecipe,
-  getPickedIngredient,
-  pickIngredient,
-  placeInFuelCell,
-  placeInInputCell,
-  removeFromFuelCell,
-  removeFromInputCell
+applyRecipeToCells,
+getCookFuel,
+getCookInput,
+getMatchingRecipe,
+getPickedIngredient,
+pickIngredient,
+placeInFuelCell,
+placeInInputCell,
+removeFromFuelCell,
+removeFromInputCell
 } from '../cookSlots'
-import { type CookableItem, getCookableById } from '../cookableItems'
-import { closeCookMenu, isCookOpen } from '../cookToggle'
-import { getInventorySlot, getItemDisplayName, getCatalogItem } from '../items'
+import { closeCookMenu,isCookOpen } from '../cookToggle'
+import { getCatalogItem,getInventorySlot,getItemDisplayName } from '../items'
 import { getLearnedRecipeIds } from '../learnedRecipes'
 import { Panel } from '../panel'
 import { createPressPulse } from '../pressPulse'
-import { collectStorageItemIds, getCombinedCount } from '../storageSession'
+import { collectStorageItemIds,getCombinedCount } from '../storageSession'
 import {
-  COOK_DETAILS_HEIGHT,
-  COOK_DETAILS_WIDTH,
-  COOK_FUEL_CENTER_PCT,
-  COOK_FUEL_ICON_SIZE_PCT,
-  COOK_INPUT_CENTERS_PCT,
-  COOK_INPUT_ICON_SIZE_PCT,
-  COOK_LAYOUT_HEIGHT,
-  COOK_LAYOUT_TEXTURE,
-  COOK_LAYOUT_WIDTH,
-  COOK_LIST_GAP,
-  COOK_LIST_HEIGHT,
-  COOK_LIST_PADDING_X,
-  COOK_LIST_WIDTH,
-  COOK_OUTPUT_CENTER_PCT,
-  COOK_OUTPUT_ICON_SIZE_PCT,
-  COOK_PANEL_GAP,
-  COOK_RECIPE_ICON_SIZE,
-  COOK_RECIPE_ROW_HEIGHT,
-  COOK_SHORTAGE_BG,
-  COOK_SHORTAGE_FG,
-  CLOSE_BUTTON_COOK_MARGIN_RIGHT,
-  CLOSE_BUTTON_COOK_MARGIN_TOP,
-  CRAFT_BUTTON_FG,
-  CRAFT_BUTTON_FRAME_H,
-  CRAFT_BUTTON_FRAME_W,
-  CRAFT_BUTTON_H,
-  CRAFT_BUTTON_TEXTURE,
-  CRAFT_BUTTON_W,
-  CRAFT_DIVIDER_COLOR,
-  CRAFT_HAVE_LOW_COLOR,
-  CRAFT_HAVE_OK_COLOR,
-  CRAFT_INVENTORY_SIZE,
-  CRAFT_PANEL_PADDING_BOTTOM,
-  CRAFT_PANEL_PADDING_TOP,
-  CRAFT_PANEL_PADDING_X,
-  CRAFT_ROW_SELECTED_BG,
-  CRAFT_TEXT_COLOR,
-  CRAFT_TEXT_DIM_COLOR,
-  CRAFT_TEXT_LIGHT_COLOR
+COOK_DETAILS_HEIGHT,
+COOK_DETAILS_WIDTH,
+COOK_LAYOUT_HEIGHT,
+COOK_LAYOUT_WIDTH,
+COOK_LIST_GAP,
+COOK_LIST_HEIGHT,
+COOK_LIST_PADDING_X,
+COOK_LIST_WIDTH,
+COOK_OUTPUT_ICON_SIZE_PCT,
+COOK_RECIPE_ICON_SIZE,
+COOK_SHORTAGE_BG,
+COOK_SHORTAGE_FG,
+CRAFT_BUTTON_FG,
+CRAFT_BUTTON_FRAME_H,
+CRAFT_BUTTON_FRAME_W,
+CRAFT_BUTTON_H,
+CRAFT_BUTTON_W,
+CRAFT_DIVIDER_COLOR,
+CRAFT_HAVE_LOW_COLOR,
+CRAFT_HAVE_OK_COLOR,
+CRAFT_PANEL_PADDING_BOTTOM,
+CRAFT_PANEL_PADDING_TOP,
+CRAFT_PANEL_PADDING_X,
+CRAFT_ROW_SELECTED_BG,
+CRAFT_TEXT_COLOR,
+CRAFT_TEXT_DIM_COLOR,
+CRAFT_TEXT_LIGHT_COLOR
 } from '../theme'
-import { AggregatedInventoryGrid } from './AggregatedInventoryGrid'
 import { CloseButton } from './CloseButton'
 
 // Module-level pulse so the same animation clock survives across the
@@ -158,15 +144,19 @@ function CookPanel(): ReactEcs.JSX.Element {
         textAlign="middle-left"
         uiTransform={{ width: '100%', height: 44 }}
       />
-      <CookRecipeLayout />
-      <UiEntity uiTransform={{ height: 12, width: 1 }} />
-      <Label
-        value={cookHint()}
-        fontSize={14}
-        color={canStartCook() ? UI_GOLD : UI_MUTED}
-        textAlign="middle-left"
-        uiTransform={{ width: '100%', height: 48 }}
-      />
+      <UiEntity
+        uiTransform={{ width: '100%', flexGrow: 1, flexDirection: 'column', alignItems: 'center', overflow: 'scroll' }}
+      >
+        <CookRecipeLayout />
+        <UiEntity uiTransform={{ height: 12, width: 1 }} />
+        <Label
+          value={cookHint()}
+          fontSize={14}
+          color={canStartCook() ? UI_GOLD : UI_MUTED}
+          textAlign="middle-left"
+          uiTransform={{ width: '100%', height: 48, flexShrink: 0 }}
+        />
+      </UiEntity>
       <CookActionRow />
     </Panel>
   )
@@ -214,7 +204,9 @@ function CookRecipeLayout(): ReactEcs.JSX.Element {
     <UiEntity
       uiTransform={{
         width: COOK_LAYOUT_WIDTH,
-        height: COOK_LAYOUT_HEIGHT
+        height: COOK_LAYOUT_HEIGHT,
+        flexShrink: 0,
+        borderRadius: 8
       }}
       uiBackground={{
         color: UI_CELL
@@ -406,6 +398,7 @@ function CookActionRow(): ReactEcs.JSX.Element {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-end',
+        flexShrink: 0,
         height: CRAFT_BUTTON_FRAME_H
       }}
     >
@@ -423,6 +416,7 @@ function CookActionButton(): ReactEcs.JSX.Element {
     <UiEntity
       uiTransform={{
         width: CRAFT_BUTTON_FRAME_W,
+        flexShrink: 0,
         height: CRAFT_BUTTON_FRAME_H,
         alignItems: 'center',
         justifyContent: 'center'
@@ -432,6 +426,7 @@ function CookActionButton(): ReactEcs.JSX.Element {
         uiTransform={{
           width: w,
           height: h,
+          borderRadius: 8,
           alignItems: 'center',
           justifyContent: 'center'
         }}
@@ -508,30 +503,23 @@ function CookRecipeList(): ReactEcs.JSX.Element {
           column scrolls (drag / mouse wheel) while the wood frame
           stays put. flexGrow: 1 makes it eat the remaining vertical
           space below the title + divider. */}
-      <UiEntity
-        uiTransform={{
-          width: '100%',
-          flexGrow: 1,
-          flexDirection: 'column',
-          overflow: 'scroll'
-        }}
-      >
-        {learnedIds.length === 0 ? (
-          <Label
-            value="Cook ingredients to discover recipes."
-            fontSize={12}
-            color={CRAFT_TEXT_DIM_COLOR}
-            textAlign="top-left"
-            uiTransform={{ width: '100%', height: 60 }}
-          />
-        ) : (
-          learnedIds.map((id) => {
-            const recipe = getCookableById(id)
-            if (recipe === null) return null
-            return <CookRecipeRow key={id} recipe={recipe} selected={matchedId === id} />
-          })
-        )}
-      </UiEntity>
+      <MenuList id="recipes" height={Math.min(COOK_LIST_HEIGHT, getMobileLayout().height - 32) - 110} rowHeight={60}>
+        {learnedIds.length === 0
+          ? [
+              <Label
+                value="Cook ingredients to discover recipes."
+                fontSize={12}
+                color={CRAFT_TEXT_DIM_COLOR}
+                textAlign="top-left"
+                uiTransform={{ width: '100%', height: 60 }}
+              />
+            ]
+          : learnedIds.map((id) => {
+              const recipe = getCookableById(id)
+              if (recipe === null) return null
+              return <CookRecipeRow key={id} recipe={recipe} selected={matchedId === id} />
+            })}
+      </MenuList>
     </Panel>
   )
 }
@@ -554,14 +542,17 @@ function CookRecipeRow(props: { recipe: CookableItem; selected: boolean; key?: s
     <UiEntity
       uiTransform={{
         width: '100%',
-        height: COOK_RECIPE_ROW_HEIGHT,
+        height: 56,
+        flexShrink: 0,
+        borderRadius: 8,
         flexDirection: 'row',
         alignItems: 'center',
         margin: { bottom: 4 },
         padding: { left: 6, right: 6 }
       }}
       uiBackground={props.selected ? { color: CRAFT_ROW_SELECTED_BG } : undefined}
-      onMouseDown={() => applyRecipeToCells(recipe)}
+      onMouseDown={beginUiTouch}
+      onMouseUp={() => applyRecipeToCells(recipe)}
     >
       <UiEntity
         uiTransform={{ width: COOK_RECIPE_ICON_SIZE, height: COOK_RECIPE_ICON_SIZE }}
@@ -572,7 +563,7 @@ function CookRecipeRow(props: { recipe: CookableItem; selected: boolean; key?: s
       />
       <Label
         value={recipe.name}
-        fontSize={12}
+        fontSize={14}
         color={props.selected ? CRAFT_TEXT_LIGHT_COLOR : CRAFT_TEXT_COLOR}
         textAlign="middle-left"
         uiTransform={{ flexGrow: 1, height: '100%', margin: { left: 8 } }}
@@ -628,18 +619,17 @@ function CookSupplies(): ReactEcs.JSX.Element {
         fontSize={13}
         color={UI_MUTED}
         textAlign="top-left"
-        uiTransform={{ width: '100%', height: 48 }}
+        uiTransform={{ width: '100%', height: 48, flexShrink: 0 }}
       />
-      <UiEntity uiTransform={{ width: '100%', flexGrow: 1, flexDirection: 'column', overflow: 'scroll' }}>
-        {items.length === 0 && (
-          <Label
-            value="No ingredients yet. Fish or search barrels for food."
-            fontSize={15}
-            color={UI_MUTED}
-            textAlign="top-left"
-            uiTransform={{ width: '100%', height: 80 }}
-          />
-        )}
+      {items.length === 0 && (
+        <Label
+          value="No ingredients yet. Fish or search barrels for food."
+          fontSize={15}
+          color={UI_MUTED}
+          uiTransform={{ width: '100%', height: 80 }}
+        />
+      )}
+      <MenuList id="supplies" height={Math.min(540, getMobileLayout().height - 32) - 116} rowHeight={52}>
         {items.map(
           (item) =>
             item && (
@@ -681,7 +671,7 @@ function CookSupplies(): ReactEcs.JSX.Element {
               </UiEntity>
             )
         )}
-      </UiEntity>
+      </MenuList>
     </Panel>
   )
 }

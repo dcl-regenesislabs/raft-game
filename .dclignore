@@ -20,3 +20,8 @@ README.md
 *.md
 src
 .github
+
+# Full-resolution art references are development-only.
+images/concepts
+docs
+scripts

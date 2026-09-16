@@ -1,3 +1,4 @@
+import { beginUiTouch } from './mobileControlsState'
 // Storage menu open/close state. Mirrors `cookToggle.ts`: the storage
 // menu has no HUD toggle button — it opens when the player taps a placed
 // storage construction (see `systems/constructionInteract.ts`) and closes
@@ -40,6 +41,7 @@ export function isStorageActionLocked(): boolean {
 export function openStorageMenu(entity: Entity): void {
   activeStorage = entity
   if (open) return
+  beginUiTouch()
   open = true
   playSfx('storageOpen')
   setInventoryOpen(false)
@@ -50,6 +52,7 @@ export function openStorageMenu(entity: Entity): void {
 
 export function closeStorageMenu(): void {
   if (!open) return
+  beginUiTouch()
   open = false
   playSfx('storageClose')
   postCloseLockoutSec = POST_CLOSE_LOCKOUT_S

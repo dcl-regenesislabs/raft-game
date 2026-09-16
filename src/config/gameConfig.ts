@@ -24,6 +24,9 @@ export const DEBUG_MODE = true
 // DEBUG_MODE determines whether direct entry includes the debug test setup.
 export const SKIP_LOBBY = true
 
+// Runs started without guidance immediately unlock every normal crafting recipe.
+export const TUTORIAL_ENABLED = true
+
 // --- Event scheduler -------------------------------------------------------
 // Centralised cadence for the recurring scripted events. The scheduler
 // in `src/systems/eventScheduler.ts` decides at most one action per

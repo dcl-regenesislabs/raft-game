@@ -1,3 +1,5 @@
+import { EXPANSION_ITEMS, expansionIcon } from '../expansion/catalog'
+import { CRAFT_CATEGORY_ICONS } from './craftCategories'
 // Pre-warms the renderer's asset cache for every HUD/UI texture used
 // by the scene, so opening the inventory / craft / cook panels for the
 // first time doesn't trigger visible pop-in.
@@ -14,6 +16,8 @@ import { AssetLoad, engine } from '@dcl/sdk/ecs'
 
 const HUD_PRELOAD_ASSETS: readonly string[] = [
   ...MAIN_ACTION_ICON_ASSETS,
+  ...CRAFT_CATEGORY_ICONS,
+  ...EXPANSION_ITEMS.map(expansionIcon),
   // Splash
   'images/raft_game_logo.png',
 

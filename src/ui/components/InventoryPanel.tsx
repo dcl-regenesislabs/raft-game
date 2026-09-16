@@ -1,59 +1,37 @@
+import { Color4 } from '@dcl/sdk/math'
+import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
 import { equipInventorySlot } from '../../systems/nativeEquipment'
 import { isSlotSelectable } from '../inventoryState'
 import { beginUiTouch } from '../mobileControlsState'
-import { UI_PAPER, UI_BORDER, UI_CELL, UI_INK, UI_MUTED } from '../visualTheme'
-import { isMobile } from '@dcl/sdk/platform'
 import { getMobileLayout } from '../mobileLayout'
-import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
-import { Color4 } from '@dcl/sdk/math'
+import { Panel } from '../panel'
+import { UI_BORDER,UI_CELL,UI_GOLD,UI_INK,UI_MUTED,UI_PAPER } from '../visualTheme'
 
+import { getPickedIngredient,pickIngredient } from '../cookSlots'
 import { isCookOpen } from '../cookToggle'
-import { getPickedIngredient, pickIngredient } from '../cookSlots'
 import { isCraftOpen } from '../craftToggle'
-import { getSelectedDragSlot, isSwapModeActive, pressSlot } from '../inventoryDrag'
-import { ToolPicker } from './ToolPicker'
-import { openEquipmentPicker, isEquipmentPickerOpen, isInventoryOpen, setInventoryOpen } from '../inventoryToggle'
-import { getActiveStorage, isStorageOpen } from '../storageToggle'
-import { getStoragePicked, pressStorageSlot } from '../storageSession'
+import { getSelectedDragSlot,pressSlot } from '../inventoryDrag'
+import { isEquipmentPickerOpen,isInventoryOpen,setInventoryOpen } from '../inventoryToggle'
+import { INVENTORY_TOTAL_SLOTS,type ItemDef,getInventorySlot,getItemDisplayName } from '../items'
+import { getStoragePicked,pressStorageSlot } from '../storageSession'
+import { getActiveStorage,isStorageOpen } from '../storageToggle'
 import {
-  BOTTOM_BAR_SLOT_COUNT,
-  INVENTORY_LAYOUT,
-  INVENTORY_TOTAL_SLOTS,
-  type ItemDef,
-  getInventorySlot,
-  getItemDisplayName
-} from '../items'
-import {
-  BAR_BOTTOM,
-  CLOSE_BUTTON_INVENTORY_RIGHT,
-  CLOSE_BUTTON_INVENTORY_TOP,
-  COOK_NON_INGREDIENT_TINT,
-  GLOW_ALPHA_PEAK_BONUS,
-  GLOW_COLOR,
-  INVENTORY_CELL_CENTERS_PCT,
-  INVENTORY_CELL_SIZE_PCT,
-  INVENTORY_GRID_CELLS,
-  INVENTORY_ITEM_INSET_PCT,
-  INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED,
-  INVENTORY_PANEL_SIZE,
-  INVENTORY_PANEL_TEXTURE
+COOK_NON_INGREDIENT_TINT,
+GLOW_ALPHA_PEAK_BONUS,
+GLOW_COLOR,
+INVENTORY_ITEM_INSET_PCT,
+INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED,
+INVENTORY_PANEL_SIZE
 } from '../theme'
-import { shakeOffset } from '../utils/shake'
 import { CloseButton } from './CloseButton'
 import { DurabilityBar } from './DurabilityBar'
-import { InventoryWithBar } from './InventoryWithBar'
 import { ItemCountBadge } from './ItemCountBadge'
 
 // Total cell count of the inventory-panel grid. Sourced from the shared
 // linear layout so adjusting `items.ts` flows through to the UI.
 const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_TOTAL_SLOTS
 
-// Bottom-center panel: 5×5 inventory grid stacked on top of the 5-slot
-// hot-bar. Anchored where the standalone `BottomBar` normally lives so the
-// hot-bar visually stays put when the inventory opens — the grid grows
-// upward from the bar. The standalone `BottomBar` is hidden by `ui()`
-// while the inventory is open so the bar shown here is the only one.
-// Renders nothing while the inventory is closed.
+// One safe-area backpack with thirty freely assignable slots.
 export function InventoryPanel(): ReactEcs.JSX.Element | null {
   if (!isInventoryOpen() || isEquipmentPickerOpen()) return null
   const layout = getMobileLayout()
@@ -61,7 +39,7 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
   const selected = getSelectedDragSlot()
   const item = selected === null ? null : getInventorySlot(selected)
   return (
-    <UiEntity
+    <Panel
       uiTransform={{
         positionType: 'absolute',
         position: { top: '50%', left: '50%' },
@@ -72,7 +50,6 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
     >
       <UiEntity
         uiTransform={{ width: size, height: 80, padding: 12, borderRadius: 10 }}
-        uiBackground={{ color: UI_PAPER }}
       >
         <Label
           value="BACKPACK"
@@ -111,39 +88,7 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
         </UiEntity>
       </UiEntity>
       <InventoryGrid size={size} />
-    </UiEntity>
-  )
-}
-
-// Persistent label that surfaces the name of the slot currently picked
-// up for swapping. Anchored on the visual seam between the inventory
-// grid and the hot-bar so it reads as a caption tying the two halves
-// together. Rendered AFTER `InventoryWithBar` in the parent so it draws
-// on top of the bar's painted top frame instead of being occluded.
-function SelectedItemLabel(props: { value: string; size: number }): ReactEcs.JSX.Element {
-  return (
-    <UiEntity
-      uiTransform={{
-        positionType: 'absolute',
-        position: { top: props.size - 42 + (isMobile() ? 64 : 0), left: 0 },
-        width: props.size,
-        height: 24,
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    >
-      <UiEntity
-        uiTransform={{
-          height: 24,
-          padding: { left: 14, right: 14 },
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-        uiBackground={{ color: Color4.create(0, 0, 0, 0.6) }}
-      >
-        <Label value={props.value} fontSize={14} color={Color4.White()} />
-      </UiEntity>
-    </UiEntity>
+    </Panel>
   )
 }
 
@@ -206,18 +151,12 @@ function InventoryCell(props: { uiIndex: number; globalIndex: number; key?: numb
   const storagePicked = storageOpen ? getStoragePicked() : null
   const isStoragePickedHere =
     storagePicked !== null && storagePicked.side === 'player' && storagePicked.index === globalIndex
-  const swapActive = !cookOpen && !storageOpen && isSwapModeActive()
   const isSwapSelected = !cookOpen && !storageOpen && getSelectedDragSlot() === globalIndex
   const isCookPicked = cookOpen && display !== null && getPickedIngredient() === display.id
-  const shouldShake =
-    (swapActive && !isSwapSelected && display !== null) ||
-    isCookPicked ||
-    (storageOpen && storagePicked !== null && !isStoragePickedHere && display !== null)
-
   const inset =
     isSwapSelected || isStoragePickedHere ? INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED : INVENTORY_ITEM_INSET_PCT
 
-  const shake = shouldShake ? shakeOffset(Date.now() / 1000) : { x: 0, y: 0 }
+  const shake = { x: 0, y: 0 }
 
   return (
     <UiEntity
@@ -228,10 +167,11 @@ function InventoryCell(props: { uiIndex: number; globalIndex: number; key?: numb
         height: '16.4%',
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: UI_BORDER
+        borderColor: isSwapSelected || isStoragePickedHere || isCookPicked ? UI_GOLD : UI_BORDER
       }}
       uiBackground={{ color: UI_CELL }}
       onMouseDown={() => {
+        beginUiTouch()
         // Inventory grid is read-only while the craft menu is open — no
         // selection, no swap, the player just sees their materials and
         // crafted stock alongside the recipe.

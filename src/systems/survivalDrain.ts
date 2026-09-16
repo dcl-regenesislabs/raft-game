@@ -1,3 +1,4 @@
+import { isWinActive } from '../ui/winScreen'
 import {
   HUNGER_DRAIN_PCT_PER_S,
   LIFE_DAMAGE_BOTH_PCT_PER_S,
@@ -26,7 +27,7 @@ export function survivalDrainSystem(dt: number): void {
   // Freeze every gameplay timer while the death screen is up. Otherwise
   // life/hunger/thirst would keep ticking and the player would re-die
   // immediately on Play Again before the reset frame even rendered.
-  if (isGameOver()) return
+  if (isGameOver() || isWinActive()) return
   // Same idea for the lobby — the player hasn't started the run yet,
   // so survival timers shouldn't tick while they're picking a portal.
   if (isStartupGateActive()) return

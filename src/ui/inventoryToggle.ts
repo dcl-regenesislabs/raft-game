@@ -1,4 +1,5 @@
-import { beginUiTouch, isMobileUiInputBlocked } from './mobileControlsState'
+import { isWinActive } from './winScreen'
+import { beginUiTouch, isMobileUiInputBlocked, isEquipmentInputBlocked } from './mobileControlsState'
 import { recordTutorialAction } from './tutorialState'
 // Inventory open/close toggle button. Mirrors the press-animation shape used
 // by `actionButton` so the two HUD buttons feel consistent: a brief scale-up
@@ -52,6 +53,11 @@ let lastModifierApplied: boolean | null = null
 // to re-lock by clicking anywhere when they're done.
 let lastPanelOpenApplied: boolean | null = null
 
+export function protectPanelDismissal(): void {
+  beginUiTouch()
+  postCloseLockoutSec = POST_CLOSE_LOCKOUT_S
+}
+
 export function isInventoryOpen(): boolean {
   return open
 }
@@ -63,7 +69,7 @@ export function isInventoryOpen(): boolean {
 // running.
 export function isInventoryActionLocked(): boolean {
   return (
-    isMobileUiInputBlocked() ||
+    isMobileUiInputBlocked() || isEquipmentInputBlocked() ||
     open ||
     postCloseLockoutSec > 0 ||
     isCraftOpen() ||
@@ -71,7 +77,7 @@ export function isInventoryActionLocked(): boolean {
     isStorageActionLocked() ||
     isSystemMenuOpen() ||
     isCrafting() ||
-    isGameOver()
+    isGameOver() || isWinActive()
   )
 }
 
@@ -118,6 +124,7 @@ export function inventoryToggleResetSystem(dt: number): void {
     postCloseLockoutSec = Math.max(0, postCloseLockoutSec - dt)
   }
   const lock =
+    isGameOver() || isWinActive() ||
     open ||
     isCraftOpen() ||
     isCookOpen() ||
@@ -155,7 +162,7 @@ export function inventoryToggleResetSystem(dt: number): void {
       isCookOpen() ||
       isStorageOpen() ||
       isSystemMenuOpen() ||
-      isGameOver()
+      isGameOver() || isWinActive()
     if (panelOpen !== lastPanelOpenApplied) {
       PointerLock.createOrReplace(engine.CameraEntity, {
         isPointerLocked: !panelOpen

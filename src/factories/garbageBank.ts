@@ -1,3 +1,4 @@
+import { isSandbox, metric, chapter } from '../progression/state'
 import { recordTutorialAction } from '../ui/tutorialState'
 import { addCollected } from '../ui/inventoryState'
 import { notifyItemReceived } from '../ui/itemReceivedNotification'
@@ -29,6 +30,14 @@ const BARREL_POOL = [
 // (`systems/garbageGrab.ts`).
 export function bankGarbageKind(kind: string): void {
   recordTutorialAction('collect')
+  if (kind === 'barrel' && !isSandbox()) {
+    for (const [id, count] of [['wood', 2], ['rope', 1], ['potato', 2]] as const) {
+      const received = addCollected(id, count)
+      notifyItemReceived(id, received)
+      metric('collected:' + id, received)
+    }
+    return
+  }
   if (kind === 'barrel') {
     // Always: a bit of wood for fuel continuity + a rope roll.
     const woodCount = randInt(1, 2)
@@ -46,6 +55,7 @@ export function bankGarbageKind(kind: string): void {
     }
     return
   }
-  addCollected(kind, 1)
-  notifyItemReceived(kind, 1)
+  const received = addCollected(kind, !isSandbox() && chapter() >= 4 ? 2 : 1)
+  metric('collected:' + kind, received)
+  notifyItemReceived(kind, received)
 }

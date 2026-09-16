@@ -1,3 +1,5 @@
+import { RaidStatus } from './components/RaidStatus'
+import { PanelBackdrop } from './components/PanelBackdrop'
 import { BuilderHint } from './components/BuilderHint'
 import { ProximityActions } from './components/ProximityActions'
 import { Color4 } from '@dcl/sdk/math'
@@ -134,7 +136,7 @@ function ui(): ReactEcs.JSX.Element {
 
   return (
     <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
-      {anyPanel && !isEquipmentPickerOpen() && <UiEntity uiTransform={{ positionType: 'absolute', width: '100%', height: '100%' }} uiBackground={{ color: Color4.create(0.01, 0.04, 0.06, 0.55) }} />}
+      {anyPanel && <PanelBackdrop transparent={isEquipmentPickerOpen()} />}
       <SafeArea>
         <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
           {/* No conditional fullscreen onMouseDown here. We used to attach
@@ -166,12 +168,13 @@ function ui(): ReactEcs.JSX.Element {
           <StorageMenu />
           {!anyPanel && !isMobile() && <RotateButtons />}
 
-          <NotificationOverlay />
-          <ItemReceivedOverlay />
         </UiEntity>
       </SafeArea>
+      <NotificationOverlay />
+      <ItemReceivedOverlay />
       {(!anyPanel || isEquipmentPickerOpen()) && isMobile() && <MobileHud />}
       {!anyPanel && <ChargeReticle />}
+      {!anyPanel && <RaidStatus />}
       {!anyPanel && <ProximityActions />}
       {!anyPanel && isMobile() && <BuilderHint />}
       {/* System (settings) menu sits OUTSIDE SafeArea so its dark backdrop

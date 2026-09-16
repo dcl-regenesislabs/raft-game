@@ -1,3 +1,6 @@
+import { attachPrototypeSprite } from '../expansion/sprites'
+import { getExpansionItem, EXPANSION_STRUCTURES } from '../expansion/catalog'
+import { ExpansionState, StructureHealth } from '../components'
 import {
   ColliderLayer,
   Entity,
@@ -15,17 +18,17 @@ import {
 } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
-import {
-  PlatformConstruction,
-  PurifierState,
-  STORAGE_SLOT_COUNT,
-  StorageContents
-} from '../components'
+import { PlatformConstruction, PurifierState, STORAGE_SLOT_COUNT, StorageContents } from '../components'
 import { PLATFORM_SIZE_X, PLATFORM_SIZE_Y, PLATFORM_SIZE_Z } from './platform'
 
-export type ConstructionKind = 'grill' | 'purifier' | 'storage'
+export type ConstructionKind = string
 
-export const CONSTRUCTION_KINDS: readonly ConstructionKind[] = ['grill', 'purifier', 'storage']
+export const CONSTRUCTION_KINDS: readonly ConstructionKind[] = [
+  'grill',
+  'purifier',
+  'storage',
+  ...EXPANSION_STRUCTURES.map((item) => item.id)
+]
 
 const SRC: Record<ConstructionKind, string> = {
   grill: 'assets/scene/items/grill.glb',
@@ -77,9 +80,10 @@ const HOVER_MAX_DISTANCE = 5
 export function createConstruction(
   platform: Entity,
   kind: ConstructionKind,
-  yawDeg: number = 0
+  yawDeg: number = 0,
+  support?: 'towerPlatform' | 'armoredFoundation'
 ): Entity {
-  const visualSize = VISUAL_SIZE_M[kind]
+  const visualSize = getConstructionVisualSize(kind)
   const child = engine.addEntity()
   // Cancel the platform parent's non-uniform (3, 0.3, 3) scale so the
   // construction renders proportionally, then up-scale to visualSize.
@@ -88,23 +92,32 @@ export function createConstruction(
     // Local Y: platform parent has scale.y = PLATFORM_SIZE_Y, so local
     // Y of N renders at N * PLATFORM_SIZE_Y world meters above the
     // platform origin.
-    position: Vector3.create(0, DECK_OFFSET_M[kind] / PLATFORM_SIZE_Y, 0),
+    position: Vector3.create(
+      0,
+      (getConstructionDeckOffset(kind) + (support === 'towerPlatform' ? 2.3 : 0)) / PLATFORM_SIZE_Y,
+      0
+    ),
     rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
-    scale: Vector3.create(
-      visualSize / PLATFORM_SIZE_X,
-      visualSize / PLATFORM_SIZE_Y,
-      visualSize / PLATFORM_SIZE_Z
-    )
+    scale: Vector3.create(visualSize / PLATFORM_SIZE_X, visualSize / PLATFORM_SIZE_Y, visualSize / PLATFORM_SIZE_Z)
   })
+  if (getExpansionItem(kind)) {
+    const base = Transform.get(platform).position
+    Transform.createOrReplace(child, {
+      position: Vector3.create(base.x, base.y + 0.9 + (support === 'towerPlatform' ? 2.3 : 0), base.z),
+      rotation: Quaternion.fromEulerDegrees(0, yawDeg, 0),
+      scale: Vector3.One()
+    })
+    attachPrototypeSprite(child, kind)
+  } else {
   GltfContainer.create(child, {
-    src: SRC[kind],
+    src: getConstructionGlb(kind),
     // CL_POINTER so the GLB's own visible mesh acts as the click target.
     // CL_PHYSICS so the player can't walk through the construction —
     // without it the GLB renders but is non-solid, and the player just
     // phases into the grill / purifier.
-    visibleMeshesCollisionMask:
-      ColliderLayer.CL_POINTER | ColliderLayer.CL_PHYSICS
+    visibleMeshesCollisionMask: ColliderLayer.CL_POINTER | ColliderLayer.CL_PHYSICS
   })
+  }
   // Purifier needs a second F-key event for the "add wood" path —
   // grill/storage stay E-only. The hover prompt shows both lines on the
   // purifier so the player can see which key does what.
@@ -113,13 +126,25 @@ export function createConstruction(
       eventType: PointerEventType.PET_DOWN,
       eventInfo: {
         button: InputAction.IA_PRIMARY,
-        hoverText: HOVER_TEXT[kind],
-        maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
+        hoverText: getConstructionDefaultHoverText(kind),
+        maxDistance: HOVER_MAX_DISTANCE,
+        maxPlayerDistance: HOVER_MAX_DISTANCE,
         showFeedback: false
       }
     }
   ]
-  if (kind === 'purifier') {
+  if (
+    [
+      'purifier',
+      'smelter',
+      'improvedGrill',
+      'waterTank',
+      'ballista',
+      'netLauncher',
+      'harpoonTower',
+      'deckCannon'
+    ].includes(kind)
+  ) {
     // Fire starts off → fuel prompt is visible at placement. The
     // purifier process system hides this entry whenever the flame is
     // burning, since one log at a time is the design (no stacking).
@@ -128,7 +153,8 @@ export function createConstruction(
       eventInfo: {
         button: InputAction.IA_SECONDARY,
         hoverText: 'Add wood',
-        maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
+        maxDistance: HOVER_MAX_DISTANCE,
+        maxPlayerDistance: HOVER_MAX_DISTANCE,
         showFeedback: false
       }
     })
@@ -139,8 +165,30 @@ export function createConstruction(
   // confirms a recipe and stored on the platform's `ActiveCook`
   // component. `aux` stays here as RootEntity (id 0) for the in-flight
   // cleanup branch in `destroyPlatformEntity`.
-  PlatformConstruction.create(platform, { kind, child, aux: engine.RootEntity, yawDeg })
-  if (kind === 'storage') {
+  let aux = engine.RootEntity
+  if (support) {
+    aux = engine.addEntity()
+    const base = Transform.get(platform).position
+    Transform.create(aux, { position: Vector3.create(base.x, base.y + 0.9, base.z), scale: Vector3.One() })
+    attachPrototypeSprite(aux, support)
+
+  }
+  PlatformConstruction.create(platform, { kind, child, aux, yawDeg })
+  const expansion = getExpansionItem(kind)
+  if (expansion) {
+    ExpansionState.create(platform, {
+      health: (expansion.health ?? 100) + (support ? (support === 'towerPlatform' ? 150 : 400) : 0),
+      maxHealth: (expansion.health ?? 100) + (support ? (support === 'towerPlatform' ? 150 : 400) : 0),
+      fuel: 0,
+      progress: 0,
+      stock: 0,
+      ammo: 0,
+      active: false,
+      installed: false
+    })
+  }
+  if (support && !expansion) StructureHealth.createOrReplace(platform, { current: 500, max: 500 })
+  if (kind === 'storage' || kind === 'ammoCrate') {
     // Per-storage contents live on the platform entity. Pre-fill 25
     // empty slots so the UI can index them directly without
     // null-guarding length on every render.
@@ -172,18 +220,15 @@ export function createConstruction(
 // burning, since the purifier doesn't stack logs (one at a time).
 // `purifierProcessSystem` calls this on transitions, not every frame,
 // so the SDK doesn't churn the component repeatedly.
-export function setPurifierHoverPrompt(
-  child: Entity,
-  primaryText: string,
-  showFuel: boolean
-): void {
+export function setPurifierHoverPrompt(child: Entity, primaryText: string, showFuel: boolean): void {
   const events = [
     {
       eventType: PointerEventType.PET_DOWN,
       eventInfo: {
         button: InputAction.IA_PRIMARY,
         hoverText: primaryText,
-        maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
+        maxDistance: HOVER_MAX_DISTANCE,
+        maxPlayerDistance: HOVER_MAX_DISTANCE,
         showFeedback: false
       }
     }
@@ -194,7 +239,8 @@ export function setPurifierHoverPrompt(
       eventInfo: {
         button: InputAction.IA_SECONDARY,
         hoverText: 'Add wood',
-        maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
+        maxDistance: HOVER_MAX_DISTANCE,
+        maxPlayerDistance: HOVER_MAX_DISTANCE,
         showFeedback: false
       }
     })
@@ -258,11 +304,7 @@ const FRESH_WATER_COLOR = Color4.create(0.2, 0.55, 0.95, 0.7)
 // scale = sizeM / 0.72.
 const CONSTRUCTION_WORLD_SCALE = 0.72
 
-function createBowlWaterCylinder(
-  constructionChild: Entity,
-  bowl: BowlGeometry,
-  color: Color4
-): Entity {
+function createBowlWaterCylinder(constructionChild: Entity, bowl: BowlGeometry, color: Color4): Entity {
   const cylinder = engine.addEntity()
   Transform.create(cylinder, {
     parent: constructionChild,
@@ -312,51 +354,61 @@ export function getPurifierBowlGeometry(which: 'salt' | 'fresh'): {
 //   - 'PICK UP'    → cooked plate is ready
 //   - 'GRAB COAL'  → cook over-burned
 //   - default kind text restored once the grill is empty again
-export function setConstructionPointerPrompt(
-  child: Entity,
-  hoverText: string | null
-): void {
+export function setConstructionPointerPrompt(child: Entity, hoverText: string | null): void {
   if (hoverText === null) {
     if (PointerEvents.getOrNull(child) !== null) PointerEvents.deleteFrom(child)
     return
   }
   setConstructionEvents(child, [
-      {
-        eventType: PointerEventType.PET_DOWN,
-        eventInfo: {
-          button: InputAction.IA_PRIMARY,
-          hoverText,
-          maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE,
-          showFeedback: false
-        }
+    {
+      eventType: PointerEventType.PET_DOWN,
+      eventInfo: {
+        button: InputAction.IA_PRIMARY,
+        hoverText,
+        maxDistance: HOVER_MAX_DISTANCE,
+        maxPlayerDistance: HOVER_MAX_DISTANCE,
+        showFeedback: false
       }
-    ])
+    }
+  ])
 }
 
 export function getConstructionDefaultHoverText(kind: ConstructionKind): string {
-  return HOVER_TEXT[kind]
+  return HOVER_TEXT[kind] ?? getExpansionItem(kind)?.name ?? 'Interact'
 }
 
 export function getConstructionGlb(kind: ConstructionKind): string {
-  return SRC[kind]
+  return SRC[kind] ?? ''
 }
 
 export function getConstructionVisualSize(kind: ConstructionKind): number {
-  return VISUAL_SIZE_M[kind]
+  return VISUAL_SIZE_M[kind] ?? 1
 }
 
 export function getConstructionDeckOffset(kind: ConstructionKind): number {
-  return DECK_OFFSET_M[kind]
+  return DECK_OFFSET_M[kind] ?? 0.9
 }
 
 // Track the renderer-selected proximity target, including older Explorer hover events.
 function setConstructionEvents(child: Entity, entries: PBPointerEvents_Entry[]): void {
-  PointerEvents.createOrReplace(child, { pointerEvents: [
-    ...entries.map(entry => ({ ...entry, interactionType: InteractionType.PROXIMITY })),
-    ...[PointerEventType.PET_PROXIMITY_ENTER, PointerEventType.PET_PROXIMITY_LEAVE,
-      PointerEventType.PET_HOVER_ENTER, PointerEventType.PET_HOVER_LEAVE].map(eventType => ({
-      eventType, interactionType: InteractionType.PROXIMITY,
-      eventInfo: { button: InputAction.IA_ANY, maxDistance: HOVER_MAX_DISTANCE, maxPlayerDistance: HOVER_MAX_DISTANCE, showFeedback: false }
-    }))
-  ] })
+  PointerEvents.createOrReplace(child, {
+    pointerEvents: [
+      ...entries.map((entry) => ({ ...entry, interactionType: InteractionType.PROXIMITY })),
+      ...[
+        PointerEventType.PET_PROXIMITY_ENTER,
+        PointerEventType.PET_PROXIMITY_LEAVE,
+        PointerEventType.PET_HOVER_ENTER,
+        PointerEventType.PET_HOVER_LEAVE
+      ].map((eventType) => ({
+        eventType,
+        interactionType: InteractionType.PROXIMITY,
+        eventInfo: {
+          button: InputAction.IA_ANY,
+          maxDistance: HOVER_MAX_DISTANCE,
+          maxPlayerDistance: HOVER_MAX_DISTANCE,
+          showFeedback: false
+        }
+      }))
+    ]
+  })
 }

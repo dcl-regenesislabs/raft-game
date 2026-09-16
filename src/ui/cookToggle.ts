@@ -1,3 +1,4 @@
+import { beginUiTouch } from './mobileControlsState'
 // Cooking menu open/close state. Unlike inventory and craft, the cooking
 // menu has no HUD toggle button — it opens when the player clicks a
 // placed grill in the world (see `systems/constructionInteract.ts`)
@@ -32,6 +33,7 @@ export function isCookOpen(): boolean {
 export function setCookOpen(target: boolean): void {
   if (open === target) return
   const wasOpen = open
+  beginUiTouch()
   open = target
   if (wasOpen && !target) {
     clearPickedIngredient()
@@ -45,6 +47,7 @@ export function setCookOpen(target: boolean): void {
 export function openCookMenu(grill: Entity): void {
   setActiveCookGrill(grill)
   if (open) return
+  beginUiTouch()
   open = true
   setInventoryOpen(false)
   setCraftOpen(false)

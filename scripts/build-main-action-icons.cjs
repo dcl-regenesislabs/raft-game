@@ -5,6 +5,7 @@ const path = require('node:path')
 const { PNG } = require('pngjs')
 const root = path.resolve(__dirname, '..')
 const sources = new Set([
+  ...fs.readdirSync(path.join(root, 'images/hud/expansion')).filter(name => name.endsWith('.png')).map(name => 'images/hud/expansion/' + name),
   ...[...fs.readFileSync(path.join(root, 'src/ui/items.ts'), 'utf8').matchAll(/'((?:images\/)[^']+\.png)'/g)].map(m => m[1]),
   'images/hud/hands.png', 'images/hud/eraser.png'
 ])

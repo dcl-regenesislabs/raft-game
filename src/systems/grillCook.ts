@@ -1,3 +1,5 @@
+import { isGameOver } from '../ui/gameOver'
+import { isWinActive } from '../ui/winScreen'
 import { GltfContainer, Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion } from '@dcl/sdk/math'
 
@@ -46,6 +48,7 @@ const COAL_TEXTURE = 'images/cooking/coal.png'
 const GLB_PLATE_SPIN_DPS = 30
 
 export function grillCookSystem(dt: number): void {
+  if (isGameOver() || isWinActive()) return
   for (const [platform] of engine.getEntitiesWith(ActiveCook)) {
     const state = ActiveCook.getMutable(platform)
     state.elapsedSec += dt

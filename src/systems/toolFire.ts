@@ -1,5 +1,5 @@
 import { getSelectedSlot } from '../ui/inventoryState'
-import { isMobileUiInputBlocked } from '../ui/mobileControlsState'
+import { isMobileUiInputBlocked, isEquipmentInputBlocked } from '../ui/mobileControlsState'
 import { InputAction, PointerEventType, inputSystem } from '@dcl/sdk/ecs'
 import { isMobile } from '@dcl/sdk/platform'
 
@@ -26,7 +26,7 @@ import {
 export const USE_NATIVE_POINTER = true
 
 export function toolFireJustPressed(): boolean {
-  if (isMobileUiInputBlocked() || (isMobile() && getSelectedSlot() < 0)) return false
+  if (isEquipmentInputBlocked() || isMobileUiInputBlocked() || (isMobile() && getSelectedSlot() < 0)) return false
   if (!USE_NATIVE_POINTER && isMobile()) return actionButtonJustPressed()
   return inputSystem.isTriggered(
     InputAction.IA_POINTER,
@@ -35,6 +35,7 @@ export function toolFireJustPressed(): boolean {
 }
 
 export function isToolFirePressed(): boolean {
+  if (isEquipmentInputBlocked()) return false
   if (isMobile() && getSelectedSlot() < 0) return false
   if (!USE_NATIVE_POINTER && isMobile()) return isActionButtonPressed()
   return inputSystem.isPressed(InputAction.IA_POINTER)
@@ -43,5 +44,5 @@ export function isToolFirePressed(): boolean {
 // Native mobile interaction buttons emit global input. The caller supplies
 // the same looked-at target and reach checks as its entity-targeted path.
 export function mobileInteractionJustPressed(action: InputAction): boolean {
-  return isMobile() && !isMobileUiInputBlocked() && inputSystem.isTriggered(action, PointerEventType.PET_DOWN)
+  return isMobile() && !isEquipmentInputBlocked() && !isMobileUiInputBlocked() && inputSystem.isTriggered(action, PointerEventType.PET_DOWN)
 }

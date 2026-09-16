@@ -1,0 +1,712 @@
+{
+  "note": "Raw costs before rewards; representative optional defense path, excludes extra raft tiles. Fuel includes plate production. Timings require human playtests.",
+  "stages": [
+    {
+      "chapter": "opening",
+      "bill": {
+        "hammer": 1,
+        "cup": 1,
+        "purifier": 1,
+        "grill": 1,
+        "rope": 3,
+        "wood": 8,
+        "plastic": 6
+      },
+      "raw": {
+        "wood": 17,
+        "plants": 16,
+        "plastic": 9,
+        "metal": 3
+      }
+    },
+    {
+      "chapter": "workshop",
+      "bill": {
+        "workbench": 1,
+        "smelter": 1,
+        "storage": 1,
+        "metalPlate": 1
+      },
+      "raw": {
+        "wood": 14.666666666666666,
+        "metal": 12,
+        "plants": 8
+      }
+    },
+    {
+      "chapter": "zombies",
+      "bill": {
+        "armoryBench": 1,
+        "alarmBell": 1,
+        "spear": 1,
+        "spikeStrip": 2
+      },
+      "raw": {
+        "wood": 17.333333333333332,
+        "metal": 15,
+        "plants": 6
+      }
+    },
+    {
+      "chapter": "pirates",
+      "bill": {
+        "engineeringBench": 1,
+        "ballista": 2,
+        "bolts": 16,
+        "ammoCrate": 1,
+        "sail": 1
+      },
+      "raw": {
+        "wood": 43.333333333333336,
+        "metal": 48,
+        "plastic": 2,
+        "plants": 16
+      }
+    },
+    {
+      "chapter": "beasts",
+      "bill": {
+        "researchTable": 1,
+        "metalPlate": 3,
+        "wire": 2,
+        "harpoonTower": 2,
+        "harpoons": 18
+      },
+      "raw": {
+        "wood": 30.666666666666664,
+        "metal": 78,
+        "plastic": 2,
+        "plants": 30
+      }
+    },
+    {
+      "chapter": "rescue",
+      "bill": {
+        "generator": 1,
+        "antennaMast": 1,
+        "rescueRadio": 1,
+        "wood": 6,
+        "bolts": 16,
+        "harpoons": 10
+      },
+      "raw": {
+        "metal": 92,
+        "wood": 27.999999999999996,
+        "plastic": 23,
+        "plants": 16
+      }
+    }
+  ],
+  "recipes": [
+    {
+      "id": "rope",
+      "chapter": 1,
+      "station": "basic",
+      "batch": 1,
+      "raw": {
+        "plants": 2
+      }
+    },
+    {
+      "id": "hook",
+      "chapter": 1,
+      "station": "basic",
+      "batch": 1,
+      "raw": {
+        "wood": 1,
+        "plants": 2
+      }
+    },
+    {
+      "id": "hammer",
+      "chapter": 1,
+      "station": "basic",
+      "batch": 1,
+      "raw": {
+        "wood": 2,
+        "plants": 2
+      }
+    },
+    {
+      "id": "spear",
+      "chapter": 1,
+      "station": "basic",
+      "batch": 1,
+      "raw": {
+        "wood": 4,
+        "plants": 4
+      }
+    },
+    {
+      "id": "purifier",
+      "chapter": 1,
+      "station": "basic",
+      "batch": 1,
+      "raw": {
+        "wood": 3,
+        "plants": 4,
+        "plastic": 2,
+        "metal": 1
+      }
+    },
+    {
+      "id": "grill",
+      "chapter": 1,
+      "station": "basic",
+      "batch": 1,
+      "raw": {
+        "metal": 2,
+        "wood": 3,
+        "plants": 4
+      }
+    },
+    {
+      "id": "fishingRod",
+      "chapter": 1,
+      "station": "basic",
+      "batch": 1,
+      "raw": {
+        "wood": 3,
+        "plants": 8
+      }
+    },
+    {
+      "id": "cup",
+      "chapter": 1,
+      "station": "basic",
+      "batch": 1,
+      "raw": {
+        "wood": 1,
+        "plastic": 1
+      }
+    },
+    {
+      "id": "anchor",
+      "chapter": 4,
+      "station": "engineeringBench",
+      "batch": 1,
+      "raw": {
+        "metal": 6,
+        "plants": 8
+      }
+    },
+    {
+      "id": "storage",
+      "chapter": 2,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 4,
+        "metal": 2,
+        "plants": 4
+      }
+    },
+    {
+      "id": "workbench",
+      "chapter": 2,
+      "station": "basic",
+      "batch": 1,
+      "raw": {
+        "wood": 6,
+        "metal": 2,
+        "plants": 4
+      }
+    },
+    {
+      "id": "armoryBench",
+      "chapter": 3,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 7.333333333333333,
+        "metal": 6
+      }
+    },
+    {
+      "id": "engineeringBench",
+      "chapter": 4,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 8.666666666666666,
+        "metal": 12,
+        "plastic": 2
+      }
+    },
+    {
+      "id": "smelter",
+      "chapter": 2,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "metal": 6,
+        "wood": 4
+      }
+    },
+    {
+      "id": "researchTable",
+      "chapter": 5,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 8,
+        "metal": 6
+      }
+    },
+    {
+      "id": "nails",
+      "chapter": 3,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "metal": 1
+      }
+    },
+    {
+      "id": "gears",
+      "chapter": 4,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "metal": 4,
+        "wood": 1.3333333333333333
+      }
+    },
+    {
+      "id": "wire",
+      "chapter": 4,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "metal": 2,
+        "plastic": 1
+      }
+    },
+    {
+      "id": "circuitBoard",
+      "chapter": 5,
+      "station": "researchTable",
+      "batch": 1,
+      "raw": {
+        "metal": 6,
+        "plastic": 4,
+        "wood": 0.6666666666666666
+      }
+    },
+    {
+      "id": "rainCollector",
+      "chapter": 2,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 4,
+        "plastic": 4,
+        "plants": 4
+      }
+    },
+    {
+      "id": "cropBed",
+      "chapter": 2,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 4,
+        "plants": 4
+      }
+    },
+    {
+      "id": "waterTank",
+      "chapter": 3,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "metal": 6,
+        "wood": 2,
+        "plastic": 6
+      }
+    },
+    {
+      "id": "improvedGrill",
+      "chapter": 3,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "metal": 8,
+        "wood": 6.666666666666666,
+        "plants": 4
+      }
+    },
+    {
+      "id": "metalHook",
+      "chapter": 3,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "metal": 4,
+        "wood": 1.3333333333333333,
+        "plants": 4
+      }
+    },
+    {
+      "id": "salvageAxe",
+      "chapter": 3,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "metal": 4,
+        "wood": 3.333333333333333
+      }
+    },
+    {
+      "id": "bow",
+      "chapter": 3,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "wood": 4,
+        "plants": 6
+      }
+    },
+    {
+      "id": "arrows",
+      "chapter": 3,
+      "station": "armoryBench",
+      "batch": 4,
+      "raw": {
+        "wood": 0.25,
+        "metal": 0.25
+      }
+    },
+    {
+      "id": "boardingShield",
+      "chapter": 5,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "wood": 4.666666666666667,
+        "metal": 2
+      }
+    },
+    {
+      "id": "scrapArmor",
+      "chapter": 5,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "metal": 8,
+        "wood": 2.6666666666666665,
+        "plants": 4
+      }
+    },
+    {
+      "id": "wall",
+      "chapter": 3,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 4,
+        "plants": 2
+      }
+    },
+    {
+      "id": "gate",
+      "chapter": 3,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 5,
+        "metal": 2
+      }
+    },
+    {
+      "id": "stairs",
+      "chapter": 4,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 6,
+        "metal": 2
+      }
+    },
+    {
+      "id": "upperFloor",
+      "chapter": 4,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 6,
+        "metal": 2
+      }
+    },
+    {
+      "id": "railing",
+      "chapter": 3,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 3,
+        "plants": 2
+      }
+    },
+    {
+      "id": "armoredFoundation",
+      "chapter": 5,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "metal": 10,
+        "wood": 2.6666666666666665
+      }
+    },
+    {
+      "id": "towerPlatform",
+      "chapter": 4,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 8,
+        "metal": 6
+      }
+    },
+    {
+      "id": "ammoCrate",
+      "chapter": 4,
+      "station": "workbench",
+      "batch": 1,
+      "raw": {
+        "wood": 5.333333333333333,
+        "metal": 4
+      }
+    },
+    {
+      "id": "ropeBarricade",
+      "chapter": 3,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "wood": 3,
+        "plants": 6
+      }
+    },
+    {
+      "id": "spikeStrip",
+      "chapter": 3,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "wood": 3,
+        "metal": 3
+      }
+    },
+    {
+      "id": "netLauncher",
+      "chapter": 5,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "metal": 8,
+        "wood": 6.666666666666666,
+        "plants": 6
+      }
+    },
+    {
+      "id": "ballista",
+      "chapter": 4,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "metal": 14,
+        "wood": 10.666666666666666
+      }
+    },
+    {
+      "id": "harpoonTower",
+      "chapter": 5,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "metal": 22,
+        "wood": 7.333333333333333,
+        "plants": 6
+      }
+    },
+    {
+      "id": "deckCannon",
+      "chapter": 5,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "metal": 24,
+        "wood": 12
+      }
+    },
+    {
+      "id": "nets",
+      "chapter": 5,
+      "station": "armoryBench",
+      "batch": 2,
+      "raw": {
+        "plants": 2
+      }
+    },
+    {
+      "id": "bolts",
+      "chapter": 4,
+      "station": "armoryBench",
+      "batch": 4,
+      "raw": {
+        "wood": 0.25,
+        "metal": 0.25
+      }
+    },
+    {
+      "id": "harpoons",
+      "chapter": 5,
+      "station": "armoryBench",
+      "batch": 2,
+      "raw": {
+        "metal": 1,
+        "wood": 0.3333333333333333,
+        "plants": 1
+      }
+    },
+    {
+      "id": "cannonballs",
+      "chapter": 5,
+      "station": "armoryBench",
+      "batch": 2,
+      "raw": {
+        "metal": 2,
+        "wood": 0.6666666666666666,
+        "coal": 0.5
+      }
+    },
+    {
+      "id": "alarmBell",
+      "chapter": 3,
+      "station": "armoryBench",
+      "batch": 1,
+      "raw": {
+        "metal": 3,
+        "plants": 2
+      }
+    },
+    {
+      "id": "lookoutPost",
+      "chapter": 4,
+      "station": "engineeringBench",
+      "batch": 1,
+      "raw": {
+        "wood": 5,
+        "plants": 6
+      }
+    },
+    {
+      "id": "sail",
+      "chapter": 4,
+      "station": "engineeringBench",
+      "batch": 1,
+      "raw": {
+        "wood": 4,
+        "plants": 16
+      }
+    },
+    {
+      "id": "steeringWheel",
+      "chapter": 4,
+      "station": "engineeringBench",
+      "batch": 1,
+      "raw": {
+        "wood": 6.666666666666666,
+        "metal": 8
+      }
+    },
+    {
+      "id": "engine",
+      "chapter": 4,
+      "station": "engineeringBench",
+      "batch": 1,
+      "raw": {
+        "metal": 24,
+        "wood": 8
+      }
+    },
+    {
+      "id": "generator",
+      "chapter": 5,
+      "station": "engineeringBench",
+      "batch": 1,
+      "raw": {
+        "metal": 26,
+        "wood": 6.666666666666666,
+        "plastic": 3
+      }
+    },
+    {
+      "id": "batteryBank",
+      "chapter": 5,
+      "station": "engineeringBench",
+      "batch": 1,
+      "raw": {
+        "metal": 14,
+        "wood": 2,
+        "plastic": 7
+      }
+    },
+    {
+      "id": "powerRelay",
+      "chapter": 5,
+      "station": "engineeringBench",
+      "batch": 1,
+      "raw": {
+        "metal": 8,
+        "plastic": 3,
+        "wood": 0.6666666666666666
+      }
+    },
+    {
+      "id": "antennaMast",
+      "chapter": 5,
+      "station": "researchTable",
+      "batch": 1,
+      "raw": {
+        "metal": 18,
+        "wood": 3.333333333333333,
+        "plastic": 4,
+        "plants": 6
+      }
+    },
+    {
+      "id": "rescueRadio",
+      "chapter": 5,
+      "station": "researchTable",
+      "batch": 1,
+      "raw": {
+        "metal": 34,
+        "plastic": 16,
+        "wood": 4.666666666666666
+      }
+    },
+    {
+      "id": "transmitterCore",
+      "chapter": 6,
+      "station": "researchTable",
+      "batch": 1,
+      "raw": {
+        "metal": 64,
+        "plastic": 24,
+        "wood": 13.333333333333332
+      }
+    },
+    {
+      "id": "metalPlate",
+      "chapter": 2,
+      "station": "smelter",
+      "batch": 1,
+      "raw": {
+        "metal": 2,
+        "wood": 0.6666666666666666
+      }
+    }
+  ]
+}

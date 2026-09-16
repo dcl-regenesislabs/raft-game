@@ -1,0 +1,111 @@
+{
+ "seq": 37,
+ "progression": {
+  "version": 1,
+  "mode": "progression-test",
+  "events": [
+   "collect",
+   "expand",
+   "drink",
+   "cookedMeal"
+  ],
+  "wins": 0,
+  "seconds": 9.147910231000001,
+  "recovery": 0,
+  "salvage": 3,
+  "seed": 1238546086,
+  "pending": {},
+  "metrics": {
+   "fixtureChapter": 2,
+   "menuSeconds": 3.2248563069999996,
+   "activeSeconds": 5.923053924000001,
+   "productionSeconds": 5
+  },
+  "milestones": [
+   0,
+   0
+  ]
+ },
+ "dead": false,
+ "checkpoint": true,
+ "context": null,
+ "recipes": [
+  "rope",
+  "hook",
+  "hammer",
+  "spear",
+  "purifier",
+  "grill",
+  "fishingRod",
+  "cup",
+  "repairKit",
+  "bandage",
+  "workbench"
+ ],
+ "counts": [
+  {
+   "id": "potato",
+   "count": 2
+  },
+  {
+   "id": "hammer",
+   "count": 1
+  },
+  {
+   "id": "cup",
+   "count": 1
+  },
+  {
+   "id": "spear",
+   "count": 1
+  },
+  {
+   "id": "wood",
+   "count": 20
+  },
+  {
+   "id": "metal",
+   "count": 10
+  },
+  {
+   "id": "plastic",
+   "count": 20
+  },
+  {
+   "id": "plants",
+   "count": 20
+  },
+  {
+   "id": "rope",
+   "count": 20
+  }
+ ],
+ "devices": [
+  {
+   "e": 659,
+   "kind": "smelter",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 85,
+   "progress": 5,
+   "stock": 0,
+   "queued": 5,
+   "ammo": 0,
+   "active": true,
+   "installed": false
+  },
+  {
+   "e": 672,
+   "kind": "workbench",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": false
+  }
+ ]
+}

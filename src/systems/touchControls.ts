@@ -1,3 +1,4 @@
+import { expansionActions } from '../expansion/runtime'
 import { getMainActionIcon } from '../ui/mainActionIcons'
 import { HANDS_ICON } from '../ui/theme'
 import { BUILD_ICON, ERASE_ICON, ROTATE_CW_ICON, ROTATE_CCW_ICON } from '../ui/buildControlIcons'
@@ -117,26 +118,56 @@ export function resolveMobileControls(): MobileControlState {
     fishingRod: 'Cast line',
     hammer: 'Build',
     spear: 'Attack',
-    anchor: 'Throw anchor'
+    anchor: 'Throw anchor',
+    repairKit: 'Repair',
+    bandage: 'Bandage',
+    bow: 'Shoot arrow',
+    boardingShield: 'Block',
+    scrapArmor: 'Wear armor',
+    salvageAxe: 'Salvage'
   }
-  const pointerLabel = !item ? 'Hands' : isEmptyCupHeld() ? (target === 'water' ? 'Fill cup' : 'Aim at water') : isFishingLineActive()
-    ? isFishingBiting()
-      ? 'CATCH!'
-      : 'Retract'
-    : item?.id === 'saltWater'
-      ? 'Drink salt water'
-      : item?.id === 'freshWater'
-        ? 'Drink water'
-        : getRaftBuilderMode() === 'destroying'
-          ? 'Destroy tile'
-          : (labels[item?.heldKind ?? ''] ?? (item?.consumable ? 'Eat' : 'Place'))
+  const pointerLabel = !item
+    ? 'Hands'
+    : isEmptyCupHeld()
+      ? target === 'water'
+        ? 'Fill cup'
+        : 'Aim at water'
+      : isFishingLineActive()
+        ? isFishingBiting()
+          ? 'CATCH!'
+          : 'Retract'
+        : item?.id === 'saltWater'
+          ? 'Drink salt water'
+          : item?.id === 'freshWater'
+            ? 'Drink water'
+            : getRaftBuilderMode() === 'destroying'
+              ? 'Destroy tile'
+              : (labels[item?.id ?? ''] ?? labels[item?.heldKind ?? ''] ?? (item?.consumable ? 'Eat' : 'Place'))
+  const nearby = getProximityConstruction()
+  const extra = nearby ? expansionActions(nearby.platform) : null
+  if (extra) {
+    eIcon = extra.icon
+    eLabel = extra.primary
+  }
   const builder = getRaftBuilderMode()
   const rotating = builder === 'placing' || getConstructionPlacementMode() !== 'idle'
   const modeIcon = builder === 'destroying' ? ERASE_ICON : BUILD_ICON
   return {
-    pointer: { visible: desired.pointer, icon: getMainActionIcon(builder !== 'idle' ? modeIcon : (item?.texture ?? HANDS_ICON)), label: pointerLabel },
-    e: { visible: desired.e, icon: rotating ? ROTATE_CCW_ICON : eIcon, label: rotating ? 'Rotate left' : eLabel },
-    f: { visible: desired.f, icon: rotating ? ROTATE_CW_ICON : getCatalogItem('wood')?.texture, label: rotating ? 'Rotate right' : 'Add wood' },
+    pointer: {
+      visible: desired.pointer,
+      icon: getMainActionIcon(builder !== 'idle' ? modeIcon : (item?.texture ?? HANDS_ICON)),
+      label: pointerLabel
+    },
+    e: {
+      visible: desired.e || (!!extra && !worldControlsHidden()),
+      icon: rotating ? ROTATE_CCW_ICON : eIcon,
+      label: rotating ? 'Rotate left' : eLabel
+    },
+    f: {
+      visible: desired.f || (!!extra?.secondary && !worldControlsHidden()),
+      icon: rotating ? ROTATE_CW_ICON : (extra?.secondaryIcon ?? getCatalogItem('wood')?.texture),
+      label: rotating ? 'Rotate right' : (extra?.secondary ?? 'Add wood')
+    },
     shortcuts: NATIVE_SLOT_ACTIONS.map((_, index) => ({
       visible: index === 0 && builder !== 'idle' && !worldControlsHidden(),
       icon: builder === 'destroying' ? BUILD_ICON : ERASE_ICON,
@@ -157,13 +188,25 @@ export function initTouchControls(): void {
 export function touchControlsSystem(_dt: number): void {
   const state = resolveMobileControls()
   const menu =
+    isGameOver() ||
+    isWinActive() ||
+    isCrafting() ||
     (isInventoryOpen() && !isEquipmentPickerOpen()) ||
     isCraftOpen() ||
     isCookOpen() ||
     isStorageOpen() ||
     isSystemMenuOpen()
-  const proximity = getProximityConstruction() !== null && getRaftBuilderMode() === 'idle' && getConstructionPlacementMode() === 'idle'
-  const signature = JSON.stringify({ state, menu, proximity })
+  const proximity =
+    getProximityConstruction() !== null && getRaftBuilderMode() === 'idle' && getConstructionPlacementMode() === 'idle'
+  const visual = (action: ControlAction) => ({ visible: action.visible, icon: action.icon })
+  const signature = JSON.stringify({
+    pointer: visual(state.pointer),
+    e: visual(state.e),
+    f: visual(state.f),
+    shortcuts: state.shortcuts.map(visual),
+    menu,
+    proximity
+  })
   if (lastWritten === signature) return
   lastWritten = signature
   const button = (inputAction: InputAction, action: ControlAction) => ({

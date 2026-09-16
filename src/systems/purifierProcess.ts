@@ -1,3 +1,5 @@
+import { isGameOver } from '../ui/gameOver'
+import { isWinActive } from '../ui/winScreen'
 import { Entity, engine } from '@dcl/sdk/ecs'
 
 import { PlatformConstruction, PurifierState } from '../components'
@@ -58,20 +60,22 @@ const CONVERSION_RATE_PER_SEC = 1 / SECONDS_TO_FULL_PURIFY
 // `constructionInteract`; this system is the passive simulation.
 
 export function purifierProcessSystem(dt: number): void {
+  if (isGameOver() || isWinActive()) return
   for (const [platform, , pc] of engine.getEntitiesWith(
     PurifierState,
     PlatformConstruction
   )) {
     const state = PurifierState.getMutable(platform)
     if (state.fireSec > 0) {
-      state.fireSec = Math.max(0, state.fireSec - dt)
+      const burningTime = Math.min(Math.max(0, dt), state.fireSec)
+      state.fireSec = Math.max(0, state.fireSec - burningTime)
 
       // Convert salt → fresh while there's salt to draw from AND the
       // output bowl isn't already full. The min() pair clamps the
       // delta so we never overshoot 0 on the input or 1 on the output
       // even when dt spikes.
       if (state.saltAmount > 0 && state.freshAmount < 1) {
-        const want = CONVERSION_RATE_PER_SEC * dt
+        const want = CONVERSION_RATE_PER_SEC * burningTime
         const delta = Math.min(want, state.saltAmount, 1 - state.freshAmount)
         state.saltAmount -= delta
         state.freshAmount += delta

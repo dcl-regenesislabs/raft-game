@@ -1,11 +1,13 @@
-import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
+import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
 import { equipInventorySlot } from '../../systems/nativeEquipment'
-import { getInventorySlot, getItemDisplayName } from '../items'
-import { HANDS_SLOT, getSelectedSlot, isSlotSelectable, getEquippableSlots } from '../inventoryState'
-import { HANDS_ICON } from '../theme'
+import { HANDS_SLOT,getEquippableSlots,getSelectedSlot,isSlotSelectable } from '../inventoryState'
+import { getInventorySlot,getItemDisplayName } from '../items'
 import { beginUiTouch } from '../mobileControlsState'
-import { UI_ACCENT, UI_INK, UI_MUTED, UI_CELL } from '../visualTheme'
+import { getMobileLayout } from '../mobileLayout'
 import { Panel } from '../panel'
+import { HANDS_ICON } from '../theme'
+import { UI_ACCENT,UI_CELL,UI_INK,UI_MUTED } from '../visualTheme'
+import { MenuList } from './MenuList'
 
 // Anchored directly below Change tool, not a fullscreen inventory modal.
 export function ToolPicker(): ReactEcs.JSX.Element {
@@ -15,12 +17,16 @@ export function ToolPicker(): ReactEcs.JSX.Element {
       <Panel
         uiTransform={{
           width: 232,
-          height: Math.max(62, Math.min(316, slots.length * 50 + 16)),
+          height: Math.max(62, Math.min(316, getMobileLayout(true).height - 140, slots.length * 54 + 16)),
           padding: 8,
           flexDirection: 'column'
         }}
       >
-        <UiEntity uiTransform={{ width: '100%', flexGrow: 1, flexDirection: 'column', overflow: 'scroll' }}>
+        <MenuList
+          id="tools"
+          height={Math.max(62, Math.min(316, getMobileLayout(true).height - 140, slots.length * 54 + 16)) - 16}
+          rowHeight={54}
+        >
           {slots.map((slot) => {
             const item = getInventorySlot(slot)
             const hands = slot === HANDS_SLOT
@@ -31,7 +37,7 @@ export function ToolPicker(): ReactEcs.JSX.Element {
                 key={slot}
                 uiTransform={{
                   width: '100%',
-                  height: 46,
+                  height: 50,
                   flexShrink: 0,
                   margin: { bottom: 4 },
                   padding: 6,
@@ -47,24 +53,29 @@ export function ToolPicker(): ReactEcs.JSX.Element {
               >
                 {item || hands ? (
                   <UiEntity
-                    uiTransform={{ width: 32, height: 32 }}
+                    uiTransform={{ width: 32, height: 32, flexShrink: 0 }}
                     uiBackground={{ textureMode: 'stretch', texture: { src: hands ? HANDS_ICON : item!.texture } }}
                   />
                 ) : (
-                  <Label value="—" fontSize={20} color={UI_MUTED} uiTransform={{ width: 32, height: 32 }} />
+                  <Label
+                    value="—"
+                    fontSize={20}
+                    color={UI_MUTED}
+                    uiTransform={{ width: 32, height: 32, flexShrink: 0 }}
+                  />
                 )}
                 <Label
                   value={hands ? 'Hands' : item ? getItemDisplayName(item) : `Empty slot ${slot + 1}`}
                   fontSize={14}
                   color={usable ? UI_INK : UI_MUTED}
                   textAlign="middle-left"
-                  uiTransform={{ width: 140, height: 32, margin: { left: 8 } }}
+                  uiTransform={{ flexGrow: 1, flexShrink: 1, height: 36, margin: { left: 8 } }}
                 />
-                {selected && <Label value="✓" fontSize={16} uiTransform={{ width: 20, height: 32 }} />}
+                {selected && <Label value="✓" fontSize={16} uiTransform={{ width: 20, height: 32, flexShrink: 0 }} />}
               </UiEntity>
             )
           })}
-        </UiEntity>
+        </MenuList>
       </Panel>
     </UiEntity>
   )

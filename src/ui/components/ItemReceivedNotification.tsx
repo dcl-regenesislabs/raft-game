@@ -1,3 +1,6 @@
+import { objectiveBottom } from '../progressionHud'
+import { isSandbox } from '../../progression/state'
+import { getNotification } from '../notification'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
 import { getItemReceivedView } from '../itemReceivedNotification'
@@ -26,9 +29,11 @@ export function ItemReceivedOverlay(): ReactEcs.JSX.Element | null {
     itemCount * ITEM_NOTIF_ICON_SIZE +
     Math.max(0, itemCount - 1) * ITEM_NOTIF_ICON_GAP
   const panelWidth = innerWidth + ITEM_NOTIF_PADDING_X * 2
+  const inset = isSandbox() ? ITEM_NOTIF_TOP_INSET : objectiveBottom()
+  if (!isSandbox() && getNotification()) return null
   const offscreenTop = -(ITEM_NOTIF_HEIGHT + ITEM_NOTIF_TOP_INSET)
   const top =
-    offscreenTop + (ITEM_NOTIF_TOP_INSET - offscreenTop) * view.slide
+    offscreenTop + (inset - offscreenTop) * view.slide
   return (
     <UiEntity
       uiTransform={{

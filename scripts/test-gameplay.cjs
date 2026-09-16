@@ -19,9 +19,17 @@ function load(p){
  }},{filename});return exports
 }
 function component(){const data=new Map();return {data,getOrNull:e=>data.get(e)??null,getMutable:e=>{if(!data.has(e))throw Error('missing entity');return data.get(e)},get:e=>data.get(e),getMutableOrNull:e=>data.get(e)??null,create:(e,v)=>data.set(e,v),deleteFrom:e=>data.delete(e)}}
-const PurifierState=component(),PlatformConstruction=component();const ecs={InputAction:{},inputSystem:{isPressed:()=>false},engine:{RootEntity:0,removeEntity:()=>{},getEntitiesWith:function*(...cs){for(const [e]of cs[0].data)if(cs.every(c=>c.data.has(e)))yield[e,...cs.map(c=>c.data.get(e))]}}}
+let fireHeld=false, fireDown=false, fireUp=false
+const PurifierState=component(),PlatformConstruction=component();const ecs={InputAction:{IA_POINTER:0},PointerEventType:{PET_DOWN:0,PET_UP:1},inputSystem:{isPressed:()=>fireHeld,isTriggered:(_,type)=>type===1?fireUp:fireDown},engine:{RootEntity:0,removeEntity:()=>{},getEntitiesWith:function*(...cs){for(const [e]of cs[0].data)if(cs.every(c=>c.data.has(e)))yield[e,...cs.map(c=>c.data.get(e))]}}}
+let dead=false, lobby=false, low=0
+mock('ui/gameOver.ts',{isGameOver:()=>dead,triggerGameOver:()=>{dead=true}})
+mock('ui/winScreen.ts',{isWinActive:()=>false})
+mock('ui/craftContext.ts', { recipeMatchesContext: () => true })
+mock('expansion/runtime.ts',{hasCraftStation:()=>true,resetExpansion:()=>{}})
 mock('factories/heldItem.ts',{setHeldItem:()=>{},setHeldFood:()=>{},setHeldCup:()=>{},setHeldViewmodelHidden:()=>{}})
-mock('ui/inventoryToggle.ts',{isInventoryOpen:()=>false})
+mock('ui/inventoryToggle.ts',{isInventoryOpen:()=>false,setInventoryOpen:()=>{}})
+for (const [file,fn] of [['fishingRod','cancelFishingForEquipmentChange'],['hookThrower','cancelHookCharge'],['anchorThrower','cancelAnchorCharge'],['constructionPlacement','cancelConstructionPreview'],['raftBuilder','cancelRaftPreview']]) mock('systems/'+file+'.ts',{[fn]:()=>{}})
+mock('ui/actionButton.ts',{actionButtonJustPressed:()=>false,isActionButtonPressed:()=>false})
 mock('ui/notification.ts',{showNotification:()=>{}})
 mock('ui/itemReceivedNotification.ts',{notifyItemReceived:()=>{}})
 mock('audio/sfx.ts',{playSfx:()=>{}})
@@ -38,6 +46,19 @@ test('Insufficient materials do not craft or advance tutorial',()=>{assert.equal
 test('Rope recipe deducts two plants and advances tutorial',()=>{bank.bankGarbageKind('plants');assert(craft.startCraft('rope'));assert.equal(inv.getCollectedCount('plants'),0);assert.equal(inv.getCollectedCount('rope'),1);assert(tutorial.hasTutorialAction('rope'))})
 test('Hammer recipe spends materials and creates equippable tool',()=>{inv.addCollected('wood',2);assert(craft.startCraft('hammer'));assert.equal(inv.getCollectedCount('wood'),0);assert.equal(inv.getCollectedCount('rope'),0);assert(slot('hammer')>=0);assert(tutorial.hasTutorialAction('hammer'))})
 test('Guide hide/reopen retains earlier progress',()=>{tutorial.dismissTutorial();assert.equal(tutorial.isTutorialEnabled(),false);tutorial.showTutorial();assert(tutorial.hasTutorialAction('hammer'))})
+test('Full backpack cannot spend materials on a lost craft output',()=>{
+ reset(); inv.addCollected('plants',4);
+ while(items.serializeInventoryLayout().filter(Boolean).length<30) inv.addCollected('hammer',1);
+ assert.equal(craft.startCraft('rope'),false); assert.equal(inv.getCollectedCount('plants'),4);
+ assert.equal(inv.addCollected('metal',1),0); assert.equal(inv.getCollectedCount('metal'),0);
+ reset()
+})
+test('Craft may use the slot freed by its last material',()=>{
+ reset(); inv.addCollected('plants',2);
+ while(items.serializeInventoryLayout().filter(Boolean).length<30) inv.addCollected('hammer',1);
+ assert.equal(craft.startCraft('rope'),true); assert.equal(inv.getCollectedCount('rope'),1); assert.ok(slot('rope')>=0);
+ reset()
+})
 test('Every craft recipe resolves an inventory output and material definitions',()=>{for(const r of recipes.CRAFTABLE_ITEMS){assert(items.getCatalogItem(r.id),r.id);for(const c of r.cost)assert(items.getCatalogItem(c.materialId),c.materialId)}})
 test('Crafting cup, filling, drinking and retaining empty cup',()=>{inv.addCollected('wood',1);inv.addCollected('plastic',1);assert(craft.startCraft('cup'));const i=slot('cup');assert(i>=0);assert(inv.transmuteContainerSlot(i,'saltWater'));assert(tutorial.hasTutorialAction('saltWater'));assert(inv.transmuteContainerSlot(i,'freshWater'));assert(tutorial.hasTutorialAction('freshWater'));stats.setStat('thirst',0.5);assert(inv.drinkContainerSlot(i,'freshWater'));assert.equal(stats.getStat('thirst'),0.75);assert.equal(items.getInventorySlot(i).id,'cup');assert(tutorial.hasTutorialAction('drink'))})
 test('Salt water reduces thirst and does not complete drink objective',()=>{tutorial.restartTutorial();const i=slot('cup');inv.transmuteContainerSlot(i,'saltWater');stats.setStat('thirst',0.5);assert(inv.drinkContainerSlot(i,'saltWater'));assert.equal(stats.getStat('thirst'),0.25);assert.equal(tutorial.hasTutorialAction('drink'),false)})
@@ -64,8 +85,7 @@ const cooking=load('ui/cookSession.ts')
 test('Cooking menu preview does not spend ingredients',()=>{reset();cells.clearCookSlots();inv.addCollected('sardines',2);inv.addCollected('wood',1);assert(cells.pickIngredient('sardines'));assert(cells.placeInInputCell(0));assert.equal(inv.getCollectedCount('sardines'),2);assert.equal(cells.getMatchingRecipe().id,'grilled_sardines')})
 test('Cooking requires fuel and a valid grill',()=>{cooking.setActiveCookGrill(10);PlatformConstruction.create(10,{child:11,yawDeg:0});assert.equal(cooking.canStartCook(),false);assert(cells.pickIngredient('wood'));assert(cells.placeInFuelCell());assert(cooking.canStartCook())})
 test('Starting cooking consumes exact recipe quantities and prevents double cooking',()=>{const r=cells.getMatchingRecipe();assert(cooking.startCook());assert.equal(inv.getCollectedCount('wood'),0);assert.equal(inv.getCollectedCount('sardines'),2-r.ingredients[0].amount);assert(ActiveCook.getOrNull(10));assert.equal(cooking.startCook(),false)})
-let dead=false, lobby=false, low=0
-mock('ui/gameOver.ts',{isGameOver:()=>dead,triggerGameOver:()=>{dead=true}})
+
 mock('ui/startupGate.ts',{isStartupGateActive:()=>lobby})
 mock('systems/eventScheduler.ts',{notifyHungerCrossedLow:()=>{low++}})
 const survival=load('systems/survivalDrain.ts')
@@ -99,6 +119,31 @@ test('Hands unequips without consuming a backpack slot and can re-equip',()=>{
  assert.equal(inv.getBottomBarSelectedLabel(),'Hands')
  inv.hydrateSelectedSlot(-1);assert.equal(inv.serializeSelectedSlot(),-1)
  inv.selectSlot(0);assert.equal(inv.getSelectedSlot(),0);assert.equal(items.getSlotDurability(0),durability)
+})
+
+test('Only eating cooked food completes the campaign meal milestone',()=>{
+ reset();const progress=load('progression/state.ts');progress.resetProgress('campaign')
+ inv.addCollected('potato',1);inv.consumeFoodById('potato');assert(!progress.hasProgress('cookedMeal'))
+ inv.addCollected('roasted_potato',1);inv.consumeFoodById('roasted_potato');assert(progress.hasProgress('cookedMeal'))
+ tutorial.dismissTutorial();assert(progress.hasProgress('cookedMeal'));progress.resetProgress('sandbox')
+})
+test('Ammo batches check the entire output cap before spending',()=>{
+ reset();const cap=items.getCatalogItem('arrows').maxStackSize
+ inv.addCollected('arrows',cap-3);inv.addCollected('wood',10);inv.addCollected('metal',10)
+ assert(!craft.startCraft('arrows'));assert.equal(inv.getCollectedCount('wood'),10)
+ inv.subtractCollected('arrows',1);assert(craft.startCraft('arrows'));assert.equal(inv.getCollectedCount('arrows'),cap)
+})
+test('Crafting equipment immediately equips it; resources and ammo keep that selection',()=>{
+ reset();inv.addCollected('wood',20);inv.addCollected('plants',10);inv.addCollected('metal',10);assert(craft.startCraft('rope'));assert(craft.startCraft('hammer'));assert.equal(items.getInventorySlot(inv.getSelectedSlot()).id,'hammer');
+ assert(craft.startCraft('rope'));assert.equal(items.getInventorySlot(inv.getSelectedSlot()).id,'hammer');assert(craft.startCraft('arrows'));assert.equal(items.getInventorySlot(inv.getSelectedSlot()).id,'hammer');
+ inv.addCollected('plastic',4);assert(craft.startCraft('cup'));assert.equal(items.getInventorySlot(inv.getSelectedSlot()).id,'cup');
+})
+test('Consuming the final placed item cannot pass its press to the fallback hook',()=>{
+ reset();const gate=load('ui/mobileControlsState.ts'),fire=load('systems/toolFire.ts');
+ inv.addCollected('purifier',1);inv.selectSlot(slot('purifier'));fireHeld=fireDown=fireUp=false;gate.mobileUiInputSystem(1);
+ fireHeld=fireDown=true;assert(fire.toolFireJustPressed());inv.subtractCollected('purifier',1);assert.equal(items.getInventorySlot(inv.getSelectedSlot()).id,'hook');assert(!fire.toolFireJustPressed(),'same-frame placement press leaked');
+ fireDown=false;gate.mobileUiInputSystem(2);assert(gate.isEquipmentInputBlocked(),'held press must remain blocked beyond cooldown');
+ fireHeld=false;fireUp=true;gate.mobileUiInputSystem(.01);fireUp=false;fireHeld=fireDown=true;assert(fire.toolFireJustPressed());fireHeld=fireDown=false;gate.mobileUiInputSystem(1);
 })
 for(const r of results)console.log(r.status+' '+r.name+(r.error?' — '+r.error:''))
 

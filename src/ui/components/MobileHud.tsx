@@ -1,28 +1,28 @@
-import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
-import { getMobileLayout } from '../mobileLayout'
-import { getStat } from '../statsBars'
-import { HANDS_ICON, STAT_ICON_TEXTURES, INVENTORY_BUTTON_ICON, CRAFT_BUTTON_ICON, SYSTEM_BUTTON_ICON } from '../theme'
-import {
-  toggleInventory,
-  openEquipmentPicker,
-  isEquipmentPickerOpen,
-  setInventoryOpen,
-  showBackpack
-} from '../inventoryToggle'
-import { toggleCraft } from '../craftToggle'
-import { toggleSystemMenu } from '../systemToggle'
-import { beginUiTouch } from '../mobileControlsState'
-import { getSelectedSlot } from '../inventoryState'
-import { getInventorySlot, getItemDisplayName } from '../items'
-import { UI_GLASS, UI_BORDER, UI_GOLD } from '../visualTheme'
-import { Tutorial } from './Tutorial'
-import { ToolPicker } from './ToolPicker'
-import { PLATFORM_COST, getPlatformMaterialAvailable } from '../../systems/raft/platformCost'
+import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
+import { isFishingLineActive } from '../../systems/fishingRod'
+import { PLATFORM_COST,getPlatformMaterialAvailable } from '../../systems/raft/platformCost'
 import { getRaftBuilderMode } from '../../systems/raftBuilder'
 import { resolveMobileControls } from '../../systems/touchControls'
-import { isFishingLineActive } from '../../systems/fishingRod'
+import { toggleCraft } from '../craftToggle'
+import { getSelectedSlot } from '../inventoryState'
+import {
+isEquipmentPickerOpen,
+openEquipmentPicker,
+setInventoryOpen,
+showBackpack,
+toggleInventory
+} from '../inventoryToggle'
+import { getInventorySlot,getItemDisplayName } from '../items'
+import { beginUiTouch } from '../mobileControlsState'
+import { getMobileLayout } from '../mobileLayout'
+import { getStat } from '../statsBars'
+import { toggleSystemMenu } from '../systemToggle'
+import { CRAFT_BUTTON_ICON,HANDS_ICON,INVENTORY_BUTTON_ICON,STAT_ICON_TEXTURES,SYSTEM_BUTTON_ICON } from '../theme'
+import { UI_BORDER,UI_GLASS,UI_GOLD,UI_INK } from '../visualTheme'
 import { DurabilityBar } from './DurabilityBar'
+import { ToolPicker } from './ToolPicker'
+import { Tutorial } from './Tutorial'
 
 const WIDTH = 392
 const VITALS = [
@@ -121,19 +121,19 @@ export function MobileHud(): ReactEcs.JSX.Element {
           }}
         >
           <UiEntity uiTransform={{ width: 40, height: 44 }}>
-            {(
-
+            {
               <UiEntity
                 uiTransform={{ width: 38, height: 38 }}
                 uiBackground={{ textureMode: 'stretch', texture: { src: item?.texture ?? HANDS_ICON } }}
               />
-            )}
+            }
             <DurabilityBar slotIndex={getSelectedSlot()} />
           </UiEntity>
           <UiEntity uiTransform={{ width: 118, height: 40, flexDirection: 'column' }}>
             <Label
               value={item ? getItemDisplayName(item) : 'Hands'}
               fontSize={16}
+              color={UI_INK}
               textAlign="middle-left"
               uiTransform={{ width: 118, height: 22 }}
             />
@@ -157,8 +157,6 @@ export function MobileHud(): ReactEcs.JSX.Element {
           uiTransform={{ positionType: 'absolute', position: { top: 138, right: 0 }, width: WIDTH, height: 22 }}
         />
       )}
-
-
     </UiEntity>
   )
 }

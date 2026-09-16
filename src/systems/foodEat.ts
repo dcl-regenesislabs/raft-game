@@ -1,3 +1,4 @@
+import { getInventorySlot } from '../ui/items'
 import { Transform } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
@@ -74,7 +75,7 @@ export function foodEatSystem(dt: number): void {
   if (cooldown > 0) cooldown = Math.max(0, cooldown - dt)
 
   const heldKind = getHeldItemKind()
-  const isFoodHeld = heldKind === 'food'
+  const isFoodHeld = heldKind === 'food' && getInventorySlot(getSelectedSlot())?.consumable === true
   const isDrinkContainerHeld = heldKind === 'cup' && isDrinkable(getHeldFoodId())
   const isEdibleHeld = isFoodHeld || isDrinkContainerHeld
 

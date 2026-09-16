@@ -1,0 +1,258 @@
+{
+ "seq": 19,
+ "progression": {
+  "version": 1,
+  "mode": "progression-test",
+  "events": [
+   "collect",
+   "expand",
+   "drink",
+   "cookedMeal",
+   "plate"
+  ],
+  "wins": 3,
+  "seconds": 12.46683846199999,
+  "recovery": 0,
+  "salvage": 4,
+  "seed": 1689612113,
+  "pending": {},
+  "metrics": {
+   "fixtureChapter": 6,
+   "menuSeconds": 1.356368308,
+   "activeSeconds": 11.110470153999998,
+   "retries": 1
+  },
+  "milestones": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "dead": false,
+ "checkpoint": true,
+ "context": null,
+ "recipes": [
+  "rope",
+  "hook",
+  "hammer",
+  "spear",
+  "purifier",
+  "grill",
+  "fishingRod",
+  "cup",
+  "repairKit",
+  "bandage",
+  "workbench"
+ ],
+ "counts": [
+  {
+   "id": "potato",
+   "count": 2
+  },
+  {
+   "id": "hammer",
+   "count": 1
+  },
+  {
+   "id": "cup",
+   "count": 1
+  },
+  {
+   "id": "spear",
+   "count": 1
+  },
+  {
+   "id": "wood",
+   "count": 20
+  },
+  {
+   "id": "metal",
+   "count": 20
+  },
+  {
+   "id": "plastic",
+   "count": 20
+  },
+  {
+   "id": "plants",
+   "count": 20
+  },
+  {
+   "id": "rope",
+   "count": 20
+  },
+  {
+   "id": "metalPlate",
+   "count": 10
+  },
+  {
+   "id": "bolts",
+   "count": 20
+  },
+  {
+   "id": "harpoons",
+   "count": 20
+  }
+ ],
+ "devices": [
+  {
+   "e": 66150,
+   "kind": "rescueRadio",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": true
+  },
+  {
+   "e": 66163,
+   "kind": "antennaMast",
+   "health": 160,
+   "maxHealth": 160,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": false
+  },
+  {
+   "e": 66162,
+   "kind": "generator",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 77.75,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": false
+  },
+  {
+   "e": 743,
+   "kind": "workbench",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": false
+  },
+  {
+   "e": 748,
+   "kind": "smelter",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 90,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": false
+  },
+  {
+   "e": 756,
+   "kind": "armoryBench",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": false
+  },
+  {
+   "e": 761,
+   "kind": "alarmBell",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": false
+  },
+  {
+   "e": 766,
+   "kind": "engineeringBench",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": false
+  },
+  {
+   "e": 771,
+   "kind": "ballista",
+   "health": 180,
+   "maxHealth": 180,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 20,
+   "active": false,
+   "installed": false
+  },
+  {
+   "e": 776,
+   "kind": "ammoCrate",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": false
+  },
+  {
+   "e": 781,
+   "kind": "researchTable",
+   "health": 100,
+   "maxHealth": 100,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 0,
+   "active": false,
+   "installed": true
+  },
+  {
+   "e": 786,
+   "kind": "harpoonTower",
+   "health": 220,
+   "maxHealth": 220,
+   "fuel": 0,
+   "progress": 0,
+   "stock": 0,
+   "queued": 0,
+   "ammo": 20,
+   "active": false,
+   "installed": false
+  }
+ ]
+}

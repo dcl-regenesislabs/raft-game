@@ -1,3 +1,4 @@
+import { removePrototypeEntity } from '../expansion/sprites'
 import {
   ColliderLayer,
   Entity,
@@ -140,11 +141,11 @@ export function createPlatform(
 export function destroyPlatformEntity(entity: Entity): void {
   const construction = PlatformConstruction.getOrNull(entity)
   if (construction !== null) {
-    engine.removeEntity(construction.child)
+    removePrototypeEntity(construction.child)
     // `aux` is a legacy slot — newer grills don't populate it, but
     // older save data / in-flight scenes may. Cheap to keep guarded.
     if (construction.aux !== engine.RootEntity) {
-      engine.removeEntity(construction.aux)
+      removePrototypeEntity(construction.aux)
     }
   }
   // Purifier water-fill cylinders are top-level entities parented to the

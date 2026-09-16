@@ -1,3 +1,5 @@
+import { getExpansionItem } from '../expansion/catalog'
+import { paintSprite, spriteSize } from '../expansion/sprites'
 import {
   Entity,
   GltfContainer,
@@ -28,6 +30,7 @@ export type SpectralPalette = {
 }
 
 type State = {
+  spriteKind?: string
   isVisible: boolean
   blinkPhase: number
   dim: Color4
@@ -58,6 +61,9 @@ export function createSpectralConstruction(
     position: Vector3.create(0, 0, 0),
     scale: Vector3.create(0, 0, 0)
   })
+  const spriteKind = getExpansionItem(kind) ? kind : undefined
+  if (spriteKind) paintSprite(ghost, spriteKind, dim)
+  else {
   GltfContainer.create(ghost, { src: getConstructionGlb(kind) })
   GltfNodeModifiers.create(ghost, {
     modifiers: [
@@ -68,13 +74,15 @@ export function createSpectralConstruction(
       }
     ]
   })
+  }
   states.set(ghost, {
+    spriteKind,
     isVisible: false,
     blinkPhase: 0,
     dim,
     bright,
-    visualSize,
-    deckOffsetM: getConstructionDeckOffset(kind)
+    visualSize: spriteKind ? spriteSize(kind) : visualSize,
+    deckOffsetM: spriteKind ? 0.2 + spriteSize(kind) / 2 : getConstructionDeckOffset(kind)
   })
   return ghost
 }
@@ -134,6 +142,8 @@ function lerpColor(a: Color4, b: Color4, t: number): Color4 {
 }
 
 function setSpectralColor(ghost: Entity, color: Color4): void {
+  const kind = states.get(ghost)?.spriteKind
+  if (kind) { paintSprite(ghost, kind, color); return }
   const mods = GltfNodeModifiers.getMutable(ghost)
   mods.modifiers = [
     {

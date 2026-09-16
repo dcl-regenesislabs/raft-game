@@ -1,3 +1,5 @@
+import { campaignMode, campaignRandom, isSandbox, nextSalvage } from '../progression/state'
+const random = () => campaignMode() === 'progression-test' ? campaignRandom() : Math.random()
 import { Vector3 } from '@dcl/sdk/math'
 
 import {
@@ -51,11 +53,12 @@ const MIN_UPSTREAM_GAP = 6
 
 // State — module-local because there's only ever one spawner. Initialized
 // so the first item fires almost immediately on scene start.
+let spawnedCount = 0
 let elapsed = SPAWN_INTERVAL_MEAN_S
 let nextInterval = SPAWN_INTERVAL_MEAN_S
 
 function rollNextInterval(): number {
-  const jitter = (Math.random() * 2 - 1) * SPAWN_INTERVAL_JITTER_S
+  const jitter = (random() * 2 - 1) * SPAWN_INTERVAL_JITTER_S
   return Math.max(0.5, SPAWN_INTERVAL_MEAN_S + jitter)
 }
 
@@ -97,7 +100,7 @@ function spawnOne(): void {
   // dead-centre (passing right over the raft) to the corridor edge. No
   // bypass enforced; items are colliderless so they drift through the
   // raft footprint visually, which is exactly the desired behaviour.
-  let lateral = (Math.random() * 2 - 1) * lateralHalfWidth
+  let lateral = !isSandbox() && spawnedCount++ % 3 === 0 ? 0 : (random() * 2 - 1) * lateralHalfWidth
   let lateralX = anchorX + perpX * lateral
   let lateralZ = anchorZ + perpZ * lateral
   let upstreamMax = maxFlowDistance(lateralX, lateralZ, -flowX, -flowZ, sceneSize, MAP_EDGE_SPAWN_MARGIN)
@@ -120,7 +123,7 @@ function spawnOne(): void {
   // starts at most `upstreamMax` metres along -flow from the lateral
   // anchor — `maxFlowDistance` already bakes in MAP_EDGE_SPAWN_MARGIN.
   const baseSpawnDistance = Math.min(desiredSpawnDistance, upstreamMax)
-  const upstreamJitter = (Math.random() * 2 - 1) * UPSTREAM_JITTER_M
+  const upstreamJitter = (random() * 2 - 1) * UPSTREAM_JITTER_M
   const spawnDistance = clamp(
     baseSpawnDistance + upstreamJitter,
     flowHalf + MIN_UPSTREAM_GAP,
@@ -134,7 +137,7 @@ function spawnOne(): void {
     lateralZ + flowZ * along
   )
 
-  const speed = DRIFT_SPEED + (Math.random() * 2 - 1) * DRIFT_SPEED_JITTER
+  const speed = DRIFT_SPEED + (random() * 2 - 1) * DRIFT_SPEED_JITTER
   const velocity = Vector3.create(flowX * speed, 0, flowZ * speed)
 
   // Lifetime: time to drift from spawn through the lateral pos and on to
@@ -143,7 +146,7 @@ function spawnOne(): void {
   const totalDistance = spawnDistance + downstreamMax
   const maxLifetime = totalDistance / Math.max(speed, 0.5) + 5
 
-  const kind = pickWeightedKind(GARBAGE_KINDS)
+  const kind = isSandbox() ? pickWeightedKind(GARBAGE_KINDS) : nextSalvage()
 
   createFloatingGarbage({
     kind,
@@ -179,3 +182,5 @@ function clamp(value: number, min: number, max: number): number {
   if (max < min) return min
   return value < min ? min : value > max ? max : value
 }
+
+export function resetGarbageSpawner(): void { elapsed = SPAWN_INTERVAL_MEAN_S; nextInterval = SPAWN_INTERVAL_MEAN_S; spawnedCount = 0 }

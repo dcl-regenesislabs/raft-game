@@ -1,3 +1,5 @@
+import { ambientAllowed, assaultActive } from '../progression/state'
+import { damageStructure } from '../expansion/runtime'
 import { Animator, Entity, Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
@@ -107,7 +109,7 @@ export function setSharkAttacksSuppressed(value: boolean): void {
 // suppression is active. The scheduler retries every frame until this
 // reports success.
 export function triggerSharkAttack(): boolean {
-  if (attacksSuppressed) return false
+  if (attacksSuppressed || !ambientAllowed() || assaultActive()) return false
   if (anySharkAttacking()) return false
   if (!hasAttackablePlatform()) return false
   const choice = selectAttack()
@@ -569,7 +571,7 @@ function advanceAttack(entity: Entity, dt: number): void {
     if (attack.elapsed >= SHARK_BITE_DURATION_S) {
       stopBite(entity)
       if (Platform.getOrNull(target) !== null) {
-        destroyPlatformEntity(target)
+        damageStructure(target, 50)
       }
       const tr = Transform.get(entity)
       attackCache.set(entity, {
@@ -664,4 +666,17 @@ function lerpV3(a: Vector3, b: Vector3, t: number): Vector3 {
     a.y + (b.y - a.y) * t,
     a.z + (b.z - a.z) * t
   )
+}
+
+export function cancelSharkAttacks(): void {
+  for (const [entity, attack] of engine.getEntitiesWith(SharkAttack)) {
+    if (PlatformUnderAttack.getOrNull(attack.target)) PlatformUnderAttack.deleteFrom(attack.target)
+    if (Platform.getOrNull(attack.target)) tintPlatform(attack.target, 0)
+    stopBite(entity)
+    const tr = Transform.get(entity)
+    attackCache.set(entity, { startPos: Vector3.create(tr.position.x, tr.position.y, tr.position.z), returnStartRot: copyRotation(tr.rotation) })
+    const mutable = SharkAttack.getMutable(entity)
+    mutable.phase = SharkAttackPhase.Return
+    mutable.elapsed = 0
+  }
 }

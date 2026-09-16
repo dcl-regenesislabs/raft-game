@@ -1,6 +1,6 @@
 import { InputAction } from '@dcl/sdk/ecs'
 import { INVENTORY_TOTAL_SLOTS } from '../ui/items'
-import { HANDS_SLOT, isSlotSelectable, selectSlot } from '../ui/inventoryState'
+import { HANDS_SLOT, isSlotSelectable, selectSlot, getSlotItem } from '../ui/inventoryState'
 import { setInventoryOpen } from '../ui/inventoryToggle'
 import { beginUiTouch } from '../ui/mobileControlsState'
 import { cancelFishingForEquipmentChange } from './fishingRod'
@@ -27,4 +27,13 @@ export function equipInventorySlot(slot: number): boolean {
   cancelRaftPreview()
   selectSlot(slot)
   return true
+}
+
+// Craft output uses the same cancellation and input protection as the picker.
+// Materials/ammunition have no equip action and leave the current tool alone.
+export function equipCraftedItem(id: string): boolean {
+  for (let slot = 0; slot < INVENTORY_TOTAL_SLOTS; slot++) {
+    if (getSlotItem(slot)?.id === id && isSlotSelectable(slot)) return equipInventorySlot(slot)
+  }
+  return false
 }

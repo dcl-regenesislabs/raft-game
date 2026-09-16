@@ -46,7 +46,7 @@ import { computeWobble } from '../utils/wobble'
 const HOOK_ITEM_ID = 'hook'
 
 function isHookEquipped(): boolean {
-  return getSlotItem(getSelectedSlot())?.id === HOOK_ITEM_ID
+  return ['hook', 'metalHook'].includes(getSlotItem(getSelectedSlot())?.id ?? '')
 }
 
 const CAMERA_FORWARD = Vector3.create(0, 0, 1)

@@ -27,7 +27,7 @@ export function setStat(kind: StatKind, value: number): void {
 }
 
 export function adjustStat(kind: StatKind, delta: number): void {
-  setStat(kind, stats[kind] + delta)
+  stats[kind] = Math.max(0, Math.min(delta < 0 ? STAT_OVERCAP_MAX : Math.max(1, stats[kind]), stats[kind] + delta))
 }
 
 // Restore a stat by `base` (clamped at the normal 1.0 cap) and then add
@@ -39,7 +39,7 @@ export function restoreStat(
   base: number,
   bonus: number = 0
 ): void {
-  const afterBase = Math.max(0, Math.min(1, stats[kind] + base))
+  const afterBase = Math.max(0, Math.min(Math.max(1, stats[kind]), stats[kind] + base))
   const afterBonus = Math.max(0, Math.min(STAT_OVERCAP_MAX, afterBase + bonus))
   stats[kind] = afterBonus
 }

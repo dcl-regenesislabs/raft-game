@@ -1,3 +1,6 @@
+import { AMMO_BATCHES } from '../progression/config'
+import { EXPANSION_ITEMS, expansionIcon } from '../expansion/catalog'
+import type { CraftCategoryId } from './craftCategories'
 // Catalog of items the player can craft. Each entry binds the recipe (which
 // materials and how many) to the metadata the craft panel needs to display
 // it: name, flavor description, and an icon texture.
@@ -14,6 +17,7 @@ export interface MaterialCost {
 export interface CraftableItem {
   id: string
   name: string
+  category: CraftCategoryId
   description: string
   texture: string
   cost: readonly MaterialCost[]
@@ -21,22 +25,23 @@ export interface CraftableItem {
   // session falls back to the default (currently 0 — instant). Set a
   // positive value to re-introduce a HUD-locking timer for a specific
   // recipe.
+  station?: string
   craftSec?: number
+  outputCount?: number
 }
 
 export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   {
     id: 'rope',
+    category: 'resources',
     name: 'ROPE',
-    description:
-      'Two handfuls of seaweed twisted into a length of rope. The backbone of every tool you\'ll build.',
+    description: "Two handfuls of seaweed twisted into a length of rope. The backbone of every tool you'll build.",
     texture: 'images/hud/items/rope.png',
-    cost: [
-      { materialId: 'plants', amount: 2 }
-    ]
+    cost: [{ materialId: 'plants', amount: 2 }]
   },
   {
     id: 'hook',
+    category: 'tools',
     name: 'HOOK',
     description:
       'A whittled wooden hook lashed to a length of rope. Snags floating debris and the smaller fish that drift past the raft.',
@@ -48,9 +53,9 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   },
   {
     id: 'hammer',
+    category: 'tools',
     name: 'HAMMER',
-    description:
-      'A sturdy building hammer for raising platforms and lashing your raft together.',
+    description: 'A sturdy building hammer for raising platforms and lashing your raft together.',
     texture: 'images/hud/items/hammer.png',
     cost: [
       { materialId: 'wood', amount: 2 },
@@ -59,9 +64,9 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   },
   {
     id: 'spear',
+    category: 'weapons',
     name: 'WOODEN SPEAR',
-    description:
-      'A pointed wooden shaft for warding off circling sharks at close range.',
+    description: 'A pointed wooden shaft for warding off circling sharks at close range.',
     texture: 'images/hud/items/spear.png',
     cost: [
       { materialId: 'wood', amount: 4 },
@@ -70,9 +75,9 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   },
   {
     id: 'purifier',
+    category: 'food-water',
     name: 'WATER PURIFIER',
-    description:
-      'Boils sea water through layers of rope-woven mesh and salvaged plastic to make it drinkable.',
+    description: 'Boils sea water through layers of rope-woven mesh and salvaged plastic to make it drinkable.',
     texture: 'images/hud/items/water-purifier.png',
     cost: [
       { materialId: 'wood', amount: 3 },
@@ -83,9 +88,9 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   },
   {
     id: 'grill',
+    category: 'food-water',
     name: 'GRILL',
-    description:
-      'A scrap-metal cooking station. Char fish and meat into proper meals.',
+    description: 'A scrap-metal cooking station. Char fish and meat into proper meals.',
     texture: 'images/hud/items/grill.png',
     cost: [
       { materialId: 'metal', amount: 2 },
@@ -95,9 +100,9 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   },
   {
     id: 'fishingRod',
+    category: 'tools',
     name: 'FISHING ROD',
-    description:
-      'A real rod with a long line. Casts further than the throw hook and pulls in larger fish.',
+    description: 'A real rod with a long line. Casts further than the throw hook and pulls in larger fish.',
     texture: 'images/hud/items/fishing-rod.png',
     cost: [
       { materialId: 'wood', amount: 3 },
@@ -119,9 +124,9 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   // },
   {
     id: 'cup',
+    category: 'food-water',
     name: 'CUP',
-    description:
-      'A simple vessel carved from wood and lined with plastic. Holds water and other liquids.',
+    description: 'A simple vessel carved from wood and lined with plastic. Holds water and other liquids.',
     texture: 'images/hud/items/cup.png',
     cost: [
       { materialId: 'wood', amount: 1 },
@@ -130,9 +135,10 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   },
   {
     id: 'anchor',
+    station: 'engineeringBench',
+    category: 'navigation',
     name: 'ANCHOR',
-    description:
-      'A heavy metal weight on a rope. Throw it at a drifting island to haul it close enough to board.',
+    description: 'A heavy metal weight on a rope. Throw it at a drifting island to haul it close enough to board.',
     texture: 'images/hud/items/anchor-v3.png',
     cost: [
       { materialId: 'metal', amount: 6 },
@@ -141,16 +147,23 @@ export const CRAFTABLE_ITEMS: readonly CraftableItem[] = [
   },
   {
     id: 'storage',
+    station: 'workbench',
+    category: 'stations',
     name: 'STORAGE',
-    description:
-      'A scrap-and-iron chest. Stash supplies on board so your inventory stays clear for tools and food.',
+    description: 'A scrap-and-iron chest. Stash supplies on board so your inventory stays clear for tools and food.',
     texture: 'images/hud/items/storage.png',
     cost: [
       { materialId: 'wood', amount: 4 },
       { materialId: 'metal', amount: 2 },
       { materialId: 'rope', amount: 2 }
     ]
-  }
+  },
+  // Retired consumables retain legacy inventory support but are no longer offered.
+  ...EXPANSION_ITEMS.filter((item) => !['metalPlate', 'bandage', 'repairKit'].includes(item.id)).map((item) => ({
+    ...item,
+    texture: expansionIcon(item),
+    outputCount: AMMO_BATCHES[item.id] ?? 1
+  }))
 ]
 
 export function getCraftableById(id: string): CraftableItem | null {

@@ -1,64 +1,32 @@
-import { getMobileLayout } from '../mobileLayout'
-import { UI_PAPER, UI_BORDER, UI_CELL, UI_MUTED } from '../visualTheme'
-import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
+import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
+import { getMobileLayout } from '../mobileLayout'
+import { UI_BORDER,UI_CELL,UI_GOLD,UI_MUTED,UI_PAPER } from '../visualTheme'
 
-import {
-  closeStorageMenu,
-  getActiveStorage,
-  isStorageOpen
-} from '../storageToggle'
-import {
-  getStoragePicked,
-  getStorageSlotCount,
-  pressStorageSlot,
-  readStorageSlot
-} from '../storageSession'
 import { getCatalogItem } from '../items'
 import { Panel } from '../panel'
+import { getStoragePicked,getStorageSlotCount,pressStorageSlot,readStorageSlot } from '../storageSession'
+import { closeStorageMenu,getActiveStorage,isStorageOpen } from '../storageToggle'
 import {
-  CRAFT_TEXT_COLOR,
-  COUNT_BADGE_BG,
-  COUNT_BADGE_FG,
-  GLOW_ALPHA_PEAK_BONUS,
-  GLOW_COLOR,
-  INVENTORY_CELL_CENTERS_PCT,
-  INVENTORY_CELL_SIZE_PCT,
-  INVENTORY_GRID_CELLS,
-  INVENTORY_ITEM_INSET_PCT,
-  INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED,
-  INVENTORY_PANEL_TEXTURE
+COUNT_BADGE_BG,
+COUNT_BADGE_FG,
+CRAFT_TEXT_COLOR,
+GLOW_ALPHA_PEAK_BONUS,
+GLOW_COLOR,
+INVENTORY_GRID_CELLS,
+INVENTORY_ITEM_INSET_PCT,
+INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED
 } from '../theme'
+import { CloseButton } from './CloseButton'
+import { InventoryWithBar } from './InventoryWithBar'
 
 // Storage menu uses tighter padding than the craft menu — there's no
 // long materials list to breathe around, just two grids side by side, so
 // large frame insets just look like wasted border.
 const STORAGE_GRID_SIZE = 400
 const STORAGE_PANEL_PADDING_X = 16
-const STORAGE_PANEL_PADDING_TOP = 8
 const STORAGE_PANEL_PADDING_BOTTOM = 12
-// Each grid's wood-frame texture eats ~11% of its width as decorative
-// border. With 400px grids that's ~44px of dead space on each inner edge,
-// so we slide the right pane left to overlap the two frames into one.
-const STORAGE_PANE_OVERLAP = -40
-import { shakeOffset } from '../utils/shake'
-import { CloseButton } from './CloseButton'
-import { InventoryWithBar } from './InventoryWithBar'
-
-// Dual-pane storage panel. Renders nothing while the menu is closed.
-//
-// Layout:
-//   [ player inventory grid (25 slots 5..29) ]   →   [ storage grid (25 slots) ]
-//
-// The player's existing bottom bar stays rendered underneath through the
-// normal HUD chain, so all 30 player slots are reachable while the menu
-// is open. Click handling for the player pane lives in InventoryPanel /
-// BottomBar — they detect `isStorageOpen()` and route to
-// `pressStorageSlot('player', i, activeStorage)`.
-//
-// The storage pane is rendered locally because its slots come from a
-// per-entity component (`StorageContents`), not the global inventory
-// layout, so we can't reuse the existing InventoryGrid code unmodified.
+// All thirty backpack slots and twenty-five storage slots share equal cell sizes.
 export function StorageMenu(): ReactEcs.JSX.Element | null {
   if (!isStorageOpen()) return null
   const active = getActiveStorage()
@@ -89,15 +57,26 @@ export function StorageMenu(): ReactEcs.JSX.Element | null {
           }
         }}
       >
-        <Label value="Tap an item, then a destination slot to move it." fontSize={16} color={UI_MUTED} textAlign="middle-left" uiTransform={{ positionType: 'absolute', position: { top: 12, left: 16 }, width: size * 2 - 56, height: 32 }} />
+        <Label
+          value="Tap an item, then a destination slot to move it."
+          fontSize={16}
+          color={UI_MUTED}
+          textAlign="middle-left"
+          uiTransform={{
+            positionType: 'absolute',
+            position: { top: 12, left: 16 },
+            width: (size * 11) / 6 - 56,
+            height: 32
+          }}
+        />
         <UiEntity
           uiTransform={{
             flexDirection: 'row',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'center'
           }}
         >
-          <PaneLabel value="INVENTORY" width={size}>
+          <PaneLabel value="BACKPACK" width={size}>
             <InventoryWithBar size={size} />
           </PaneLabel>
           <UiEntity
@@ -105,8 +84,8 @@ export function StorageMenu(): ReactEcs.JSX.Element | null {
               margin: { left: 12 }
             }}
           >
-            <PaneLabel value="STORAGE" width={size}>
-              <StorageGrid size={size} />
+            <PaneLabel value="STORAGE" width={(size * 5) / 6}>
+              <StorageGrid size={(size * 5) / 6} />
             </PaneLabel>
           </UiEntity>
         </UiEntity>
@@ -168,43 +147,35 @@ function StorageGrid(props: { size: number }): ReactEcs.JSX.Element {
   )
 }
 
-function StorageCell(props: {
-  uiIndex: number
-  key?: number | string
-}): ReactEcs.JSX.Element | null {
+function StorageCell(props: { uiIndex: number; key?: number | string }): ReactEcs.JSX.Element | null {
   const active = getActiveStorage()
   if (active === null) return null
 
   const col = props.uiIndex % INVENTORY_GRID_CELLS
   const row = Math.floor(props.uiIndex / INVENTORY_GRID_CELLS)
-  const halfCell = INVENTORY_CELL_SIZE_PCT / 2
-  const leftPct = INVENTORY_CELL_CENTERS_PCT[col] - halfCell
-  const topPct = INVENTORY_CELL_CENTERS_PCT[row] - halfCell
+  const leftPct = col * 20 + 1.8
+  const topPct = row * 20 + 1.8
 
   const slot = readStorageSlot(active, props.uiIndex)
   const def = slot.id === '' ? null : getCatalogItem(slot.id)
 
   const picked = getStoragePicked()
-  const isPickedHere =
-    picked !== null && picked.side === 'storage' && picked.index === props.uiIndex
-  const shouldShake =
-    picked !== null && !isPickedHere && def !== null
+  const isPickedHere = picked !== null && picked.side === 'storage' && picked.index === props.uiIndex
 
-  const inset = isPickedHere
-    ? INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED
-    : INVENTORY_ITEM_INSET_PCT
+  const inset = isPickedHere ? INVENTORY_ITEM_INSET_PCT_SWAP_SELECTED : INVENTORY_ITEM_INSET_PCT
 
-  const shake = shouldShake
-    ? shakeOffset(Date.now() / 1000)
-    : { x: 0, y: 0 }
+  const shake = { x: 0, y: 0 }
 
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
         position: { top: `${topPct}%`, left: `${leftPct}%` },
-        width: `${INVENTORY_CELL_SIZE_PCT}%`,
-        height: `${INVENTORY_CELL_SIZE_PCT}%`
+        width: '16.4%',
+        height: '16.4%',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: isPickedHere ? UI_GOLD : UI_BORDER
       }}
       uiBackground={{ color: UI_CELL }}
       onMouseDown={() => {
@@ -231,12 +202,7 @@ function StorageCell(props: {
               position: { top: '4%', bottom: '4%', left: '4%', right: '4%' }
             }}
             uiBackground={{
-              color: Color4.create(
-                GLOW_COLOR.r,
-                GLOW_COLOR.g,
-                GLOW_COLOR.b,
-                GLOW_ALPHA_PEAK_BONUS
-              )
+              color: Color4.create(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, GLOW_ALPHA_PEAK_BONUS)
             }}
           />
         )}
@@ -257,9 +223,7 @@ function StorageCell(props: {
             }}
           />
         )}
-        {def !== null && def.stackable && slot.count > 0 && (
-          <CountBadge count={slot.count} />
-        )}
+        {def !== null && def.stackable && slot.count > 0 && <CountBadge count={slot.count} />}
       </UiEntity>
     </UiEntity>
   )

@@ -1,7 +1,7 @@
 {
   "name": "raft-game",
   "version": "1.0.0",
-  "description": "Raft Game \u2014 survive on a raft in Decentraland: fish, scavenge, craft, and build.",
+  "description": "Raft Game — survive on a raft in Decentraland: fish, scavenge, craft, and build.",
   "scripts": {
     "start": "sdk-commands start",
     "deploy": "npm run prepare:scene && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org --multi-scene",

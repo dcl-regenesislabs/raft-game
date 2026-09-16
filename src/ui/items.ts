@@ -1,3 +1,4 @@
+import { EXPANSION_ITEMS, expansionIcon } from '../expansion/catalog'
 // Single source of truth for every item the player can hold or collect.
 // The inventory is one shared 30-slot list. The desktop hotbar provides
 // shortcuts to its first five slots; the backpack displays every slot.
@@ -59,12 +60,7 @@ export interface ItemDef {
 // `components.ts`) so they remain a meaningful upgrade.
 export const PLAYER_STACK_CAP = 20
 
-const TOOL = (
-  id: string,
-  texture: string,
-  heldKind: HeldItemKind,
-  opts: { maxDurability?: number } = {}
-): ItemDef => ({
+const TOOL = (id: string, texture: string, heldKind: HeldItemKind, opts: { maxDurability?: number } = {}): ItemDef => ({
   id,
   texture,
   stackable: false,
@@ -73,9 +69,7 @@ const TOOL = (
   hasAction: true,
   consumable: false,
   ingredient: false,
-  ...(opts.maxDurability !== undefined
-    ? { maxDurability: opts.maxDurability }
-    : {})
+  ...(opts.maxDurability !== undefined ? { maxDurability: opts.maxDurability } : {})
 })
 
 // Tools that don't yet have a first-person viewmodel or action wired up.
@@ -96,11 +90,7 @@ const PENDING_TOOL = (id: string, texture: string): ItemDef => ({
 // Stackable resource (`wood`, `metal`, …). `ingredient` defaults off; the
 // few materials the cook menu accepts (currently just wood as fuel) opt
 // in by passing `ingredient: true`.
-const MATERIAL = (
-  id: string,
-  texture: string,
-  opts: { ingredient?: boolean } = {}
-): ItemDef => ({
+const MATERIAL = (id: string, texture: string, opts: { ingredient?: boolean } = {}): ItemDef => ({
   id,
   texture,
   stackable: true,
@@ -242,8 +232,7 @@ export const INVENTORY_LAYOUT: readonly (ItemDef | null)[] = layout
 const durabilities: number[] = new Array(INVENTORY_TOTAL_SLOTS).fill(-1)
 
 function seedDurabilityForSlot(slotIndex: number, def: ItemDef | null): void {
-  durabilities[slotIndex] =
-    def !== null && def.maxDurability !== undefined ? def.maxDurability : -1
+  durabilities[slotIndex] = def !== null && def.maxDurability !== undefined ? def.maxDurability : -1
 }
 
 // Seed the starter loadout's durabilities once the layout is in place.
@@ -281,10 +270,7 @@ export function getSlotDurabilityFraction(slotIndex: number): number | null {
 // 0. Returns the new value. Caller is responsible for clearing the
 // slot when this returns 0; doing the clear here would couple this
 // module to the held-viewmodel reset logic which lives in inventoryState.
-export function decrementSlotDurability(
-  slotIndex: number,
-  amount: number = 1
-): number {
+export function decrementSlotDurability(slotIndex: number, amount: number = 1): number {
   if (slotIndex < 0 || slotIndex >= durabilities.length) return 0
   if (durabilities[slotIndex] < 0) return 0
   const next = Math.max(0, durabilities[slotIndex] - amount)
@@ -313,6 +299,22 @@ const MATERIAL_CATALOG: Record<string, ItemDef> = {
 }
 
 const CRAFTED_CATALOG: Record<string, ItemDef> = {
+  ...Object.fromEntries(
+    EXPANSION_ITEMS.map((item) => [
+      item.id,
+      item.kind === 'resource'
+        ? MATERIAL(item.id, expansionIcon(item))
+        : item.id === 'metalHook'
+          ? TOOL(item.id, expansionIcon(item), 'hook', { maxDurability: 80 })
+          : item.kind === 'tool'
+            ? {
+                ...CRAFTED_PLACEABLE(item.id, expansionIcon(item)),
+                heldKind: 'food' as const
+              }
+            : CRAFTED_PLACEABLE(item.id, expansionIcon(item))
+    ])
+  ),
+
   // Tools mirror the starter-layout TOOL defs so a crafted hammer/spear
   // behaves identically to the one the player started with — same icon,
   // same equippable behaviour, same heldKind viewmodel.
@@ -350,21 +352,21 @@ const RAW_INGREDIENT_OPTS = {
 } as const
 
 const INGREDIENT_CATALOG: Record<string, ItemDef> = {
-  sardines:   FOOD('sardines',   'images/cooking/sardines.png',   RAW_INGREDIENT_OPTS),
-  mussels:    FOOD('mussels',    'images/cooking/mussels.png',    RAW_INGREDIENT_OPTS),
-  clams:      FOOD('clams',      'images/cooking/clams.png',      RAW_INGREDIENT_OPTS),
-  squid:      FOOD('squid',      'images/cooking/squid.png',      RAW_INGREDIENT_OPTS),
+  sardines: FOOD('sardines', 'images/cooking/sardines.png', RAW_INGREDIENT_OPTS),
+  mussels: FOOD('mussels', 'images/cooking/mussels.png', RAW_INGREDIENT_OPTS),
+  clams: FOOD('clams', 'images/cooking/clams.png', RAW_INGREDIENT_OPTS),
+  squid: FOOD('squid', 'images/cooking/squid.png', RAW_INGREDIENT_OPTS),
   shark_meat: FOOD('shark_meat', 'images/cooking/shark_meat.png', RAW_INGREDIENT_OPTS),
-  seaweed:    FOOD('seaweed',    'images/cooking/seaweed.png',    RAW_INGREDIENT_OPTS),
-  tomatoes:   FOOD('tomatoes',   'images/cooking/tomatoes.png',   RAW_INGREDIENT_OPTS),
-  garlic:     FOOD('garlic',     'images/cooking/garlic.png',     RAW_INGREDIENT_OPTS),
-  sea_salt:   FOOD('sea_salt',   'images/cooking/sea_salt.png',   RAW_INGREDIENT_OPTS),
-  olive_oil:  FOOD('olive_oil',  'images/cooking/olive_oil.png',  RAW_INGREDIENT_OPTS),
+  seaweed: FOOD('seaweed', 'images/cooking/seaweed.png', RAW_INGREDIENT_OPTS),
+  tomatoes: FOOD('tomatoes', 'images/cooking/tomatoes.png', RAW_INGREDIENT_OPTS),
+  garlic: FOOD('garlic', 'images/cooking/garlic.png', RAW_INGREDIENT_OPTS),
+  sea_salt: FOOD('sea_salt', 'images/cooking/sea_salt.png', RAW_INGREDIENT_OPTS),
+  olive_oil: FOOD('olive_oil', 'images/cooking/olive_oil.png', RAW_INGREDIENT_OPTS),
   // Potato is the one raw ingredient the player can still eat — survival
   // fallback that restores a tiny sliver of hunger.
-  potato:     FOOD('potato',     'images/cooking/potato.png',     { ingredient: true }),
-  crab:       FOOD('crab',       'images/cooking/crab.png',       RAW_INGREDIENT_OPTS),
-  spaghetti:  FOOD('spaghetti',  'images/cooking/spaghetti.png',  RAW_INGREDIENT_OPTS),
+  potato: FOOD('potato', 'images/cooking/potato.png', { ingredient: true }),
+  crab: FOOD('crab', 'images/cooking/crab.png', RAW_INGREDIENT_OPTS),
+  spaghetti: FOOD('spaghetti', 'images/cooking/spaghetti.png', RAW_INGREDIENT_OPTS),
   fettuccine: FOOD('fettuccine', 'images/cooking/fettuccine.png', RAW_INGREDIENT_OPTS)
 }
 
@@ -374,36 +376,36 @@ const INGREDIENT_CATALOG: Record<string, ItemDef> = {
 // ingredients — once cooked, you eat them, you don't re-cook them.
 const PLATE_CATALOG: Record<string, ItemDef> = {
   // 1-ingredient plates (5)
-  grilled_sardines:        FOOD('grilled_sardines',        'images/cooking/grilled_sardines.png'),
-  boiled_mussels:          FOOD('boiled_mussels',          'images/cooking/boiled_mussels.png'),
-  charred_squid:           FOOD('charred_squid',           'images/cooking/charred_squid.png'),
-  roasted_potato:          FOOD('roasted_potato',          'images/cooking/roasted_potato.png'),
-  grilled_shark_meat:      FOOD('grilled_shark_meat',      'images/cooking/grilled_shark_meat.png'),
+  grilled_sardines: FOOD('grilled_sardines', 'images/cooking/grilled_sardines.png'),
+  boiled_mussels: FOOD('boiled_mussels', 'images/cooking/boiled_mussels.png'),
+  charred_squid: FOOD('charred_squid', 'images/cooking/charred_squid.png'),
+  roasted_potato: FOOD('roasted_potato', 'images/cooking/roasted_potato.png'),
+  grilled_shark_meat: FOOD('grilled_shark_meat', 'images/cooking/grilled_shark_meat.png'),
   // 2-ingredient plates (15)
-  salted_sardines:         FOOD('salted_sardines',         'images/cooking/salted_sardines.png'),
-  clam_broth:              FOOD('clam_broth',              'images/cooking/clam_broth.png'),
-  garlic_squid:            FOOD('garlic_squid',            'images/cooking/garlic_squid.png'),
-  shark_steak:             FOOD('shark_steak',             'images/cooking/shark_steak.png'),
-  crab_with_sea_salt:      FOOD('crab_with_sea_salt',      'images/cooking/crab_with_sea_salt.png'),
-  sardines_pomodoro:       FOOD('sardines_pomodoro',       'images/cooking/sardines_pomodoro.png'),
-  mussels_pomodoro:        FOOD('mussels_pomodoro',        'images/cooking/mussels_pomodoro.png'),
-  squid_with_seaweed:      FOOD('squid_with_seaweed',      'images/cooking/squid_with_seaweed.png'),
-  crab_with_potato:        FOOD('crab_with_potato',        'images/cooking/crab_with_potato.png'),
-  shark_with_potato:       FOOD('shark_with_potato',       'images/cooking/shark_with_potato.png'),
-  squid_with_tomato:       FOOD('squid_with_tomato',       'images/cooking/squid_with_tomato.png'),
-  shark_with_tomato:       FOOD('shark_with_tomato',       'images/cooking/shark_with_tomato.png'),
-  sardines_in_oil:         FOOD('sardines_in_oil',         'images/cooking/sardines_in_oil.png'),
-  mussels_and_clams:       FOOD('mussels_and_clams',       'images/cooking/mussels_and_clams.png'),
-  spaghetti_alle_vongole:  FOOD('spaghetti_alle_vongole',  'images/cooking/spaghetti_alle_vongole.png'),
+  salted_sardines: FOOD('salted_sardines', 'images/cooking/salted_sardines.png'),
+  clam_broth: FOOD('clam_broth', 'images/cooking/clam_broth.png'),
+  garlic_squid: FOOD('garlic_squid', 'images/cooking/garlic_squid.png'),
+  shark_steak: FOOD('shark_steak', 'images/cooking/shark_steak.png'),
+  crab_with_sea_salt: FOOD('crab_with_sea_salt', 'images/cooking/crab_with_sea_salt.png'),
+  sardines_pomodoro: FOOD('sardines_pomodoro', 'images/cooking/sardines_pomodoro.png'),
+  mussels_pomodoro: FOOD('mussels_pomodoro', 'images/cooking/mussels_pomodoro.png'),
+  squid_with_seaweed: FOOD('squid_with_seaweed', 'images/cooking/squid_with_seaweed.png'),
+  crab_with_potato: FOOD('crab_with_potato', 'images/cooking/crab_with_potato.png'),
+  shark_with_potato: FOOD('shark_with_potato', 'images/cooking/shark_with_potato.png'),
+  squid_with_tomato: FOOD('squid_with_tomato', 'images/cooking/squid_with_tomato.png'),
+  shark_with_tomato: FOOD('shark_with_tomato', 'images/cooking/shark_with_tomato.png'),
+  sardines_in_oil: FOOD('sardines_in_oil', 'images/cooking/sardines_in_oil.png'),
+  mussels_and_clams: FOOD('mussels_and_clams', 'images/cooking/mussels_and_clams.png'),
+  spaghetti_alle_vongole: FOOD('spaghetti_alle_vongole', 'images/cooking/spaghetti_alle_vongole.png'),
   // 3-ingredient plates (8)
   spaghetti_with_sardines: FOOD('spaghetti_with_sardines', 'images/cooking/spaghetti_with_sardines.png'),
-  fettuccine_with_shark:   FOOD('fettuccine_with_shark',   'images/cooking/fettuccine_with_shark.png'),
-  spaghetti_mussels:       FOOD('spaghetti_mussels',       'images/cooking/spaghetti_mussels.png'),
-  fettuccine_squid:        FOOD('fettuccine_squid',        'images/cooking/fettuccine_squid.png'),
-  fettuccine_pomodoro:     FOOD('fettuccine_pomodoro',     'images/cooking/fettuccine_pomodoro.png'),
+  fettuccine_with_shark: FOOD('fettuccine_with_shark', 'images/cooking/fettuccine_with_shark.png'),
+  spaghetti_mussels: FOOD('spaghetti_mussels', 'images/cooking/spaghetti_mussels.png'),
+  fettuccine_squid: FOOD('fettuccine_squid', 'images/cooking/fettuccine_squid.png'),
+  fettuccine_pomodoro: FOOD('fettuccine_pomodoro', 'images/cooking/fettuccine_pomodoro.png'),
   spaghetti_squid_seaweed: FOOD('spaghetti_squid_seaweed', 'images/cooking/spaghetti_squid_seaweed.png'),
-  fettuccine_crab_potato:  FOOD('fettuccine_crab_potato',  'images/cooking/fettuccine_crab_potato.png'),
-  seafood_stew:            FOOD('seafood_stew',            'images/cooking/seafood_stew.png'),
+  fettuccine_crab_potato: FOOD('fettuccine_crab_potato', 'images/cooking/fettuccine_crab_potato.png'),
+  seafood_stew: FOOD('seafood_stew', 'images/cooking/seafood_stew.png'),
   // 4-ingredient hero plates (2). These render as 3D models in hand
   // and above the grill — the texture path still drives the inventory
   // icon, but the `glb` field swaps the world-space visual to a proper
@@ -439,7 +441,7 @@ export function getItemDisplayName(def: ItemDef): string {
 // Material lookup independent of whether the player has collected one yet.
 // The craft panel needs material icons before the player owns any.
 export function getMaterialDef(id: string): ItemDef | null {
-  return MATERIAL_CATALOG[id] ?? null
+  return MATERIAL_CATALOG[id] ?? CRAFTED_CATALOG[id] ?? null
 }
 
 // Catalog-wide lookup independent of whether the player currently owns
@@ -492,11 +494,7 @@ function findAutoAllocationSlot(_def: ItemDef): number {
 // its own cell. Returns the slot index, or -1 if the inventory is full
 // or the id isn't in either catalog.
 export function ensureCollectibleSlot(id: string): number {
-  const def =
-    MATERIAL_CATALOG[id] ??
-    CRAFTED_CATALOG[id] ??
-    INGREDIENT_CATALOG[id] ??
-    PLATE_CATALOG[id]
+  const def = MATERIAL_CATALOG[id] ?? CRAFTED_CATALOG[id] ?? INGREDIENT_CATALOG[id] ?? PLATE_CATALOG[id]
   if (def === undefined) return -1
   if (def.stackable) {
     const existing = findSlotIndexById(id)
@@ -518,11 +516,7 @@ export function ensureCollectibleSlot(id: string): number {
 export function transmuteSlot(slotIndex: number, newId: string): boolean {
   if (slotIndex < 0 || slotIndex >= layout.length) return false
   if (layout[slotIndex] === null) return false
-  const next =
-    MATERIAL_CATALOG[newId] ??
-    CRAFTED_CATALOG[newId] ??
-    INGREDIENT_CATALOG[newId] ??
-    PLATE_CATALOG[newId]
+  const next = MATERIAL_CATALOG[newId] ?? CRAFTED_CATALOG[newId] ?? INGREDIENT_CATALOG[newId] ?? PLATE_CATALOG[newId]
   if (next === undefined) return false
   layout[slotIndex] = next
   ITEMS_BY_ID[next.id] = next
@@ -634,14 +628,11 @@ export function serializeInventoryDurabilities(): number[] {
   return durabilities.slice()
 }
 
-export function hydrateInventoryDurabilities(
-  values: ReadonlyArray<number>
-): void {
+export function hydrateInventoryDurabilities(values: ReadonlyArray<number>): void {
   const limit = Math.min(values.length, durabilities.length)
   for (let i = 0; i < limit; i++) {
     const def = layout[i]
-    const maxForSlot =
-      def !== null && def.maxDurability !== undefined ? def.maxDurability : -1
+    const maxForSlot = def !== null && def.maxDurability !== undefined ? def.maxDurability : -1
     if (maxForSlot < 0) {
       // Slot can't carry durability; ignore whatever the blob has.
       durabilities[i] = -1

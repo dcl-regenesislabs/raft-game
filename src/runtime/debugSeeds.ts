@@ -12,17 +12,14 @@
 
 import { Entity } from '@dcl/sdk/ecs'
 
-import { STORAGE_MAX_STACK, StorageContents } from '../components'
-import {
-  createConstruction,
-  createPlatform,
-  gridCellToWorld
-} from '../factories'
+import { ExpansionState, STORAGE_MAX_STACK, StorageContents } from '../components'
+import { createConstruction, createPlatform, gridCellToWorld } from '../factories'
 import { addCollected } from '../ui/inventoryState'
 
 export function applyDebugSeeds(): void {
   seedDebugInventory()
   seedDebugWorld()
+  seedExpansionWorkshop()
 }
 
 // Pre-seeds the inventory with TOOLS only. Materials, placeables, and
@@ -101,9 +98,14 @@ function seedDebugStorage(entity: Entity): void {
 // be exercised without crafting first.
 function seedDebugWorld(): void {
   const ringOffsets: ReadonlyArray<readonly [number, number]> = [
-    [-1, -1], [0, -1], [1, -1],
-    [-1,  0],          [1,  0],
-    [-1,  1], [0,  1], [1,  1]
+    [-1, -1],
+    [0, -1],
+    [1, -1],
+    [-1, 0],
+    [1, 0],
+    [-1, 1],
+    [0, 1],
+    [1, 1]
   ]
   for (const [gx, gz] of ringOffsets) {
     const platform = createPlatform(gridCellToWorld(gx, gz), {
@@ -115,6 +117,40 @@ function seedDebugWorld(): void {
     else if (gx === 0 && gz === 1) {
       createConstruction(platform, 'storage', 180)
       seedDebugStorage(platform)
+    }
+  }
+}
+
+// A separate connected workshop makes the expansion testable without changing
+// the normal survival start or filling all thirty backpack slots.
+function seedExpansionWorkshop(): void {
+  for (const x of [-2, 2, 3, 4]) createPlatform(gridCellToWorld(x, 1), { gridX: x, gridZ: 1 })
+  const devices = ['workbench', 'smelter', 'researchTable', 'ammoCrate', 'alarmBell', 'armoryBench', 'engineeringBench']
+  for (let x = -2; x <= 4; x++) {
+    const tile = createPlatform(gridCellToWorld(x, 2), { gridX: x, gridZ: 2 })
+    const kind = devices[x + 2]
+    createConstruction(tile, kind)
+    if (kind === 'researchTable') ExpansionState.getMutable(tile).installed = true
+    if (kind === 'ammoCrate') {
+      const supplies = [
+        'metalPlate',
+        'gears',
+        'wire',
+        'circuitBoard',
+        'nails',
+        'arrows',
+        'bolts',
+        'harpoons',
+        'nets',
+        'cannonballs',
+        'transmitterCore',
+        'coal',
+        'potato'
+      ]
+      const storage = StorageContents.getMutable(tile)
+      supplies.forEach((id, i) => {
+        storage.slots[i] = { id, count: id === 'transmitterCore' ? 1 : 20 }
+      })
     }
   }
 }

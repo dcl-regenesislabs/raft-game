@@ -1,3 +1,6 @@
+import { isSandbox } from '../progression/state'
+import { addCollected } from '../ui/inventoryState'
+import { resetExpansion } from '../expansion/runtime'
 // Scene flow: portal exit handling + BACK TO LOBBY orchestration. Lifted
 // out of `index.ts` so the SystemMenu can call `returnToLobby()` without
 // pulling in a circular import on the entry module.
@@ -242,6 +245,7 @@ export function returnToLobby(): void {
   resetChefIdleStarterState()
   stopPlayTimer()
   resetPlayTimer()
+  resetExpansion()
   resetWinState()
   clearRankingPanelRefs()
   resetRankingPanelRefreshState()
@@ -278,5 +282,6 @@ export function activateDebugMode(): void {
 // Call after clearing the world/inventory, including Restart and Play Again.
 // Do not use activateDebugMode's one-shot guard: the old seeds were removed.
 export function applyConfiguredGameMode(): void {
-  runPortalAction(DEBUG_MODE ? 'DEBUG' : 'NEW')
+  runPortalAction(isSandbox() ? 'DEBUG' : 'NEW')
+  if (!isSandbox()) addCollected('potato', 2)
 }

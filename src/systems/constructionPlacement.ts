@@ -1,4 +1,7 @@
-import { beginUiTouch } from '../ui/mobileControlsState'
+import { removePrototypeEntity } from '../expansion/sprites'
+import { ExpansionState } from '../components'
+import { TOWERS } from '../expansion/rules'
+import { beginUiTouch, beginEquipmentTransition } from '../ui/mobileControlsState'
 import { recordTutorialAction } from '../ui/tutorialState'
 import {
   ColliderLayer,
@@ -121,11 +124,7 @@ export function constructionPlacementSystem(dt: number): void {
 
   updatePreview(dt)
 
-  if (
-    !isInventoryActionLocked() &&
-    !isSelectionPointerLockoutActive() &&
-    firePressed()
-  ) {
+  if (!isInventoryActionLocked() && !isSelectionPointerLockoutActive() && firePressed()) {
     commitPlacement()
   }
 }
@@ -199,9 +198,7 @@ function ensureGhostsFor(kind: ConstructionKind): void {
   })
 }
 
-function handleRaycast(result: {
-  hits: ReadonlyArray<{ entityId?: number }>
-}): void {
+function handleRaycast(result: { hits: ReadonlyArray<{ entityId?: number }> }): void {
   if (mode === 'idle') return
   const firstId = result.hits[0]?.entityId
   // Mirror the hit into lookAtTarget so the action button's "what am I
@@ -213,7 +210,14 @@ function handleRaycast(result: {
     hoverValid = false
     return
   }
-  const candidate = firstId as Entity
+  let candidate = firstId as Entity
+  // Construction meshes receive pointer hits before their supporting deck.
+  for (const [platform, construction] of engine.getEntitiesWith(PlatformConstruction)) {
+    if (construction.child === candidate || construction.aux === candidate) {
+      candidate = platform
+      break
+    }
+  }
   if (Platform.getOrNull(candidate) === null) {
     // Hit something else (e.g. a placement marker, the seabed proxy, etc.).
     hoverPlatform = null
@@ -223,7 +227,9 @@ function handleRaycast(result: {
   hoverPlatform = candidate
   hoverValid =
     MainPlatform.getOrNull(candidate) === null &&
-    PlatformConstruction.getOrNull(candidate) === null
+    (PlatformConstruction.getOrNull(candidate) === null ||
+      (PlatformConstruction.getOrNull(candidate)?.kind === 'towerPlatform' && !!TOWERS[mode]) ||
+      PlatformConstruction.getOrNull(candidate)?.kind === 'armoredFoundation')
 }
 
 function updatePreview(dt: number): void {
@@ -248,7 +254,14 @@ function updatePreview(dt: number): void {
     hideSpectralConstruction(set.red)
     return
   }
-  const anchor = platformTransform.position
+  const anchor = Vector3.add(
+    platformTransform.position,
+    Vector3.create(
+      0,
+      PlatformConstruction.getOrNull(hoverPlatform)?.kind === 'towerPlatform' && !!TOWERS[mode] ? 2.3 : 0,
+      0
+    )
+  )
 
   if (!hoverValid) {
     // Invalid surface — main platform or already-occupied. Pulse red on
@@ -285,11 +298,7 @@ function commitPlacement(): void {
   }
 
   if (getCollectedCount(mode) <= 0) {
-    showNotification(
-      mode === 'grill'
-        ? 'No grills in inventory. Craft a GRILL to build.'
-        : 'No water purifiers in inventory. Craft one to build.'
-    )
+    showNotification('No ' + mode + ' in inventory. Craft one first.')
     return
   }
 
@@ -297,8 +306,21 @@ function commitPlacement(): void {
   if (now - lastPlaceMs < PLACE_COOLDOWN_MS) return
   lastPlaceMs = now
 
+  beginEquipmentTransition()
   subtractCollected(mode, 1)
-  createConstruction(platform, mode, getPlacementRotationDeg())
+  const previous = PlatformConstruction.getOrNull(platform)
+  const support =
+    previous?.kind === 'towerPlatform' && !!TOWERS[mode]
+      ? 'towerPlatform'
+      : previous?.kind === 'armoredFoundation'
+        ? 'armoredFoundation'
+        : undefined
+  if (support && previous) {
+    removePrototypeEntity(previous.child)
+    PlatformConstruction.deleteFrom(platform)
+    if (ExpansionState.getOrNull(platform)) ExpansionState.deleteFrom(platform)
+  }
+  createConstruction(platform, mode, getPlacementRotationDeg(), support)
   if (mode === 'purifier' || mode === 'grill') recordTutorialAction(mode)
   playSfx('constructionPlace')
   // Hover stays the same target; the platform now carries a
@@ -306,4 +328,6 @@ function commitPlacement(): void {
   // hoverValid = false and the green ghost will swap to red.
 }
 
-export function cancelConstructionPreview(): void { transitionMode('idle') }
+export function cancelConstructionPreview(): void {
+  transitionMode('idle')
+}

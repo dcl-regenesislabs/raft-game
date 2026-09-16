@@ -1,3 +1,4 @@
+import { showNotification } from '../ui/notification'
 import {
   Entity,
   InputAction,
@@ -284,7 +285,7 @@ function tickInteracting(): void {
   const chefState = ChefNpc.get(visitor.chef)
   if (chefState.dialogLineIndex >= chefState.dialogLines.length) {
     if (wasTier4Visit) {
-      triggerWin()
+      showNotification('Chef challenge complete! Build the rescue radio to call for rescue.')
     }
     setBoatChefPose(visitor.chef, CHEF_THANKS_CLIP)
     phase = 'LINGER'

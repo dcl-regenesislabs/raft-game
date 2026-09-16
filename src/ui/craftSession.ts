@@ -1,3 +1,6 @@
+import { equipCraftedItem } from '../systems/nativeEquipment'
+import { recipeUnlocked, metric, recordProgress } from '../progression/state'
+import { recipeMatchesContext } from './craftContext'
 import { recordTutorialAction } from './tutorialState'
 // Active crafting session. While a craft is in progress, the HUD hides
 // every interactive element except a centered progress bar and tool
@@ -7,7 +10,7 @@ import { recordTutorialAction } from './tutorialState'
 
 import { playSfx } from '../audio/sfx'
 import { type CraftableItem, getCraftableById } from './craftableItems'
-import { addCollected } from './inventoryState'
+import { addCollected, canReceiveCraft } from './inventoryState'
 import { notifyItemReceived } from './itemReceivedNotification'
 import { getCombinedCount, subtractFromAll } from './storageSession'
 
@@ -35,13 +38,20 @@ export function getActiveCraft(): CraftableItem | null {
   return activeId !== null ? getCraftableById(activeId) : null
 }
 
-export function canStartCraft(id: string): boolean {
+export function getCraftBlockReason(id: string): string | null {
   const item = getCraftableById(id)
-  if (item === null) return false
+  if (!item) return 'UNKNOWN ITEM'
+  if (isCrafting()) return 'CRAFTING'
+  if (!recipeUnlocked(id)) return 'REACH NEXT MILESTONE'
+  if (!recipeMatchesContext(item.station)) return 'USE STATION'
   for (const cost of item.cost) {
-    if (getCombinedCount(cost.materialId) < cost.amount) return false
+    if (getCombinedCount(cost.materialId) < cost.amount) return 'NEED ITEMS'
   }
-  return true
+  return canReceiveCraft(item.id, item.cost, item.outputCount ?? 1) ? null : 'PACK FULL'
+}
+
+export function canStartCraft(id: string): boolean {
+  return getCraftBlockReason(id) === null
 }
 
 export function startCraft(id: string): boolean {
@@ -58,9 +68,12 @@ export function startCraft(id: string): boolean {
   const duration = item.craftSec ?? CRAFT_TIME
   if (duration <= 0) {
     // Instant craft — skip the session entirely so the HUD never locks.
-    addCollected(id, 1)
-    notifyItemReceived(id, 1)
+    addCollected(id, item.outputCount ?? 1)
+    notifyItemReceived(id, item.outputCount ?? 1)
+    metric('crafted:' + id, item.outputCount ?? 1)
+    recordProgress('crafted:' + id)
     if (id === 'rope' || id === 'hammer') recordTutorialAction(id)
+    equipCraftedItem(id)
     return true
   }
   activeId = id
@@ -74,9 +87,11 @@ export function craftSessionTickSystem(dt: number): void {
   if (activeId === null) return
   elapsedSec += dt
   if (elapsedSec >= activeDurationSec) {
-    addCollected(activeId, 1)
-    notifyItemReceived(activeId, 1)
+    addCollected(activeId, getCraftableById(activeId)?.outputCount ?? 1)
+    notifyItemReceived(activeId, getCraftableById(activeId)?.outputCount ?? 1)
+    recordProgress('crafted:' + activeId)
     if (activeId === 'rope' || activeId === 'hammer') recordTutorialAction(activeId)
+    equipCraftedItem(activeId)
     activeId = null
     elapsedSec = 0
   }

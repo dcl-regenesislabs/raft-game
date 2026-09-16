@@ -429,3 +429,21 @@ export const SharkOrbit = engine.defineComponent('shark-orbit', {
   // compensate for a model whose default forward axis isn't +Z.
   headingOffsetDeg: Schemas.Number
 })
+
+// Single-player expansion state belongs to its raft tile, so removing the tile
+// removes production, power and combat state together.
+export const ExpansionState = engine.defineComponent('raft:expansion-state', {
+  health: Schemas.Number,
+  maxHealth: Schemas.Number,
+  fuel: Schemas.Number,
+  progress: Schemas.Number,
+  stock: Schemas.Number,
+  queued: Schemas.Number,
+  ammo: Schemas.Number,
+  active: Schemas.Boolean,
+  installed: Schemas.Boolean
+})
+export const StructureHealth = engine.defineComponent('raft:structure-health', {
+  current: Schemas.Number,
+  max: Schemas.Number
+})

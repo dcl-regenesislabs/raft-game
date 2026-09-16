@@ -4,6 +4,19 @@ import { isMobile } from '@dcl/sdk/platform'
 let releaseRequired = false
 let quietTime = 0
 
+// Automatic fallback after consuming a placed item happens before other tool
+// systems run. Block that same press on every platform, not just UI touches.
+const EQUIPMENT_COOLDOWN_S = 0.4
+let equipmentQuietTime = 0
+let equipmentReleaseRequired = false
+export function beginEquipmentTransition(): void {
+  equipmentQuietTime = EQUIPMENT_COOLDOWN_S
+  equipmentReleaseRequired = true
+}
+export function isEquipmentInputBlocked(): boolean {
+  return equipmentReleaseRequired || equipmentQuietTime > 0
+}
+
 export function beginUiTouch(): void {
   if (!isMobile()) return
   releaseRequired = true
@@ -21,6 +34,12 @@ export function isMobileUiInputBlocked(): boolean {
   return isMobile() && (releaseRequired || quietTime > 0)
 }
 export function mobileUiInputSystem(dt: number): void {
+  equipmentQuietTime = Math.max(0, equipmentQuietTime - dt)
+  // A release can arrive during the cooldown. Remember it; holding the action
+  // longer than the cooldown must never activate the newly equipped tool.
+  if (!inputSystem.isPressed(InputAction.IA_POINTER) || inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_UP)) {
+    equipmentReleaseRequired = false
+  }
   quietTime = Math.max(0, quietTime - dt)
   if (quietTime === 0 && ![InputAction.IA_POINTER, InputAction.IA_PRIMARY, InputAction.IA_SECONDARY, InputAction.IA_ACTION_3, InputAction.IA_ACTION_4, InputAction.IA_ACTION_5, InputAction.IA_ACTION_6].some(action => inputSystem.isPressed(action))) {
     releaseRequired = false

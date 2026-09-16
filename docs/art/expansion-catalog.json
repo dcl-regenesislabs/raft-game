@@ -1,0 +1,308 @@
+[
+  {
+    "id": "repairKit",
+    "name": "Repair kit",
+    "description": "Use near a damaged raft tile to restore 50 health. Consumed only when a repair succeeds.",
+    "kind": "tool"
+  },
+  {
+    "id": "bandage",
+    "name": "Bandage",
+    "description": "Restores health gradually over ten seconds. Damage interrupts healing.",
+    "kind": "tool"
+  },
+  {
+    "id": "workbench",
+    "name": "Workbench",
+    "description": "Use this bench to craft building parts, survival equipment and specialized worktables.",
+    "kind": "structure"
+  },
+  {
+    "id": "armoryBench",
+    "name": "Armory",
+    "description": "Use this bench to craft weapons, defenses and their ammunition.",
+    "kind": "structure"
+  },
+  {
+    "id": "engineeringBench",
+    "name": "Engineering bench",
+    "description": "Use this bench to craft navigation machines and power equipment.",
+    "kind": "structure"
+  },
+  {
+    "id": "smelter",
+    "name": "Smelter",
+    "description": "Fuel with wood and load scrap metal to produce metal plates.",
+    "kind": "structure"
+  },
+  {
+    "id": "researchTable",
+    "name": "Research table",
+    "description": "Supply plates and wire, then use this table to craft electronics and rescue equipment.",
+    "kind": "structure"
+  },
+  {
+    "id": "nails",
+    "name": "Nails",
+    "description": "Fasteners for reinforced construction.",
+    "kind": "resource"
+  },
+  {
+    "id": "metalPlate",
+    "name": "Metal plate",
+    "description": "Structural metal produced only by loading and fueling a smelter.",
+    "kind": "resource"
+  },
+  {
+    "id": "gears",
+    "name": "Gears",
+    "description": "Mechanical transmission parts for towers and engines.",
+    "kind": "resource"
+  },
+  {
+    "id": "wire",
+    "name": "Wire",
+    "description": "Crafting material for electrical equipment. Placed machines connect automatically.",
+    "kind": "resource"
+  },
+  {
+    "id": "circuitBoard",
+    "name": "Circuit board",
+    "description": "Control electronics for rescue equipment.",
+    "kind": "resource"
+  },
+  {
+    "id": "rainCollector",
+    "name": "Rain collector",
+    "description": "Collects drinking water during periodic rain. Stores up to four drinks.",
+    "kind": "structure"
+  },
+  {
+    "id": "cropBed",
+    "name": "Crop bed",
+    "description": "Plant a potato and water it with a fresh-water cup. Harvest three potatoes after a minute.",
+    "kind": "structure"
+  },
+  {
+    "id": "waterTank",
+    "name": "Water tank",
+    "description": "Stores eight fresh-water cups. Fill from your cup, then drink or refill an empty cup.",
+    "kind": "structure"
+  },
+  {
+    "id": "improvedGrill",
+    "name": "Improved grill",
+    "description": "Fuel with wood and load potatoes. Cooks three portions per batch.",
+    "kind": "structure"
+  },
+  {
+    "id": "metalHook",
+    "name": "Metal hook",
+    "description": "A reinforced salvage hook with twice the durability of the wooden hook.",
+    "kind": "tool"
+  },
+  {
+    "id": "salvageAxe",
+    "name": "Salvage axe",
+    "description": "Recover scrap from wreck debris at close range.",
+    "kind": "tool"
+  },
+  {
+    "id": "bow",
+    "name": "Bow",
+    "description": "Aim and fire arrows at raiders. Requires arrows in your backpack.",
+    "kind": "tool"
+  },
+  {
+    "id": "arrows",
+    "name": "Arrows",
+    "description": "Ammunition for the bow.",
+    "kind": "resource"
+  },
+  {
+    "id": "boardingShield",
+    "name": "Boarding shield",
+    "description": "Hold the action button to block frontal raider attacks. Cannot attack while guarding.",
+    "kind": "tool"
+  },
+  {
+    "id": "scrapArmor",
+    "name": "Scrap armor",
+    "description": "Use to wear armor that absorbs half of incoming raider damage until its protection runs out.",
+    "kind": "tool"
+  },
+  {
+    "id": "wall",
+    "name": "Wall",
+    "description": "A solid defensive barrier. Raiders must break through it.",
+    "kind": "structure"
+  },
+  {
+    "id": "gate",
+    "name": "Gate",
+    "description": "An openable barrier. Close it to block boarders.",
+    "kind": "structure"
+  },
+  {
+    "id": "stairs",
+    "name": "Stairs",
+    "description": "A walkable staircase to an elevated firing position.",
+    "kind": "structure"
+  },
+  {
+    "id": "upperFloor",
+    "name": "Upper floor",
+    "description": "A raised deck with supporting columns. Place adjacent stairs to reach it.",
+    "kind": "structure"
+  },
+  {
+    "id": "railing",
+    "name": "Railing",
+    "description": "A low perimeter barrier that keeps crew on the deck.",
+    "kind": "structure"
+  },
+  {
+    "id": "armoredFoundation",
+    "name": "Armored foundation",
+    "description": "Reinforces a raft tile against hull attacks.",
+    "kind": "structure"
+  },
+  {
+    "id": "towerPlatform",
+    "name": "Tower platform",
+    "description": "An elevated defensive emplacement. Equip a heavy tower and place it on this platform for reinforced health.",
+    "kind": "structure"
+  },
+  {
+    "id": "ammoCrate",
+    "name": "Ammo crate",
+    "description": "Load ammunition from your backpack to resupply nearby towers.",
+    "kind": "structure"
+  },
+  {
+    "id": "ropeBarricade",
+    "name": "Rope barricade",
+    "description": "A cheap obstacle that delays boarding enemies.",
+    "kind": "structure"
+  },
+  {
+    "id": "spikeStrip",
+    "name": "Spike strip",
+    "description": "Damages boarders crossing this tile. Wears down with each hit.",
+    "kind": "structure"
+  },
+  {
+    "id": "netLauncher",
+    "name": "Net launcher",
+    "description": "Consumes nets to slow nearby boarders. Little direct damage.",
+    "kind": "structure"
+  },
+  {
+    "id": "ballista",
+    "name": "Ballista tower",
+    "description": "Fires bolts at incoming raiders within its forward arc. Requires ammunition.",
+    "kind": "structure"
+  },
+  {
+    "id": "harpoonTower",
+    "name": "Harpoon tower",
+    "description": "Automatically repels nearby sea beasts using harpoons.",
+    "kind": "structure"
+  },
+  {
+    "id": "deckCannon",
+    "name": "Deck cannon",
+    "description": "Slow, powerful cannon against pirate boats. Consumes cannonballs.",
+    "kind": "structure"
+  },
+  {
+    "id": "nets",
+    "name": "Nets",
+    "description": "Ammunition for a net launcher.",
+    "kind": "resource"
+  },
+  {
+    "id": "bolts",
+    "name": "Ballista bolts",
+    "description": "Ammunition for a ballista.",
+    "kind": "resource"
+  },
+  {
+    "id": "harpoons",
+    "name": "Harpoons",
+    "description": "Ammunition for a harpoon tower.",
+    "kind": "resource"
+  },
+  {
+    "id": "cannonballs",
+    "name": "Cannonballs",
+    "description": "Heavy ammunition for a deck cannon.",
+    "kind": "resource"
+  },
+  {
+    "id": "alarmBell",
+    "name": "Alarm bell",
+    "description": "Ring to announce and start a raid when you are ready. Successful raids yield salvage.",
+    "kind": "structure"
+  },
+  {
+    "id": "lookoutPost",
+    "name": "Lookout post",
+    "description": "Inspect to identify the next raid before ringing the alarm bell.",
+    "kind": "structure"
+  },
+  {
+    "id": "sail",
+    "name": "Sail",
+    "description": "Catch the wind to increase drifting salvage arrivals. Toggle the sail when placed.",
+    "kind": "structure"
+  },
+  {
+    "id": "steeringWheel",
+    "name": "Steering wheel",
+    "description": "Choose a salvage heading: wood, metal or plastic.",
+    "kind": "structure"
+  },
+  {
+    "id": "engine",
+    "name": "Engine",
+    "description": "Burns wood for powered salvage travel. Steering selects the resource route.",
+    "kind": "structure"
+  },
+  {
+    "id": "generator",
+    "name": "Generator",
+    "description": "Burns wood and automatically powers devices within 7 meters. No cables needed.",
+    "kind": "structure"
+  },
+  {
+    "id": "batteryBank",
+    "name": "Battery bank",
+    "description": "Automatically connects within 7 meters. Stores power and keeps the radio running when fuel runs out.",
+    "kind": "structure"
+  },
+  {
+    "id": "powerRelay",
+    "name": "Power relay",
+    "description": "Automatically extends nearby power by 7 meters. Just place it; no cables needed.",
+    "kind": "structure"
+  },
+  {
+    "id": "antennaMast",
+    "name": "Antenna mast",
+    "description": "Required beside the rescue radio to broadcast a signal.",
+    "kind": "structure"
+  },
+  {
+    "id": "rescueRadio",
+    "name": "Rescue radio",
+    "description": "Install a transmitter core and place near power and an antenna. Power connects automatically. Defend the broadcast to win.",
+    "kind": "structure"
+  },
+  {
+    "id": "transmitterCore",
+    "name": "Transmitter core",
+    "description": "Guaranteed after the third raid. This expensive replacement prevents a lost core from ending the run.",
+    "kind": "resource"
+  }
+]

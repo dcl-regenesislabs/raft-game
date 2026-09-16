@@ -1,3 +1,5 @@
+import { getExpansionItem } from '../expansion/catalog'
+import { interactExpansion } from '../expansion/runtime'
 import { getRaftBuilderMode } from './raftBuilder'
 import { getConstructionPlacementMode } from './constructionPlacement'
 import { resolveMobileControls } from './touchControls'
@@ -45,14 +47,16 @@ export function constructionInteractSystem(_dt: number): void {
 
   for (const [platform, pc] of engine.getEntitiesWith(PlatformConstruction)) {
     const child = pc.child
+    if (getProximityConstruction()?.child !== child) continue
     const tapped = inputSystem.isTriggered(InputAction.IA_PRIMARY, PointerEventType.PET_DOWN, child)
     // F-key fuels a purifier with wood. Only the purifier listens; grills
     // and storage stay E-only so a stray F-press while facing them does
     // nothing.
     const fueled =
-      pc.kind === 'purifier' && inputSystem.isTriggered(InputAction.IA_SECONDARY, PointerEventType.PET_DOWN, child)
+      (pc.kind === 'purifier' || getExpansionItem(pc.kind)) &&
+      inputSystem.isTriggered(InputAction.IA_SECONDARY, PointerEventType.PET_DOWN, child)
     if (fueled) {
-      handlePurifierFuel(platform)
+      if (!interactExpansion(platform, true)) handlePurifierFuel(platform)
       consumeWorldClick()
       return
     }
@@ -80,13 +84,17 @@ export function pressProximityAction(platform: Entity, secondary: boolean): void
   beginUiTouch()
   consumeWorldClick()
   if (secondary) {
-    if (nearby.kind === 'purifier') handlePurifierFuel(platform)
+    if (!interactExpansion(platform, true) && nearby.kind === 'purifier') handlePurifierFuel(platform)
   } else performConstructionPrimary(platform)
 }
 
 function performConstructionPrimary(platform: Entity): void {
   const pc = PlatformConstruction.getOrNull(platform)
   if (!pc) return
+  if (interactExpansion(platform, false)) {
+    consumeWorldClick()
+    return
+  }
   if (pc.kind === 'grill') {
     // Route by cook state: empty grill opens the menu, ready /
     // burned grill grabs the output, cooking grill is a no-op

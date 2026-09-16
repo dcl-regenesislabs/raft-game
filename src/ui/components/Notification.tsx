@@ -1,3 +1,6 @@
+import { objectiveBottom } from '../progressionHud'
+import { isSandbox } from '../../progression/state'
+import { UI_INK } from '../visualTheme'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
 import { getNotification } from '../notification'
@@ -19,9 +22,10 @@ export function NotificationOverlay(): ReactEcs.JSX.Element | null {
   // Slide from fully offscreen (-(height + top inset)) at slide=0 to the
   // resting NOTIFICATION_TOP_INSET at slide=1. Linear interpolation keeps
   // the easing concentrated in the slide curve itself.
+  const inset = isSandbox() ? NOTIFICATION_TOP_INSET : objectiveBottom()
   const offscreenTop = -(NOTIFICATION_HEIGHT + NOTIFICATION_TOP_INSET)
   const top =
-    offscreenTop + (NOTIFICATION_TOP_INSET - offscreenTop) * view.slide
+    offscreenTop + (inset - offscreenTop) * view.slide
   return (
     <UiEntity
       uiTransform={{
@@ -44,7 +48,7 @@ export function NotificationOverlay(): ReactEcs.JSX.Element | null {
         <Label
           value={view.message}
           fontSize={NOTIFICATION_FONT_SIZE}
-          color={NOTIFICATION_TEXT_COLOR}
+          color={UI_INK}
           textAlign="middle-center"
           uiTransform={{
             positionType: 'absolute',

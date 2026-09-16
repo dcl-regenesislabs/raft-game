@@ -1,14 +1,16 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), assert = require('node:assert/strict')
 const ts = require('typescript'), root = path.resolve(__dirname, '../src'), cache = new Map(), mocks = new Map()
 let mobile = true, pressed = false, down = false, keyDown = null, cancelled = 0, selected = 0, target = null, line = false, biting = false, panel = false, writes = []
+let up = false
+let ending = false
 let builderMode = 'idle', constructionMode = 'idle'
 let canvas = { width: 2712, height: 1220, interactableArea: { left: 220, right: 220, top: 60, bottom: 120 } }
 const component = () => { const data = new Map(); return { data, getOrNull: e => data.get(e) ?? null } }
 const components = Object.fromEntries(['ActiveCook', 'ChefNpc', 'FloatingIsland', 'IslandChest', 'PlatformConstruction', 'PurifierState'].map(k => [k, component()]))
 components.CookStatus = { Cooking: 1, Ready: 2, Burned: 3 }
 const ecs = {
- InputAction: { IA_POINTER: 0, IA_PRIMARY: 1, IA_SECONDARY: 2, IA_ACTION_3: 3, IA_ACTION_4: 4, IA_ACTION_5: 5, IA_ACTION_6: 6, IA_JUMP: 7 }, PointerEventType: { PET_DOWN: 0 },
- inputSystem: { isPressed: () => pressed, isTriggered: action => keyDown === null ? down : action === keyDown },
+ InputAction: { IA_POINTER: 0, IA_PRIMARY: 1, IA_SECONDARY: 2, IA_ACTION_3: 3, IA_ACTION_4: 4, IA_ACTION_5: 5, IA_ACTION_6: 6, IA_JUMP: 7 }, PointerEventType: { PET_DOWN: 0, PET_UP: 1 },
+ inputSystem: { isPressed: () => pressed, isTriggered: (action,type) => type === 1 ? up : keyDown === null ? down : action === keyDown },
  UiCanvasInformation: { getOrNull: () => canvas }, TouchScreenControls: { createOrReplace: (_, value) => writes.push(value) },
  engine: { RootEntity: 0, getEntitiesWith: function*(c) { for (const [e, v] of c.data) yield [e, v] } }
 }
@@ -27,6 +29,8 @@ function load(file) {
  return exports
 }
 const items = [{ id: 'hook', heldKind: 'hook', texture: 'hook.png', hasAction: true, selectable: true }, { id: 'cup', heldKind: 'cup', texture: 'cup.png', hasAction: true, selectable: true }]
+let expansionAction = null
+mock('expansion/runtime.ts', { expansionActions: () => expansionAction, interactExpansion: () => false })
 mock('components.ts', components)
 mock('ui/theme.ts', { HANDS_ICON: 'images/hud/hands.png' })
 mock('factories/islandChest.ts', { CHEST_INTERACT_MAX_DISTANCE: 4 })
@@ -35,7 +39,7 @@ mock('ui/items.ts', { getInventorySlot: i => items[i] ?? null, getCatalogItem: i
 mock('ui/inventoryState.ts', { getSelectedSlot: () => selected, selectSlot: i => { if (!panel) selected = i }, isSlotSelectable: i => !!items[i]?.selectable, getSlotHasAction: i => !!items[i]?.hasAction })
 mock('ui/actionButton.ts', { actionButtonJustPressed: () => false, isActionButtonPressed: () => false })
 mock('ui/cookableItems.ts', { getCookableById: () => ({ texture: 'meal.png' }) })
-for (const [file, fn] of [['craftToggle','isCraftOpen'],['cookToggle','isCookOpen'],['inventoryToggle','isInventoryOpen'],['gameOver','isGameOver'],['startupGate','isStartupGateActive'],['storageToggle','isStorageOpen'],['systemSession','isSystemMenuOpen'],['winScreen','isWinActive'],['craftSession','isCrafting']]) mock('ui/' + file + '.ts', { [fn]: () => panel })
+for (const [file, fn] of [['craftToggle','isCraftOpen'],['cookToggle','isCookOpen'],['inventoryToggle','isInventoryOpen'],['gameOver','isGameOver'],['startupGate','isStartupGateActive'],['storageToggle','isStorageOpen'],['systemSession','isSystemMenuOpen'],['winScreen','isWinActive'],['craftSession','isCrafting']]) mock('ui/' + file + '.ts', { [fn]: () => panel || (file === 'winScreen' && ending) })
 mock('systems/constructionPlacement.ts', { getConstructionPlacementMode: () => constructionMode, cancelConstructionPreview: () => cancelled++ })
 mock('systems/raftBuilder.ts', { getRaftBuilderMode: () => builderMode, cancelRaftPreview: () => cancelled++ })
 mock('systems/fishingRod.ts', { isFishingLineActive: () => line, isFishingBiting: () => biting, cancelFishingForEquipmentChange: () => { cancelled++; line = false } })
@@ -216,6 +220,36 @@ test('All tools keep POINTER main and jump secondary; Hands is inert', () => {
  assert.equal(fire.toolFireJustPressed(), false); assert.equal(fire.isToolFirePressed(), false)
  pressed = down = false; selected = 0; items[0] = original
 })
+test('Ending screens hide native movement and crosshair, then restore them', () => {
+ panel = false; ending = true; controls.touchControlsSystem(0)
+ assert.equal(writes.at(-1).hideJoystick, true)
+ assert.equal(writes.at(-1).hideCrosshair, true)
+ assert.ok(writes.at(-1).touchInputs.every(button => button.hide))
+ ending = false; controls.touchControlsSystem(0)
+ assert.equal(writes.at(-1).hideJoystick, false)
+ assert.equal(writes.at(-1).hideCrosshair, false)
+ assert.equal(writes.at(-1).touchInputs.find(b => b.inputAction === ecs.InputAction.IA_JUMP).hide, false)
+})
+test('Station progress text never rebuilds unchanged native action buttons', () => {
+ target = 'grill'; panel = false; ending = false; builderMode = 'idle'; constructionMode = 'idle'
+ expansionAction = { primary: 'Processing 10%', secondary: 'Add wood (30s)', icon: 'smelter.png', secondaryIcon: 'wood.png' }
+ controls.touchControlsSystem(0); const before = writes.length
+ expansionAction.primary = 'Processing 11%'; expansionAction.secondary = 'Add wood (29s)'
+ controls.touchControlsSystem(0); assert.equal(writes.length, before)
+ expansionAction = null
+})
+
+
+
+
+test('Equipment changes require release and a cooldown on both desktop and mobile', () => {
+ for (const platform of [false,true]) {
+  mobile=platform;pressed=down=up=false;gate.mobileUiInputSystem(2);pressed=down=true;gate.beginEquipmentTransition();assert(!fire.toolFireJustPressed());
+  down=false;gate.mobileUiInputSystem(1);assert(gate.isEquipmentInputBlocked());down=true;assert(!fire.toolFireJustPressed(),'fresh DOWN cannot bypass an un-released equipment transition');
+  pressed=down=false;up=true;gate.mobileUiInputSystem(.01);up=false;pressed=down=true;assert(fire.toolFireJustPressed());
+  gate.beginEquipmentTransition();pressed=down=false;up=true;gate.mobileUiInputSystem(.1);up=false;assert(gate.isEquipmentInputBlocked());gate.mobileUiInputSystem(.31);assert(!gate.isEquipmentInputBlocked());
+ }
+ mobile=true;pressed=down=up=false;
+})
+
 console.log(`${count} mobile control tests passed`)
-
-

@@ -1,3 +1,4 @@
+import { beginUiTouch } from './mobileControlsState'
 // Open/close + status state for the SYSTEM menu (SAVE / LOAD / RESTART).
 // Lives alongside the other menu-toggle modules so the HUD index can
 // gate it the same way it gates inventory / cook / craft. Status is
@@ -27,6 +28,7 @@ export function isSystemMenuOpen(): boolean {
 }
 
 export function setSystemMenuOpen(value: boolean): void {
+  beginUiTouch()
   isOpen = value
   if (!value) confirm = null
 }

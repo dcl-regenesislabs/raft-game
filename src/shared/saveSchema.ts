@@ -1,3 +1,6 @@
+import { serializeExpansionSession, hydrateExpansionSession } from '../expansion/runtime'
+import { serializeProgress, hydrateProgress, ProgressSnapshot } from '../progression/state'
+import { serializeTutorial, hydrateTutorial, TutorialAction } from '../ui/tutorialState'
 // SaveBlob — the JSON payload shipped to/from the server's
 // Storage.player. The shape is purely client-managed; the server treats
 // it as an opaque string. The `version` field gates future migrations:
@@ -5,21 +8,15 @@
 // the read side. Forward-compat reads accept the current version only;
 // older blobs are dropped on load with a warning.
 
-import {
-  setHeldCup,
-  setHeldFood,
-  setHeldItem,
-  type HeldItemKind
-} from '../factories/heldItem'
 import { getPlayTimeS, setPlayTimeS } from '../systems/playTimer'
 import {
   hydrateInventoryCounts,
+  refreshHeldForSelectedSlot,
   hydrateSelectedSlot,
   serializeInventoryCounts,
   serializeSelectedSlot
 } from '../ui/inventoryState'
 import {
-  getInventorySlot,
   hydrateInventoryDurabilities,
   hydrateInventoryLayout,
   serializeInventoryDurabilities,
@@ -65,6 +62,9 @@ export interface SaveBlob {
   raft: PlatformSnapshot[]
   position?: PositionSnapshot
   playTimeS?: number
+  expansion?: ReturnType<typeof serializeExpansionSession>
+  progression?: ProgressSnapshot
+  tutorial?: TutorialAction[]
 }
 
 export function buildSaveBlob(): SaveBlob {
@@ -82,6 +82,9 @@ export function buildSaveBlob(): SaveBlob {
     vitals: serializeVitals(),
     raft: serializeRaft(),
     playTimeS: getPlayTimeS(),
+    progression: serializeProgress(),
+    expansion: serializeExpansionSession(),
+    tutorial: serializeTutorial(),
     ...(position !== null ? { position } : {})
   }
 }
@@ -91,6 +94,8 @@ export function buildSaveBlob(): SaveBlob {
 // raft must hydrate after the player inventory (otherwise a chest pickup
 // would target an item id the layout doesn't yet know about).
 export function applySaveBlob(blob: SaveBlob): void {
+  if (blob.progression) hydrateProgress(blob.progression)
+  if (blob.tutorial) hydrateTutorial(blob.tutorial)
   hydrateInventoryLayout(blob.inventory.layout)
   // Durabilities are parallel to the layout — hydrate them immediately
   // after the layout so each slot's tool-uses match the saved state
@@ -104,34 +109,11 @@ export function applySaveBlob(blob: SaveBlob): void {
   hydrateSelectedSlot(blob.inventory.selected)
   hydrateLearnedRecipes(blob.recipes)
   hydrateVitals(blob.vitals)
+  if (blob.expansion) hydrateExpansionSession(blob.expansion)
   hydrateRaft(blob.raft)
   setPlayTimeS(blob.playTimeS ?? 0)
-  refreshHeldItemFromSelection(blob.inventory.selected)
+  refreshHeldForSelectedSlot()
   if (blob.position !== undefined) hydratePlayerPosition(blob.position)
-}
-
-// After hydrating the layout + selection, the held viewmodel is still
-// whatever the player had equipped before load. Re-equip the slot the
-// blob restored so the camera sprite/GLB matches the inventory bar.
-function refreshHeldItemFromSelection(selectedIndex: number): void {
-  const def = getInventorySlot(selectedIndex)
-  if (def === null) {
-    setHeldItem('hook')
-    return
-  }
-  if (def.heldKind === 'cup') {
-    setHeldCup(def.id, def.texture)
-    return
-  }
-  if (def.consumable) {
-    setHeldFood(def.id, def.texture, def.glb)
-    return
-  }
-  if (def.heldKind !== null) {
-    setHeldItem(def.heldKind as HeldItemKind)
-    return
-  }
-  setHeldItem('hook')
 }
 
 // Light validation — the server stores raw strings, so the client must
@@ -179,5 +161,7 @@ export function parseSaveBlob(raw: string): SaveBlob | null {
   if (v.playTimeS !== undefined && typeof v.playTimeS !== 'number') {
     v.playTimeS = undefined
   }
+  if (v.tutorial !== undefined && !Array.isArray(v.tutorial)) v.tutorial = undefined
+  if (v.expansion !== undefined && (typeof v.expansion !== 'object' || v.expansion === null)) v.expansion = undefined
   return v as SaveBlob
 }

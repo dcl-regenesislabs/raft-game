@@ -1,3 +1,6 @@
+import { beginEquipmentTransition } from './mobileControlsState'
+import { recordProgress } from '../progression/state'
+import { getCookableById } from './cookableItems'
 import { recordTutorialAction } from './tutorialState'
 // State for the bottom-bar inventory: which slot is selected and how recently
 // each slot was pressed. The press timer drives a short scale/glow pulse on
@@ -98,6 +101,7 @@ export function getSelectedSlot(): number {
 export function selectSlot(i: number): void {
   if (i === HANDS_SLOT) {
     if (isInventoryOpen()) return
+    beginEquipmentTransition()
     selected = HANDS_SLOT
     selectedAtMs = Date.now()
     pointerLockoutFromSelection = true
@@ -112,6 +116,7 @@ export function selectSlot(i: number): void {
   // every caller, not just the bottom-bar UI.
   if (!isSlotSelectable(i)) return
   const def = slotDef(i)
+  beginEquipmentTransition()
   selected = i
   pressElapsed[i] = 0
   pressCount[i]++
@@ -144,7 +149,7 @@ function applyHeldFromDef(def: ItemDef): void {
   // Consumables (food) equip as a textured plane held in front of the
   // camera. The actual eating is deferred to `systems/foodEat.ts`,
   // which watches for the fire input and runs the consume animation.
-  if (def.consumable) {
+  if (def.consumable || def.heldKind === 'food') {
     setHeldFood(def.id, def.texture, def.glb)
     return
   }
@@ -202,6 +207,7 @@ export function consumeFoodById(id: string): boolean {
   const effect = getFoodEffect(id)
   if (effect === null) return true
   if ((effect.hunger ?? 0) > 1) recordTutorialAction('eat')
+  if (getCookableById(id)) recordProgress('cookedMeal')
   const hunger = (effect.hunger ?? 0) / 100
   const hungerBonus = (effect.hungerBonus ?? 0) / 100
   const thirst = (effect.thirst ?? 0) / 100
@@ -286,14 +292,29 @@ export function addCollected(kind: string, count: number = 1): number {
   // Looks up materials and craftables; for ids already in the starter
   // layout (e.g. hammer, spear) the slot exists so this is a no-op and
   // the count just tracks internally without duplicating the slot.
-  ensureCollectibleSlot(kind)
   const cur = collectedCounts.get(kind) ?? 0
   const cap = getCatalogItem(kind)?.maxStackSize
   const accepted =
     cap === undefined ? count : Math.max(0, Math.min(count, cap - cur))
-  if (accepted <= 0) return 0
+  if (accepted <= 0 || ensureCollectibleSlot(kind) < 0) return 0
   collectedCounts.set(kind, cur + accepted)
   return accepted
+}
+
+// Predict output space after pocket materials are spent. Storage costs do
+// not free player slots. Never debit a recipe that cannot deliver its output.
+export function canReceiveCraft(id: string, costs: readonly { materialId: string; amount: number }[], outputCount = 1): boolean {
+  const def = getCatalogItem(id)
+  if (!def) return false
+  const count = getCollectedCount(id)
+  if (def.stackable && count + outputCount > (def.maxStackSize ?? Infinity)) return false
+  for (let i = 0; i < INVENTORY_TOTAL_SLOTS; i++) {
+    const slot = getInventorySlot(i)
+    if (!slot || (def.stackable && slot.id === id)) return true
+    if (slot.stackable && costs.some(cost => cost.materialId === slot.id &&
+      getCollectedCount(slot.id) > 0 && getCollectedCount(slot.id) <= cost.amount)) return true
+  }
+  return false
 }
 
 export function getCollectedCount(kind: string): number {
@@ -335,6 +356,7 @@ export function consumeSlotDurability(slotIndex: number): boolean {
   clearInventorySlot(slotIndex)
   showNotification(`${itemLabel} broke!`)
   if (slotIndex === selected) {
+    beginEquipmentTransition()
     selected = findFallbackEquipment()
     refreshHeldForSelectedSlot()
   }
@@ -349,6 +371,7 @@ function clearEmptyStackableSlot(id: string): void {
       clearInventorySlot(i)
       // Select remaining equipment and refresh the held item on every platform.
       if (wasSelected) {
+        beginEquipmentTransition()
         selected = findFallbackEquipment()
         refreshHeldForSelectedSlot()
       }
@@ -425,6 +448,7 @@ export function transmuteContainerSlot(
   collectedCounts.set(oldDef.id, Math.max(0, oldCount - 1))
   collectedCounts.set(newId, (collectedCounts.get(newId) ?? 0) + 1)
   if (slotIndex === selected) {
+    beginEquipmentTransition()
     const def = getInventorySlot(slotIndex)
     if (def !== null && def.heldKind === 'cup') {
       setHeldCup(def.id, def.texture)

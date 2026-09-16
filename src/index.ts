@@ -1,3 +1,5 @@
+import { progressionSystem } from './progression/director'
+import { expansionSystem } from './expansion/runtime'
 import { mobileUiInputSystem } from './ui/mobileControlsState'
 import { engine } from '@dcl/sdk/ecs'
 import { isMobile } from '@dcl/sdk/platform'
@@ -189,6 +191,8 @@ export async function main(): Promise<void> {
   engine.addSystem(constructionPlacementSystem)
   engine.addSystem(hookThrowerSystem)
   engine.addSystem(fishingRodSystem)
+  engine.addSystem(expansionSystem)
+  engine.addSystem(progressionSystem)
   engine.addSystem(craftSessionTickSystem)
   engine.addSystem(purifierProcessSystem)
   engine.addSystem(purifierFillSystem)

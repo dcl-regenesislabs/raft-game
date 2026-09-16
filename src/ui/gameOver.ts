@@ -1,3 +1,23 @@
+import { hydratePlayerPosition } from './playerPosition'
+import { GRID_ORIGIN } from '../factories/platform'
+import { FloatingGarbage } from '../components'
+import { destroyFloatingGarbage } from '../factories/floatingGarbage'
+import { resetProgress, campaignMode, CampaignMode, metric } from '../progression/state'
+import { clearCheckpoint, restoreCheckpoint } from '../progression/checkpoint'
+import { DEBUG_MODE } from '../config/gameConfig'
+import { resetGarbageSpawner } from '../systems/garbageSpawner'
+import { cancelSharkAttacks } from '../systems/sharkDirector'
+import { resetEventScheduler } from '../systems/eventScheduler'
+import { resetHookThrowerState } from '../systems/hookThrower'
+import { resetFishingRodState } from '../systems/fishingRod'
+import { resetRaftBuilderState } from '../systems/raftBuilder'
+import { resetConstructionPlacementState } from '../systems/constructionPlacement'
+import { resetAnchorThrowerState } from '../systems/anchorThrower'
+import { resetAnchorState } from '../systems/anchorState'
+import { closeStorageMenu } from './storageToggle'
+import { setSystemMenuOpen } from './systemSession'
+import { protectPanelDismissal } from './inventoryToggle'
+import { resetExpansion } from '../expansion/runtime'
 import { applyConfiguredGameMode } from '../runtime/sceneFlow'
 import { restartTutorial } from './tutorialState'
 // Owns the scene's "you died" state. When the player's life hits zero the
@@ -55,6 +75,7 @@ export function getGameOverPanelFade(): number {
 
 export function triggerGameOver(): void {
   if (dead) return
+  metric('deaths')
   dead = true
   elapsedSec = 0
 }
@@ -65,7 +86,43 @@ function clamp01(v: number): number {
 
 // Reset every gameplay store the death-screen flow exposes back to its
 // fresh-load baseline. Called from the Play Again button.
+function clearTransientActions(): void {
+  setInventoryOpen(false)
+  setCraftOpen(false)
+  setCookOpen(false)
+  closeStorageMenu()
+  setSystemMenuOpen(false)
+  clearCookSlots()
+  resetHookThrowerState()
+  resetFishingRodState()
+  resetRaftBuilderState()
+  resetConstructionPlacementState()
+  resetAnchorThrowerState()
+  resetAnchorState()
+  cancelSharkAttacks()
+  resetExpansion()
+  resetWinState()
+  protectPanelDismissal()
+}
+export function retryChapter(): void {
+  clearTransientActions()
+  if (!restoreCheckpoint()) { playAgain(); return }
+  metric('retries')
+  dead = false
+  elapsedSec = 0
+}
+export function startTestMode(mode: CampaignMode): void {
+  if (!DEBUG_MODE) return
+  resetProgress(mode)
+  playAgain()
+}
 export function playAgain(): void {
+  clearTransientActions()
+  resetProgress(campaignMode())
+  clearCheckpoint()
+  resetEventScheduler()
+  resetGarbageSpawner()
+  for (const [entity] of [...engine.getEntitiesWith(FloatingGarbage)]) destroyFloatingGarbage(entity)
   restartTutorial()
   destroyNonMainPlatforms()
   resetInventoryLayout()
@@ -73,6 +130,7 @@ export function playAgain(): void {
   resetLearnedRecipes()
   resetPlayTimer()
   startPlayTimer()
+  resetExpansion()
   resetWinState()
   setStat('life', 1)
   setStat('hunger', 1)
@@ -86,6 +144,7 @@ export function playAgain(): void {
   // hold whatever the player had picked, so wipe them explicitly.
   clearCookSlots()
   applyConfiguredGameMode()
+  hydratePlayerPosition({ x: GRID_ORIGIN.x, y: GRID_ORIGIN.y + 1, z: GRID_ORIGIN.z })
   dead = false
   elapsedSec = 0
 }
