@@ -528,10 +528,11 @@ test('Sprite roots own cleanup, retain support identity and keep stairs physical
   sprites.attachPrototypeSprite(root, 'stairs')
   assert.equal(sprites.getSpriteKind(root), 'stairs')
   const children = [...Transform.data].filter(([, t]) => t.parent === root)
-  assert.equal(children.length, 9, 'one sprite plus eight step colliders')
-  const steps = children.map(([, t]) => t).filter(t => t.scale.z === 0.32)
-  assert.equal(steps.length, 8)
-  assert(Math.abs(steps[7].scale.y - 2.24) < 1e-9)
+  assert.equal(children.length, 2, 'one GLB plus one smooth ramp')
+  const ramp = children.find(([e]) => !GltfContainer.getOrNull(e))[1]
+  assert.equal(ramp.scale.x, 2)
+  assert(Math.abs(ramp.scale.z - Math.hypot(2.3, 2.7)) < 1e-9)
+  assert(ramp.rotation.x < 0, 'ramp climbs toward local +Z')
   sprites.removePrototypeEntity(root)
   assert.equal(sprites.getSpriteKind(root), undefined)
   for (const [e] of children) assert.equal(Transform.getOrNull(e), null)
@@ -609,10 +610,10 @@ test('Finite finale clears every reinforcement before an already-finished broadc
   }
   assert(won);assert(progress.hasProgress('finaleCleared'));assert.equal(progress.storyWins(),3)
 })
-test('Iteration-one models sit on deck, fit a rotated raft tile, retain identity and clean up', () => {
+test('Expansion models sit on deck, fit cardinal tile rotations, retain identity and clean up', () => {
   const { EXPANSION_MODELS } = load('expansion/models.ts')
   const sprites = load('expansion/sprites.ts')
-  assert.equal(Object.keys(EXPANSION_MODELS).length, 10)
+  assert.equal(Object.keys(EXPANSION_MODELS).length, 20)
   for (const [kind, model] of Object.entries(EXPANSION_MODELS)) {
     assert(fs.existsSync(path.resolve(root, '..', model.src)))
     const entity = ecs.engine.addEntity()
@@ -622,10 +623,10 @@ test('Iteration-one models sit on deck, fit a rotated raft tile, retain identity
     const children = [...Transform.data].filter(([, t]) => t.parent === entity)
     const [visual, t] = children.find(([e]) => GltfContainer.getOrNull(e))
     assert.equal(GltfContainer.get(visual).src, model.src)
-    assert.equal(GltfContainer.get(visual).visibleMeshesCollisionMask, 0)
+    assert.equal(GltfContainer.get(visual).visibleMeshesCollisionMask, ['upperFloor', 'towerPlatform', 'lookoutPost'].includes(kind) ? ecs.ColliderLayer.CL_PHYSICS : 0)
     assert(Math.abs(0.9 + t.position.y + model.min[1] * t.scale.y - 0.2) < 1e-6, kind + ' floats or sinks')
     const radius = Math.hypot(Math.max(Math.abs(model.min[0]), Math.abs(model.max[0])), Math.max(Math.abs(model.min[2]), Math.abs(model.max[2]))) * model.scale
-    assert(radius < 1.5, kind + ' leaves tile at an arbitrary yaw')
+    assert(Math.max(model.max[0] - model.min[0], model.max[2] - model.min[2]) * model.scale <= 2.9, kind + ' leaves tile at a cardinal yaw')
     sprites.removePrototypeEntity(entity)
     assert.equal(sprites.getSpriteKind(entity), undefined)
     children.forEach(([e]) => assert.equal(Transform.getOrNull(e), null))
@@ -652,6 +653,33 @@ test('Model placement ghosts match committed transforms and never collide', () =
     assert(ecs.GltfNodeModifiers.get(ghost).modifiers.length)
     ghosts.hideSpectralConstruction(ghost)
     assert.equal(Transform.get(ghost).scale.x, 0)
+  }
+})
+test('Gate swings clear of the centre and closes without drifting at every cardinal yaw', () => {
+  const sprites = load('expansion/sprites.ts')
+  for (const yaw of [0, 90, 180, 270]) {
+    const root = ecs.engine.addEntity()
+    Transform.create(root, { position: { x: 10, y: 5, z: 20 } })
+    sprites.attachPrototypeSprite(root, 'gate')
+    for (let i = 0; i < 3; i++) {
+      sprites.setGateOpen(root, yaw, true)
+      const p = Transform.get(root).position
+      assert(Math.abs(Math.hypot(p.x - 10, p.z - 20) - Math.hypot(1.35, 1.35)) < 1e-6)
+      sprites.setGateOpen(root, yaw, false)
+      assert.deepEqual({ ...Transform.get(root).position }, { x: 10, y: 5, z: 20 })
+    }
+    sprites.removePrototypeEntity(root)
+  }
+})
+test('Raised structures leave under-deck space open and spikes do not block walking', () => {
+  const sprites = load('expansion/sprites.ts')
+  for (const kind of ['upperFloor', 'towerPlatform', 'lookoutPost', 'spikeStrip']) {
+    const root = ecs.engine.addEntity()
+    Transform.create(root, { position: point() })
+    sprites.attachPrototypeSprite(root, kind)
+    const children = [...Transform.data].filter(([, t]) => t.parent === root)
+    assert.equal(children.length, 1, kind + ' must not get a solid bounding box')
+    sprites.removePrototypeEntity(root)
   }
 })
 console.log(passed + ' expansion tests passed')

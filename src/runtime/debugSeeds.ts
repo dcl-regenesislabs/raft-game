@@ -124,6 +124,16 @@ function seedDebugWorld(): void {
 // A separate connected workshop makes the expansion testable without changing
 // the normal survival start or filling all thirty backpack slots.
 function seedExpansionWorkshop(): void {
+  const structures = ['wall', 'gate', 'stairs', 'upperFloor', 'railing', 'armoredFoundation',
+    'towerPlatform', 'ropeBarricade', 'spikeStrip', 'lookoutPost']
+  // Southern row faces the central walkway; all displays fit on their own tile.
+  structures.forEach((kind, i) => {
+    const x = i - 2
+    if (x < -1 || x > 1) createPlatform(gridCellToWorld(x, -1), { gridX: x, gridZ: -1 })
+    const tile = createPlatform(gridCellToWorld(x, -2), { gridX: x, gridZ: -2 })
+    createConstruction(tile, kind, kind === 'stairs' ? 180 : 0)
+  })
+
   const devices = ['workbench', 'smelter', 'researchTable', 'ammoCrate', 'alarmBell', 'armoryBench', 'engineeringBench',
     'rainCollector', 'cropBed', 'waterTank', 'improvedGrill']
   // Leave the existing starter ring intact; extend its walkway to every display.

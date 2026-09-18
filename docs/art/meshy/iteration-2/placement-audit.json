@@ -1,0 +1,272 @@
+{
+  "wall": {
+    "source_dimensions": [
+      1.0,
+      0.6953119933605194,
+      0.13574299961328506
+    ],
+    "node_scale": [
+      2.7,
+      2.8764065902757983,
+      1.8417156001577903
+    ],
+    "node_yaw_degrees": 0,
+    "runtime_min": [
+      -1.35,
+      0,
+      -0.125
+    ],
+    "runtime_max": [
+      1.35,
+      2,
+      0.125
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  },
+  "gate": {
+    "source_dimensions": [
+      1.0,
+      0.5742179751396179,
+      0.1948239952325821
+    ],
+    "node_scale": [
+      2.7,
+      3.482997897294509,
+      1.5398513906968088
+    ],
+    "node_yaw_degrees": 0,
+    "runtime_min": [
+      -1.35,
+      0,
+      -0.15
+    ],
+    "runtime_max": [
+      1.35,
+      2,
+      0.15
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  },
+  "stairs": {
+    "source_dimensions": [
+      0.9882819950580597,
+      0.7109380066394806,
+      1.0
+    ],
+    "node_scale": [
+      2.428456667227864,
+      3.7274698711442293,
+      2.7
+    ],
+    "node_yaw_degrees": 180,
+    "runtime_min": [
+      -1.2,
+      0,
+      -1.35
+    ],
+    "runtime_max": [
+      1.2,
+      2.65,
+      1.35
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  },
+  "upperFloor": {
+    "source_dimensions": [
+      1.0,
+      0.515625,
+      0.9609379768371582
+    ],
+    "node_scale": [
+      2.7,
+      4.46060606060606,
+      2.809754703302298
+    ],
+    "node_yaw_degrees": 0,
+    "runtime_min": [
+      -1.35,
+      0,
+      -1.35
+    ],
+    "runtime_max": [
+      1.35,
+      2.3,
+      1.35
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  },
+  "railing": {
+    "source_dimensions": [
+      0.15625,
+      0.4492190033197403,
+      1.0
+    ],
+    "node_scale": [
+      1.92,
+      2.226085701205812,
+      2.7
+    ],
+    "node_yaw_degrees": 90,
+    "runtime_min": [
+      -1.35,
+      0,
+      -0.15
+    ],
+    "runtime_max": [
+      1.35,
+      1,
+      0.15
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  },
+  "armoredFoundation": {
+    "source_dimensions": [
+      1.0,
+      0.13623099774122238,
+      1.0
+    ],
+    "node_scale": [
+      2.9,
+      1.1744757261774448,
+      2.9
+    ],
+    "node_yaw_degrees": 0,
+    "runtime_min": [
+      -1.45,
+      0,
+      -1.45
+    ],
+    "runtime_max": [
+      1.45,
+      0.16,
+      1.45
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  },
+  "towerPlatform": {
+    "source_dimensions": [
+      1.0,
+      0.5410149991512299,
+      1.0
+    ],
+    "node_scale": [
+      2.7,
+      4.251268455788378,
+      2.7
+    ],
+    "node_yaw_degrees": 0,
+    "runtime_min": [
+      -1.35,
+      0,
+      -1.35
+    ],
+    "runtime_max": [
+      1.35,
+      2.3,
+      1.35
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  },
+  "ropeBarricade": {
+    "source_dimensions": [
+      1.0,
+      0.5039060115814209,
+      0.1679680049419403
+    ],
+    "node_scale": [
+      2.7,
+      1.9844970629774288,
+      1.4883786950164397
+    ],
+    "node_yaw_degrees": 0,
+    "runtime_min": [
+      -1.35,
+      0,
+      -0.125
+    ],
+    "runtime_max": [
+      1.35,
+      1,
+      0.125
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  },
+  "spikeStrip": {
+    "source_dimensions": [
+      1.0,
+      0.2890619933605194,
+      0.31445398926734924
+    ],
+    "node_scale": [
+      2.7,
+      1.7297327614301676,
+      2.2260808381885684
+    ],
+    "node_yaw_degrees": 0,
+    "runtime_min": [
+      -1.35,
+      0,
+      -0.35
+    ],
+    "runtime_max": [
+      1.35,
+      0.5,
+      0.35
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  },
+  "lookoutPost": {
+    "source_dimensions": [
+      1.0,
+      1.0,
+      0.7597649991512299
+    ],
+    "node_scale": [
+      2.7,
+      3.65,
+      3.5537304337739966
+    ],
+    "node_yaw_degrees": 0,
+    "runtime_min": [
+      -1.35,
+      0,
+      -1.35
+    ],
+    "runtime_max": [
+      1.35,
+      3.65,
+      1.35
+    ],
+    "entity_scale": 1,
+    "deck_offset": 0.2,
+    "animations": 0,
+    "built_in_colliders": false
+  }
+}

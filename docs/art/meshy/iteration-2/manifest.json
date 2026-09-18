@@ -1,0 +1,293 @@
+{
+  "iteration": 2,
+  "approved_credits": 150,
+  "settings": {
+    "ai_model": "meshy-t2",
+    "model_type": "smart-topology",
+    "target_polycount": 4000,
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "target_formats": [
+      "glb"
+    ]
+  },
+  "assets": [
+    {
+      "id": "wall",
+      "task_id": "01a0b1ec-eb6d-74c6-a4b3-33a68779654e",
+      "source": "images/concepts/expansion/wall.png",
+      "output": "assets/scene/items/expansion/wall.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4416,
+        "faces": 4416,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.13574299216270447,
+          0.6953120231628418
+        ],
+        "bytes": 1636692
+      }
+    },
+    {
+      "id": "gate",
+      "task_id": "01a0b1ec-f392-77c7-95b3-aca6bf4fe6b2",
+      "source": "images/concepts/expansion/gate.png",
+      "output": "assets/scene/items/expansion/gate.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4128,
+        "faces": 4128,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.1948239952325821,
+          0.5742179751396179
+        ],
+        "bytes": 1721568
+      }
+    },
+    {
+      "id": "stairs",
+      "task_id": "01a0b1ef-f3fb-7134-88da-8069128f2b75",
+      "source": "images/concepts/expansion/stairs.png",
+      "output": "assets/scene/items/expansion/stairs.glb",
+      "status": "SUCCEEDED",
+      "previous_failed_task_id": "01a0b1ec-fa7f-758c-bd28-d38dc759a2a4",
+      "previous_consumed_credits": 0,
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4327,
+        "faces": 4327,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.9882819652557373,
+          1.0,
+          0.7109379768371582
+        ],
+        "bytes": 1926340
+      }
+    },
+    {
+      "id": "upperFloor",
+      "task_id": "01a0b1ed-0273-7318-b6c1-cc25c8a3c7f3",
+      "source": "images/concepts/expansion/upperFloor.png",
+      "output": "assets/scene/items/expansion/upperFloor.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 3971,
+        "faces": 3971,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.9609379768371582,
+          0.515625
+        ],
+        "bytes": 1927048
+      }
+    },
+    {
+      "id": "railing",
+      "task_id": "01a0b1ed-0838-76a9-926c-6af9d66debd7",
+      "source": "images/concepts/expansion/railing.png",
+      "output": "assets/scene/items/expansion/railing.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4300,
+        "faces": 4300,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.15625,
+          1.0,
+          0.4492189884185791
+        ],
+        "bytes": 1413360
+      }
+    },
+    {
+      "id": "armoredFoundation",
+      "task_id": "01a0b1ed-0db5-746d-a347-f5eb6128bba2",
+      "source": "images/concepts/expansion/armoredFoundation.png",
+      "output": "assets/scene/items/expansion/armoredFoundation.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4197,
+        "faces": 4197,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          1.0,
+          0.13623100519180298
+        ],
+        "bytes": 2224656
+      }
+    },
+    {
+      "id": "towerPlatform",
+      "task_id": "01a0b1ed-13f3-71ec-b538-d6dc6b0705ff",
+      "source": "images/concepts/expansion/towerPlatform.png",
+      "output": "assets/scene/items/expansion/towerPlatform.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4262,
+        "faces": 4262,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          1.0,
+          0.5410150289535522
+        ],
+        "bytes": 2313556
+      }
+    },
+    {
+      "id": "ropeBarricade",
+      "task_id": "01a0b1ed-19d9-773a-965c-5c51db336846",
+      "source": "images/concepts/expansion/ropeBarricade.png",
+      "output": "assets/scene/items/expansion/ropeBarricade.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4304,
+        "faces": 4304,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.1679680049419403,
+          0.5039060115814209
+        ],
+        "bytes": 1577524
+      }
+    },
+    {
+      "id": "spikeStrip",
+      "task_id": "01a0b1ed-1f62-7769-b934-513aa3ca0b95",
+      "source": "images/concepts/expansion/spikeStrip.png",
+      "output": "assets/scene/items/expansion/spikeStrip.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4198,
+        "faces": 4198,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.31445398926734924,
+          0.2890619933605194
+        ],
+        "bytes": 2205128
+      }
+    },
+    {
+      "id": "lookoutPost",
+      "task_id": "01a0b1ed-2550-7234-8f03-af41964ec538",
+      "source": "images/concepts/expansion/lookoutPost.png",
+      "output": "assets/scene/items/expansion/lookoutPost.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4180,
+        "faces": 4180,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.7597650289535522,
+          1.0
+        ],
+        "bytes": 2089952
+      }
+    }
+  ],
+  "integration_status": "INTEGRATED",
+  "status": "GENERATION_COMPLETE",
+  "consumed_credits": 150,
+  "runtime_fit_script": "scripts/prepare-iteration-two-models.py",
+  "qa": "docs/qa/iteration-2/verification.md"
+}

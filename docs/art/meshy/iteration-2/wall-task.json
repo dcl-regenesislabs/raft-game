@@ -1,0 +1,8 @@
+{
+  "asset": "wall",
+  "task_id": "01a0b1ec-eb6d-74c6-a4b3-33a68779654e",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b1ec-eb6d-74c6-a4b3-33a68779654e",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

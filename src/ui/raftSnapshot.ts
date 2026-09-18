@@ -1,7 +1,6 @@
 import { createFlameSprite, createIngredientSprites, createPlateSprite, getRecipeOutputTexture } from '../factories/cookingSprites'
 import { getCookableById } from './cookableItems'
-import { getSpriteKind } from '../expansion/sprites'
-import { Quaternion } from '@dcl/sdk/math'
+import { getSpriteKind, setGateOpen } from '../expansion/sprites'
 // Save-system snapshot of the player-built raft: every non-main platform
 // plus whatever construction (grill / purifier / storage) sits on it,
 // including chest contents. The main platform is implicit (always
@@ -150,11 +149,7 @@ export function hydrateRaft(snapshots: ReadonlyArray<PlatformSnapshot>): void {
     if (construction.state && ExpansionState.getOrNull(platform)) {
       ExpansionState.createOrReplace(platform, { ...construction.state })
       if (construction.kind === 'gate' && construction.state.active)
-        Transform.getMutable(PlatformConstruction.get(platform).child).rotation = Quaternion.fromEulerDegrees(
-          0,
-          construction.yawDeg + 90,
-          0
-        )
+        setGateOpen(PlatformConstruction.get(platform).child, construction.yawDeg, true)
     }
     if ((construction.kind === 'storage' || construction.kind === 'ammoCrate') && construction.contents !== undefined) {
       restoreStorageContents(platform, construction.contents)

@@ -1,0 +1,8 @@
+{
+  "asset": "gate",
+  "task_id": "01a0b1ec-f392-77c7-95b3-aca6bf4fe6b2",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b1ec-f392-77c7-95b3-aca6bf4fe6b2",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

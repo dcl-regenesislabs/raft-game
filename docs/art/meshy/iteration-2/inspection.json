@@ -1,0 +1,192 @@
+{
+  "wall": {
+    "triangles": 4416,
+    "faces": 4416,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.13574299216270447,
+      0.6953120231628418
+    ],
+    "bytes": 1636692
+  },
+  "gate": {
+    "triangles": 4128,
+    "faces": 4128,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.1948239952325821,
+      0.5742179751396179
+    ],
+    "bytes": 1721568
+  },
+  "upperFloor": {
+    "triangles": 3971,
+    "faces": 3971,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.9609379768371582,
+      0.515625
+    ],
+    "bytes": 1927048
+  },
+  "railing": {
+    "triangles": 4300,
+    "faces": 4300,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.15625,
+      1.0,
+      0.4492189884185791
+    ],
+    "bytes": 1413360
+  },
+  "armoredFoundation": {
+    "triangles": 4197,
+    "faces": 4197,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      1.0,
+      0.13623100519180298
+    ],
+    "bytes": 2224656
+  },
+  "towerPlatform": {
+    "triangles": 4262,
+    "faces": 4262,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      1.0,
+      0.5410150289535522
+    ],
+    "bytes": 2313556
+  },
+  "ropeBarricade": {
+    "triangles": 4304,
+    "faces": 4304,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.1679680049419403,
+      0.5039060115814209
+    ],
+    "bytes": 1577524
+  },
+  "spikeStrip": {
+    "triangles": 4198,
+    "faces": 4198,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.31445398926734924,
+      0.2890619933605194
+    ],
+    "bytes": 2205128
+  },
+  "lookoutPost": {
+    "triangles": 4180,
+    "faces": 4180,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.7597650289535522,
+      1.0
+    ],
+    "bytes": 2089952
+  },
+  "stairs": {
+    "triangles": 4327,
+    "faces": 4327,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.9882819652557373,
+      1.0,
+      0.7109379768371582
+    ],
+    "bytes": 1926340
+  }
+}

@@ -1,7 +1,7 @@
 import { captureCheckpoint } from '../progression/checkpoint'
 import { CAMPAIGN } from '../progression/config'
 import { isSandbox, chapter, storyWins, raidGate, completeStoryRaid, recordProgress, queueReward, claimRewards, pendingRewards, metric, hasProgress, setAssaultActive, beginRecovery } from '../progression/state'
-import { attachPrototypeSprite, removePrototypeEntity } from './sprites'
+import { attachPrototypeSprite, removePrototypeEntity, setGateOpen } from './sprites'
 import { DEBUG_MODE } from '../config/gameConfig'
 import { nextDeckStep } from './path'
 import { AUTO_WIRE_RANGE_M, powerSources, supplyPower, PowerNode } from './power'
@@ -260,7 +260,7 @@ export function interactExpansion(e: Entity, secondary: boolean): boolean {
     }
   } else if (k === 'gate') {
     s.active = !s.active
-    Transform.getMutable(pc.child).rotation = Quaternion.fromEulerDegrees(0, pc.yawDeg + (s.active ? 90 : 0), 0)
+    setGateOpen(pc.child, pc.yawDeg, s.active)
   } else if (k === 'ammoCrate') openStorageMenu(e)
   else if (TOWERS[k]) {
     const id = TOWERS[k].ammo,
