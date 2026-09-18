@@ -1,0 +1,8 @@
+{
+  "asset": "rainCollector",
+  "task_id": "01a0ac1a-ae32-715c-b590-a4e085e22558",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0ac1a-ae32-715c-b590-a4e085e22558",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

@@ -1,0 +1,8 @@
+{
+  "asset": "researchTable",
+  "task_id": "01a0ac1a-a7c9-718a-b429-bae90f3495d2",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0ac1a-a7c9-718a-b429-bae90f3495d2",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

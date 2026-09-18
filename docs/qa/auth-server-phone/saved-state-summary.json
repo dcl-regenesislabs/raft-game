@@ -1,0 +1,115 @@
+{
+  "bytes": 5532,
+  "sha256": "b9d99cbe6b0d6ed3fdc30b64bc5b3c5c190886addf0410ddc4c839cfb5c96c86",
+  "savedAtMs": 1789685544285,
+  "vitals": {
+    "life": 0.3355321623150002,
+    "hunger": 0.9692084215666007,
+    "thirst": 0.9623658485814005
+  },
+  "platforms": 27,
+  "inventory": {
+    "layout": [
+      "hook",
+      "hammer",
+      "fishingRod",
+      "cup",
+      "spaghetti",
+      "fettuccine",
+      "shark_meat",
+      "tomatoes",
+      "olive_oil",
+      "squid",
+      "crab",
+      "wood",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "counts": [
+      {
+        "id": "hammer",
+        "count": 1
+      },
+      {
+        "id": "fishingRod",
+        "count": 1
+      },
+      {
+        "id": "cup",
+        "count": 1
+      },
+      {
+        "id": "spaghetti",
+        "count": 1
+      },
+      {
+        "id": "fettuccine",
+        "count": 1
+      },
+      {
+        "id": "shark_meat",
+        "count": 2
+      },
+      {
+        "id": "tomatoes",
+        "count": 1
+      },
+      {
+        "id": "olive_oil",
+        "count": 1
+      },
+      {
+        "id": "squid",
+        "count": 1
+      },
+      {
+        "id": "crab",
+        "count": 1
+      },
+      {
+        "id": "wood",
+        "count": 4
+      }
+    ],
+    "selected": 0,
+    "durabilities": [
+      40,
+      -1,
+      10,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ]
+  },
+  "playTimeS": 34.21286492599999
+}

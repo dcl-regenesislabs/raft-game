@@ -1,5 +1,6 @@
+import { getExpansionModel } from './models'
 import {
-  ColliderLayer, Entity, Material,
+  ColliderLayer, Entity, GltfContainer, Material,
   MaterialTransparencyMode, MeshCollider, MeshRenderer, Transform, engine
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
@@ -34,9 +35,20 @@ export function attachPrototypeSprite(root: Entity, kind: string, physical = tru
   const children: Entity[] = []
   const sprite = engine.addEntity()
   children.push(sprite)
-  const size = spriteSize(kind)
-  Transform.create(sprite, { parent: root, position: Vector3.create(0, size / 2 - 0.7, 0), scale: Vector3.create(size, size, 1) })
-  paintSprite(sprite, kind)
+  const model = getExpansionModel(kind)
+  if (model) {
+    Transform.create(sprite, {
+      parent: root,
+      position: Vector3.create(0, model.deckOffset - 0.9, 0),
+      scale: Vector3.create(model.scale, model.scale, model.scale)
+    })
+    // Logical root owns pointer events; simple collision proxies stay separate.
+    GltfContainer.create(sprite, { src: model.src, visibleMeshesCollisionMask: 0, invisibleMeshesCollisionMask: 0 })
+  } else {
+    const size = spriteSize(kind)
+    Transform.create(sprite, { parent: root, position: Vector3.create(0, size / 2 - 0.7, 0), scale: Vector3.create(size, size, 1) })
+    paintSprite(sprite, kind)
+  }
   const box = (x: number, y: number, z: number, w: number, h: number, d: number) => {
     const e = engine.addEntity()
     children.push(e)
@@ -46,7 +58,12 @@ export function attachPrototypeSprite(root: Entity, kind: string, physical = tru
   // Pointer ray targets stay on the logical root so placement can resolve tiles.
   MeshCollider.setBox(root, ColliderLayer.CL_POINTER)
   if (physical) {
-    if (kind === 'stairs') {
+    if (model) {
+      const { min, max, scale } = model
+      const height = (max[1] - min[1]) * scale
+      box((min[0] + max[0]) * scale / 2, height / 2, (min[2] + max[2]) * scale / 2,
+        (max[0] - min[0]) * scale, height, (max[2] - min[2]) * scale)
+    } else if (kind === 'stairs') {
       for (let i = 0; i < 8; i++) box(0, (i + 1) * 0.14, -1.2 + i * 0.32, 2, (i + 1) * 0.28, 0.32)
     } else if (['upperFloor', 'towerPlatform', 'lookoutPost'].includes(kind)) {
       box(0, 2.25, 0, 2.7, 0.15, 2.7)

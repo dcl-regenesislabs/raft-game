@@ -16,6 +16,9 @@ import { AssetLoad, engine } from '@dcl/sdk/ecs'
 
 const HUD_PRELOAD_ASSETS: readonly string[] = [
   ...MAIN_ACTION_ICON_ASSETS,
+  'images/hud/controls/rest.png',
+  'images/hud/controls/pressed.png',
+  'images/hud/controls/jump.png',
   ...CRAFT_CATEGORY_ICONS,
   ...EXPANSION_ITEMS.map(expansionIcon),
   // Splash

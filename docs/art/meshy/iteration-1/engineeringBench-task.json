@@ -1,0 +1,8 @@
+{
+  "asset": "engineeringBench",
+  "task_id": "01a0ac1a-99fa-70a7-a5f8-a79fb042ec5b",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0ac1a-99fa-70a7-a5f8-a79fb042ec5b",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

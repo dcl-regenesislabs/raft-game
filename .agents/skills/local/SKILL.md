@@ -11,6 +11,12 @@ If a topic eventually lands in the upstream skill set, delete the local copy.
 
 ## Index
 
+### `generate-3d-models`
+
+**File:** `generate-3d-models/SKILL.md`
+
+Generate raft-game assets with Meshy T2 smart topology, targeting roughly 4,000 polygons per asset with 2K textures and GLB output. Use when the user asks to generate a new 3D model from an image or asset description; covers reference images, generation parameters, credit approval, downloads, and output verification.
+
 ### `mobile-ui-scaling`
 
 **File:** `mobile-ui-scaling/SKILL.md`

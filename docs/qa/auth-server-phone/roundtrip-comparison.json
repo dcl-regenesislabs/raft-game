@@ -1,0 +1,21 @@
+{
+  "checks": {
+    "new_save_timestamp": true,
+    "inventory_exact": true,
+    "raft_exact": true,
+    "recipes_exact": true,
+    "play_time_continues_from_save": true
+  },
+  "beforeVitals": {
+    "life": 0.3355321623150002,
+    "hunger": 0.9692084215666007,
+    "thirst": 0.9623658485814005
+  },
+  "afterVitals": {
+    "life": 0.4305863052050006,
+    "hunger": 0.9349889301261995,
+    "thirst": 0.9205420257098004
+  },
+  "beforePlayTimeS": 34.21286492599999,
+  "afterPlayTimeS": 72.23452208200003
+}

@@ -12,19 +12,20 @@ import { MenuList } from './MenuList'
 // Anchored directly below Change tool, not a fullscreen inventory modal.
 export function ToolPicker(): ReactEcs.JSX.Element {
   const slots = [HANDS_SLOT, ...getEquippableSlots()]
+  const height = Math.max(62, Math.min(getMobileLayout(true).height - 140, slots.length * 54 + 16))
   return (
     <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 124, right: 0 }, width: 232 }}>
       <Panel
         uiTransform={{
           width: 232,
-          height: Math.max(62, Math.min(316, getMobileLayout(true).height - 140, slots.length * 54 + 16)),
+          height: height,
           padding: 8,
           flexDirection: 'column'
         }}
       >
         <MenuList
           id="tools"
-          height={Math.max(62, Math.min(316, getMobileLayout(true).height - 140, slots.length * 54 + 16)) - 16}
+          height={height - 16}
           rowHeight={54}
         >
           {slots.map((slot) => {

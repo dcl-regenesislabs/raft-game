@@ -1,3 +1,4 @@
+import { fitInventoryToCapacity } from '../ui/inventoryMigration'
 import { serializeExpansionSession, hydrateExpansionSession } from '../expansion/runtime'
 import { serializeProgress, hydrateProgress, ProgressSnapshot } from '../progression/state'
 import { serializeTutorial, hydrateTutorial, TutorialAction } from '../ui/tutorialState'
@@ -94,6 +95,7 @@ export function buildSaveBlob(): SaveBlob {
 // raft must hydrate after the player inventory (otherwise a chest pickup
 // would target an item id the layout doesn't yet know about).
 export function applySaveBlob(blob: SaveBlob): void {
+  blob = { ...blob, inventory: fitInventoryToCapacity(blob.inventory) }
   if (blob.progression) hydrateProgress(blob.progression)
   if (blob.tutorial) hydrateTutorial(blob.tutorial)
   hydrateInventoryLayout(blob.inventory.layout)

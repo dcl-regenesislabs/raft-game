@@ -1,0 +1,8 @@
+{
+  "asset": "smelter",
+  "task_id": "01a0ac1a-a164-7667-ad37-47fbabb3795c",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0ac1a-a164-7667-ad37-47fbabb3795c",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

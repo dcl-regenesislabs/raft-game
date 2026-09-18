@@ -31,11 +31,11 @@ import { ItemCountBadge } from './ItemCountBadge'
 // linear layout so adjusting `items.ts` flows through to the UI.
 const INVENTORY_GRID_TOTAL_CELLS = INVENTORY_TOTAL_SLOTS
 
-// One safe-area backpack with thirty freely assignable slots.
+// One safe-area backpack with twenty-five freely assignable slots.
 export function InventoryPanel(): ReactEcs.JSX.Element | null {
   if (!isInventoryOpen() || isEquipmentPickerOpen()) return null
-  const layout = getMobileLayout()
-  const size = Math.min(720, layout.width - 32, ((layout.height - 112) * 6) / 5)
+  const layout = getMobileLayout(true)
+  const size = Math.min(720, layout.width - 32, layout.height - 112)
   const selected = getSelectedDragSlot()
   const item = selected === null ? null : getInventorySlot(selected)
   return (
@@ -43,7 +43,7 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
       uiTransform={{
         positionType: 'absolute',
         position: { top: '50%', left: '50%' },
-        margin: { left: -size / 2, top: -((size * 5) / 6 + 80) / 2 },
+        margin: { left: -size / 2, top: -(size + 80) / 2 },
         width: size,
         flexDirection: 'column'
       }}
@@ -92,13 +92,13 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
   )
 }
 
-// Six columns by five rows: all thirty inventory slots, without a separate hotbar.
+// Five columns by five rows: all twenty-five inventory slots, without a separate hotbar.
 export function InventoryGrid(props: { size?: number; filter?: (item: ItemDef) => boolean }): ReactEcs.JSX.Element {
   const size = props.size ?? INVENTORY_PANEL_SIZE
   const cells = buildGridCells(props.filter)
   return (
     <UiEntity
-      uiTransform={{ width: size, height: (size * 5) / 6, borderRadius: 14 }}
+      uiTransform={{ width: size, height: size, borderRadius: 14 }}
       uiBackground={{
         color: UI_PAPER
       }}
@@ -138,10 +138,10 @@ function buildGridCells(filter?: (item: ItemDef) => boolean): GridCell[] {
 }
 
 function InventoryCell(props: { uiIndex: number; globalIndex: number; key?: number | string }): ReactEcs.JSX.Element {
-  const col = props.uiIndex % 6
-  const row = Math.floor(props.uiIndex / 6)
-  const leftPct = col * (100 / 6) + 1.5
-  const topPct = row * 20 + 1.8
+  const col = props.uiIndex % 5
+  const row = Math.floor(props.uiIndex / 5)
+  const leftPct = col * 20 + 1.2
+  const topPct = row * 20 + 1.2
 
   const globalIndex = props.globalIndex
   const display = getInventorySlot(globalIndex)
@@ -163,8 +163,8 @@ function InventoryCell(props: { uiIndex: number; globalIndex: number; key?: numb
       uiTransform={{
         positionType: 'absolute',
         position: { top: `${topPct}%`, left: `${leftPct}%` },
-        width: '13.6667%',
-        height: '16.4%',
+        width: '17.6%',
+        height: '17.6%',
         borderRadius: 8,
         borderWidth: 1,
         borderColor: isSwapSelected || isStoragePickedHere || isCookPicked ? UI_GOLD : UI_BORDER

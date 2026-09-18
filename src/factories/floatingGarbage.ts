@@ -148,7 +148,7 @@ export function createFloatingGarbage(params: FloatingGarbageParams): Entity {
 
   // SDK-native hover prompt + entity-targeted IA_PRIMARY (E) trigger.
   // The hover prompt shows "E GRAB" on desktop within maxDistance —
-  // mobile shows just the text. `systems/garbageGrab.ts` reads the
+  // mobile reuses the hand glyph from TouchScreenControls. `systems/garbageGrab.ts` reads the
   // entity-targeted trigger to bank the item.
   PointerEvents.create(entity, {
     pointerEvents: [
@@ -158,7 +158,8 @@ export function createFloatingGarbage(params: FloatingGarbageParams): Entity {
           button: InputAction.IA_PRIMARY,
           hoverText: 'GRAB',
           maxDistance: GRAB_MAX_DISTANCE,
-          showFeedback: true
+          showFeedback: true,
+          showHighlight: true
         }
       }
     ]

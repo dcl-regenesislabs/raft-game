@@ -1,6 +1,6 @@
 import { EXPANSION_ITEMS, expansionIcon } from '../expansion/catalog'
 // Single source of truth for every item the player can hold or collect.
-// The inventory is one shared 30-slot list. The desktop hotbar provides
+// The inventory is one shared 25-slot list. The desktop hotbar provides
 // shortcuts to its first five slots; the backpack displays every slot.
 // Empty slots are null.
 
@@ -189,10 +189,10 @@ const CRAFTED_CONTAINER = (id: string, texture: string): ItemDef => ({
   ingredient: false
 })
 
-// One 30-slot inventory. The desktop hotbar mirrors its first five slots;
+// One 25-slot inventory. The desktop hotbar mirrors its first five slots;
 // item allocation and equipment selection do not depend on that shortcut row.
 export const BOTTOM_BAR_SLOT_COUNT = 5
-export const INVENTORY_TOTAL_SLOTS = 30
+export const INVENTORY_TOTAL_SLOTS = 25
 export const INVENTORY_GRID_SLOT_COUNT = INVENTORY_TOTAL_SLOTS
 
 // Shared hook def — referenced by both the starter loadout AND
@@ -466,7 +466,7 @@ export function getInventorySlot(index: number): ItemDef | null {
 }
 
 // Find the slot index currently holding the item with this id, or -1 if
-// none. Linear scan over a 30-slot list is fine — this is called once per
+// none. Linear scan over a 25-slot list is fine — this is called once per
 // pickup, not per frame.
 function findSlotIndexById(id: string): number {
   for (let i = 0; i < layout.length; i++) {
@@ -482,7 +482,7 @@ function findFirstEmptySlot(start: number, end: number): number {
   return -1
 }
 
-// Every pickup uses the first empty slot in the shared 30-slot inventory.
+// Every pickup uses the first empty slot in the shared 25-slot inventory.
 function findAutoAllocationSlot(_def: ItemDef): number {
   return findFirstEmptySlot(0, layout.length)
 }

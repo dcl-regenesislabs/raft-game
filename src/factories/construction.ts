@@ -1,3 +1,4 @@
+import { getExpansionModel } from '../expansion/models'
 import { attachPrototypeSprite } from '../expansion/sprites'
 import { getExpansionItem, EXPANSION_STRUCTURES } from '../expansion/catalog'
 import { ExpansionState, StructureHealth } from '../components'
@@ -378,15 +379,15 @@ export function getConstructionDefaultHoverText(kind: ConstructionKind): string 
 }
 
 export function getConstructionGlb(kind: ConstructionKind): string {
-  return SRC[kind] ?? ''
+  return getExpansionModel(kind)?.src ?? SRC[kind] ?? ''
 }
 
 export function getConstructionVisualSize(kind: ConstructionKind): number {
-  return VISUAL_SIZE_M[kind] ?? 1
+  return getExpansionModel(kind)?.scale ?? VISUAL_SIZE_M[kind] ?? 1
 }
 
 export function getConstructionDeckOffset(kind: ConstructionKind): number {
-  return DECK_OFFSET_M[kind] ?? 0.9
+  return getExpansionModel(kind)?.deckOffset ?? DECK_OFFSET_M[kind] ?? 0.9
 }
 
 // Track the renderer-selected proximity target, including older Explorer hover events.

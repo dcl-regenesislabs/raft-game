@@ -3,7 +3,7 @@
 // save room. Lifecycle:
 //
 //   - register loadResult + ack listeners once on boot
-//   - poll isStateSyncronized() each frame; on the rising edge fire a
+//   - poll isGameServerReady() each frame; on the rising edge fire a
 //     PROBE load that records whether a save exists without applying
 //     it, so the StartupScreen can dim/enable the LOAD LAST GAME button
 //   - SYSTEM > Save / Load / Restart and the StartupScreen's LOAD LAST
@@ -14,7 +14,7 @@
 // as opaque text. parseSaveBlob (src/shared/saveSchema.ts) validates
 // shape on read; an invalid blob is logged and ignored.
 
-import { isStateSyncronized } from '@dcl/sdk/network'
+import { isGameServerReady } from './serverConnection'
 
 import { playAgain } from '../ui/gameOver'
 import { showNotification } from '../ui/notification'
@@ -42,6 +42,8 @@ let suppressLoadNotification = false
 // the found-state into the startup gate but does NOT applySaveBlob, so
 // the player still gets to choose NEW GAME or LOAD LAST GAME.
 let saveProbeInFlight = false
+let queuedLoad: boolean | null = null
+let loadRequested = false
 
 
 export function initSaveClient(): void {
@@ -54,8 +56,15 @@ export function initSaveClient(): void {
       const found =
         data.found && data.payload !== '' && parseSaveBlob(data.payload) !== null
       setSaveProbeResult(found)
+      if (queuedLoad !== null) {
+        const silent = queuedLoad
+        queuedLoad = null
+        void requestLoad(silent)
+      }
       return
     }
+    if (!loadRequested) return
+    loadRequested = false
     const silent = suppressLoadNotification
     suppressLoadNotification = false
     if (!data.found || data.payload === '') {
@@ -72,7 +81,14 @@ export function initSaveClient(): void {
       if (!silent) showNotification('Saved data could not be read.')
       return
     }
-    applySaveBlob(blob)
+    try {
+      applySaveBlob(blob)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Save could not be loaded.'
+      setSystemStatus({ kind: 'error', message })
+      if (!silent) showNotification(message)
+      return
+    }
     setSystemStatus({ kind: 'loaded', atMs: Date.now(), found: true })
     if (!silent) showNotification('Loaded.')
   })
@@ -118,7 +134,7 @@ export function initSaveClient(): void {
 // re-pull. The probe records found-state into the startup gate; it
 // does NOT apply the save (the player chooses via the startup screen).
 export function saveClientTickSystem(_dt: number): void {
-  const synced = isStateSyncronized()
+  const synced = isGameServerReady()
   if (synced && !lastSyncState) {
     if (!probeFired) {
       probeFired = true
@@ -126,6 +142,11 @@ export function saveClientTickSystem(_dt: number): void {
         // Failure is non-fatal: leave the LOAD LAST GAME button dimmed.
       })
     }
+  }
+  if (!synced) {
+    probeFired = false
+    saveProbeInFlight = false
+    queuedLoad = null
   }
   lastSyncState = synced
 }
@@ -136,12 +157,12 @@ async function sendSaveProbe(): Promise<void> {
 }
 
 export async function requestSave(): Promise<void> {
-  if (!isStateSyncronized()) {
+  if (!isGameServerReady()) {
     setSystemStatus({
       kind: 'error',
-      message: 'Connecting — try again in a moment.'
+      message: 'Server connecting — try again in a moment.'
     })
-    showNotification('Connecting — try again in a moment.')
+    showNotification('Server connecting — try again in a moment.')
     return
   }
   setSystemStatus({ kind: 'saving' })
@@ -156,14 +177,18 @@ export async function requestSave(): Promise<void> {
 // loadResult toast notification so the player doesn't see a banner pop
 // on first connect.
 export async function requestLoad(silent: boolean = false): Promise<void> {
-  if (!isStateSyncronized()) {
+  if (!isGameServerReady()) {
     if (!silent) {
       setSystemStatus({
         kind: 'error',
-        message: 'Connecting — try again in a moment.'
+        message: 'Server connecting — try again in a moment.'
       })
-      showNotification('Connecting — try again in a moment.')
+      showNotification('Server connecting — try again in a moment.')
     }
+    return
+  }
+  if (saveProbeInFlight) {
+    queuedLoad = silent
     return
   }
   if (!silent) {
@@ -171,16 +196,17 @@ export async function requestLoad(silent: boolean = false): Promise<void> {
     showNotification('Loading…')
   }
   suppressLoadNotification = silent
+  loadRequested = true
   saveRoom.send('load', {})
 }
 
 export async function requestWipe(): Promise<void> {
-  if (!isStateSyncronized()) {
+  if (!isGameServerReady()) {
     setSystemStatus({
       kind: 'error',
-      message: 'Connecting — try again in a moment.'
+      message: 'Server connecting — try again in a moment.'
     })
-    showNotification('Connecting — try again in a moment.')
+    showNotification('Server connecting — try again in a moment.')
     return
   }
   setSystemStatus({ kind: 'wiping' })

@@ -1,0 +1,8 @@
+{
+  "asset": "cropBed",
+  "task_id": "01a0ac1a-b5ad-75d8-aa6e-1c341cfde85e",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0ac1a-b5ad-75d8-aa6e-1c341cfde85e",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

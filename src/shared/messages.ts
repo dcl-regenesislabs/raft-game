@@ -8,9 +8,10 @@
 // SaveBlob `version` field gates migrations on the client.
 
 import { Schemas } from '@dcl/sdk/ecs'
-import { registerMessagesShim } from './messagesShim'
+import { registerMessages } from '@dcl/sdk/network'
 
 export const SAVE_MESSAGES = {
+  serverHeartbeat: Schemas.Map({}),
   save: Schemas.Map({
     payload: Schemas.String
   }),
@@ -41,6 +42,5 @@ export const SAVE_MESSAGES = {
 
 export type SaveMessages = typeof SAVE_MESSAGES
 
-// Shimmed no-op room while the messaging API is absent from the current
-// SDK snapshot — see ./messagesShim.ts.
-export const saveRoom = registerMessagesShim(SAVE_MESSAGES)
+// Registered during module loading, before the ECS engine seals.
+export const saveRoom = registerMessages(SAVE_MESSAGES)

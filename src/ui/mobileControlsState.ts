@@ -1,3 +1,5 @@
+import { MOBILE_TOOL_ACTION } from './mobileToolInput'
+import { clearTouchFeedback, touchFeedbackSystem } from './touchButtonFeedback'
 import { InputAction, PointerEventType, inputSystem } from '@dcl/sdk/ecs'
 import { isMobile } from '@dcl/sdk/platform'
 
@@ -10,6 +12,7 @@ const EQUIPMENT_COOLDOWN_S = 0.4
 let equipmentQuietTime = 0
 let equipmentReleaseRequired = false
 export function beginEquipmentTransition(): void {
+  clearTouchFeedback()
   equipmentQuietTime = EQUIPMENT_COOLDOWN_S
   equipmentReleaseRequired = true
 }
@@ -18,6 +21,7 @@ export function isEquipmentInputBlocked(): boolean {
 }
 
 export function beginUiTouch(): void {
+  clearTouchFeedback()
   if (!isMobile()) return
   releaseRequired = true
   quietTime = 0.15
@@ -27,17 +31,19 @@ export function isMobileUiInputBlocked(): boolean {
   // reflow. A fresh DOWN after the debounce is a new gesture, never a held one.
   if (releaseRequired && quietTime === 0 && [
     InputAction.IA_POINTER, InputAction.IA_PRIMARY, InputAction.IA_SECONDARY,
-    InputAction.IA_ACTION_3, InputAction.IA_ACTION_4
+    InputAction.IA_ACTION_3, InputAction.IA_ACTION_4, MOBILE_TOOL_ACTION
   ].some(action => inputSystem.isTriggered(action, PointerEventType.PET_DOWN))) {
     releaseRequired = false
   }
   return isMobile() && (releaseRequired || quietTime > 0)
 }
 export function mobileUiInputSystem(dt: number): void {
+  touchFeedbackSystem()
   equipmentQuietTime = Math.max(0, equipmentQuietTime - dt)
   // A release can arrive during the cooldown. Remember it; holding the action
   // longer than the cooldown must never activate the newly equipped tool.
-  if (!inputSystem.isPressed(InputAction.IA_POINTER) || inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_UP)) {
+  const toolAction = isMobile() ? MOBILE_TOOL_ACTION : InputAction.IA_POINTER
+  if (!inputSystem.isPressed(toolAction) || inputSystem.isTriggered(toolAction, PointerEventType.PET_UP)) {
     equipmentReleaseRequired = false
   }
   quietTime = Math.max(0, quietTime - dt)

@@ -1,0 +1,319 @@
+{
+  "iteration": 1,
+  "approved_credits": 150,
+  "settings": {
+    "ai_model": "meshy-t2",
+    "model_type": "smart-topology",
+    "target_polycount": 4000,
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "target_formats": [
+      "glb"
+    ]
+  },
+  "assets": [
+    {
+      "id": "workbench",
+      "source": "images/concepts/expansion/workbench.png",
+      "output": "assets/scene/items/expansion/workbench.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac17-ca6f-73f4-9dc1-7cb94003647c",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4313,
+        "faces": 4313,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.7675780057907104,
+          0.5820310115814209
+        ],
+        "bytes": 2027668
+      },
+      "preview": "docs/art/meshy/iteration-1/workbench-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Recognizable in rendered three-quarter preview; in-world scale/colliders not yet verified."
+    },
+    {
+      "id": "armoryBench",
+      "source": "images/concepts/expansion/armoryBench.png",
+      "output": "assets/scene/items/expansion/armoryBench.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac1a-9231-7765-af0c-4ff51a623efb",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4210,
+        "faces": 4210,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.6621090173721313,
+          0.7382819652557373
+        ],
+        "bytes": 2794716
+      },
+      "preview": "docs/art/meshy/iteration-1/armoryBench-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Recognizable in rendered three-quarter preview; in-world scale/colliders not yet verified."
+    },
+    {
+      "id": "engineeringBench",
+      "source": "images/concepts/expansion/engineeringBench.png",
+      "output": "assets/scene/items/expansion/engineeringBench.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac1a-99fa-70a7-a5f8-a79fb042ec5b",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4150,
+        "faces": 4150,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.9667969942092896,
+          0.7089849710464478,
+          1.0
+        ],
+        "bytes": 2098832
+      },
+      "preview": "docs/art/meshy/iteration-1/engineeringBench-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Recognizable in rendered three-quarter preview; in-world scale/colliders not yet verified."
+    },
+    {
+      "id": "smelter",
+      "source": "images/concepts/expansion/smelter.png",
+      "output": "assets/scene/items/expansion/smelter.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac1a-a164-7667-ad37-47fbabb3795c",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4271,
+        "faces": 4271,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.7929679751396179,
+          0.7851560115814209,
+          1.0
+        ],
+        "bytes": 2219852
+      },
+      "preview": "docs/art/meshy/iteration-1/smelter-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Recognizable in rendered three-quarter preview; in-world scale/colliders not yet verified."
+    },
+    {
+      "id": "researchTable",
+      "source": "images/concepts/expansion/researchTable.png",
+      "output": "assets/scene/items/expansion/researchTable.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac1a-a7c9-718a-b429-bae90f3495d2",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4254,
+        "faces": 4254,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.6367180347442627,
+          0.5703120231628418
+        ],
+        "bytes": 2505732
+      },
+      "preview": "docs/art/meshy/iteration-1/researchTable-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Recognizable in rendered three-quarter preview; in-world scale/colliders not yet verified."
+    },
+    {
+      "id": "rainCollector",
+      "source": "images/concepts/expansion/rainCollector.png",
+      "output": "assets/scene/items/expansion/rainCollector.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac1a-ae32-715c-b590-a4e085e22558",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4295,
+        "faces": 4295,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          1.0,
+          0.8769530057907104
+        ],
+        "bytes": 2663276
+      },
+      "preview": "docs/art/meshy/iteration-1/rainCollector-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Needs texture cleanup: dark streaks on posts."
+    },
+    {
+      "id": "cropBed",
+      "source": "images/concepts/expansion/cropBed.png",
+      "output": "assets/scene/items/expansion/cropBed.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac1a-b5ad-75d8-aa6e-1c341cfde85e",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4179,
+        "faces": 4179,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.6777349710464478,
+          1.0,
+          0.43945398926734924
+        ],
+        "bytes": 2292196
+      },
+      "preview": "docs/art/meshy/iteration-1/cropBed-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Recognizable in rendered three-quarter preview; in-world scale/colliders not yet verified."
+    },
+    {
+      "id": "waterTank",
+      "source": "images/concepts/expansion/waterTank.png",
+      "output": "assets/scene/items/expansion/waterTank.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac1a-bbf8-71e4-a48e-774ebb79c914",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 3981,
+        "faces": 3981,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.7890620231628418,
+          1.0,
+          0.8652349710464478
+        ],
+        "bytes": 1762900
+      },
+      "preview": "docs/art/meshy/iteration-1/waterTank-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Recognizable in rendered three-quarter preview; in-world scale/colliders not yet verified."
+    },
+    {
+      "id": "improvedGrill",
+      "source": "images/concepts/expansion/improvedGrill.png",
+      "output": "assets/scene/items/expansion/improvedGrill.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac1a-c322-70ad-b4b9-ade41ea91417",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4150,
+        "faces": 4150,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.6894530057907104,
+          0.5058590173721313
+        ],
+        "bytes": 2736736
+      },
+      "preview": "docs/art/meshy/iteration-1/improvedGrill-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Recognizable in rendered three-quarter preview; in-world scale/colliders not yet verified."
+    },
+    {
+      "id": "ammoCrate",
+      "source": "images/concepts/expansion/ammoCrate.png",
+      "output": "assets/scene/items/expansion/ammoCrate.glb",
+      "status": "SUCCEEDED",
+      "task_id": "01a0ac1a-ca37-7176-80c7-2e7492a2cdd2",
+      "consumed_credits": 15,
+      "inspection": {
+        "triangles": 4398,
+        "faces": 4398,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.7597650289535522,
+          0.47070398926734924
+        ],
+        "bytes": 2211828
+      },
+      "preview": "docs/art/meshy/iteration-1/ammoCrate-preview.png",
+      "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED",
+      "visual_review": "Recognizable in rendered three-quarter preview; in-world scale/colliders not yet verified."
+    }
+  ],
+  "consumed_credits": 150,
+  "generation_status": "COMPLETE",
+  "integration_status": "IMPLEMENTED_BUILD_AND_UNIT_TESTED"
+}

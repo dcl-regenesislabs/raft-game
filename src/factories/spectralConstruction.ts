@@ -1,3 +1,4 @@
+import { getExpansionModel } from '../expansion/models'
 import { getExpansionItem } from '../expansion/catalog'
 import { paintSprite, spriteSize } from '../expansion/sprites'
 import {
@@ -61,10 +62,10 @@ export function createSpectralConstruction(
     position: Vector3.create(0, 0, 0),
     scale: Vector3.create(0, 0, 0)
   })
-  const spriteKind = getExpansionItem(kind) ? kind : undefined
+  const spriteKind = getExpansionItem(kind) && !getExpansionModel(kind) ? kind : undefined
   if (spriteKind) paintSprite(ghost, spriteKind, dim)
   else {
-  GltfContainer.create(ghost, { src: getConstructionGlb(kind) })
+  GltfContainer.create(ghost, { src: getConstructionGlb(kind), visibleMeshesCollisionMask: 0, invisibleMeshesCollisionMask: 0 })
   GltfNodeModifiers.create(ghost, {
     modifiers: [
       {

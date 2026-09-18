@@ -34,7 +34,7 @@ import { getRaftBuilderMode } from './raftBuilder'
 // Mobile uses the existing on-screen action button as a second input
 // path — when the look-at classification is 'garbage', tapping the
 // button banks whichever entity the camera is currently aimed at. The
-// action-button icon also swaps to the about-to-grab material via the
+// action-button icon also swaps to a hand via the
 // contextual-icon hook in `ui/components/ActionButton.tsx`.
 //
 // Banking calls `consumeWorldClick()` so the hook-thrower's mobile

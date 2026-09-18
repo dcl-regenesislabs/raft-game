@@ -52,7 +52,8 @@ function load(file) {
 }
 let craftContext = null
 mock('ui/craftContext.ts', { getCraftContextKind: () => craftContext })
-mock('ui/mobileLayout.ts', { getMobileLayout: () => area })
+let deviceArea = null
+mock('ui/mobileLayout.ts', { getMobileLayout: (hardwareOnly) => hardwareOnly && deviceArea ? deviceArea : area })
 mock('ui/mobileControlsState.ts', { beginUiTouch: () => touches++ })
 mock('ui/theme.ts', { HANDS_ICON: 'hands.png', CLOSE_BUTTON_SIZE: 48 })
 mock('ui/tutorialState.ts', {
@@ -76,7 +77,7 @@ mock('ui/inventoryState.ts', {
   HANDS_SLOT: -1,
   getSelectedSlot: () => 2,
   isSlotSelectable: () => true,
-  getEquippableSlots: () => Array.from({ length: 30 }, (_, i) => i)
+  getEquippableSlots: () => Array.from({ length: 25 }, (_, i) => i)
 })
 function nodes(tree) {
   return tree ? [tree, ...(tree.children || tree.props?.children || []).flat(Infinity).flatMap(nodes)] : []
@@ -132,8 +133,22 @@ test('Outcome fits a narrow safe area and keeps primary/secondary touch targets'
   assert.ok(tree.some((n) => n.props.uiTransform?.width === 368 && n.props.uiTransform.maxHeight === 388))
   assert.equal(tree.filter((n) => n.props.onMouseUp && n.props.uiTransform.height >= 48).length, 2)
 })
+test('Outcome centers in device insets independently of asymmetric Explorer controls', () => {
+  deviceArea = { top: 10, left: 24, right: 24, bottom: 18, width: 1500, height: 680 }
+  const tree = all(OutcomeScreen({
+    title: 'GAME OVER', message: 'Try again', fade: 1, backdrop: 1,
+    primary: { label: 'RETRY', action: () => {} }
+  }))
+  const frame = tree.find((n) => n.props.uiTransform?.position?.left === 24)
+  assert.ok(frame)
+  assert.equal(frame.props.uiTransform.position.right, 24)
+  assert.equal(frame.props.uiTransform.position.top, 10)
+  assert.equal(frame.props.uiTransform.position.bottom, 18)
+  assert.ok(tree.some((n) => n.props.uiTransform?.width === 520 && n.props.uiTransform.maxHeight === 648))
+  deviceArea = null
+})
 const { ToolPicker } = load('ui/components/ToolPicker.tsx')
-test('All thirty equipment slots plus Hands are reachable through touch pages', () => {
+test('All twenty-five equipment slots plus Hands are reachable through touch pages', () => {
   const visited = new Set()
   for (let page = 0; page < 31; page++) {
     const tree = all(ToolPicker()),
@@ -147,8 +162,8 @@ test('All thirty equipment slots plus Hands are reachable through touch pages', 
     const next = buttons.at(-1)
     next.props.onMouseUp()
   }
-  assert.equal(visited.size, 31)
-  assert.ok(visited.has(-1) && visited.has(29))
+  assert.equal(visited.size, 26)
+  assert.ok(visited.has(-1) && visited.has(24))
 })
 const { getMenuPage } = load('ui/components/MenuList.tsx')
 test('Pages clamp after inventory shrinks and reserve footer space', () => {
@@ -196,7 +211,7 @@ test('Desktop guide uses keyboard water instructions', () => {
 test('Desktop lists retain all entries and wheel scrolling', () => {
   mobile = false
   const tree = all(ToolPicker())
-  assert.equal(tree.filter((n) => n.props.onMouseUp && n.props.uiTransform.height === 50).length, 31)
+  assert.equal(tree.filter((n) => n.props.onMouseUp && n.props.uiTransform.height === 50).length, 26)
   assert.ok(tree.some((n) => n.props.uiTransform?.overflow === 'scroll'))
 })
 let dismissed = 0,

@@ -4,7 +4,6 @@ import { startTestMode } from '../gameOver'
 import { campaignMode, chapter, serializeProgress } from '../../progression/state'
 import { startRaid, debugAdvanceExpansion } from '../../expansion/runtime'
 import { Color4 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
 import { isMusicMuted,toggleMusicMuted } from '../../audio/music'
 import { armBoatChefEvent } from '../../systems/boatChefDirector'
@@ -32,28 +31,29 @@ type SystemStatus
 import { CRAFT_TEXT_DIM_COLOR } from '../theme'
 import { CloseButton as XButton } from './CloseButton'
 
-let debugToolsOpen = false
+let page: 'settings' | 'session' | 'debug' = 'settings'
 
 export function SystemMenu(): ReactEcs.JSX.Element | null {
   if (!isSystemMenuOpen()) {
-    debugToolsOpen = false
+    page = 'settings'
     return null
   }
   const confirm = getSystemConfirm()
   const detail = confirm ? describeConfirm(confirm) : null
-  const width = Math.min(560, getMobileLayout().width - 32)
+  const area = getMobileLayout(true)
+  const width = Math.min(page === 'debug' ? 560 : 420, area.width - 32)
   return (
-    <ModalFrame>
+    <ModalFrame deviceInset>
       <Panel
         uiTransform={{
           width,
-          height: Math.min(580, getMobileLayout().height - 32),
+          height: Math.min(page === 'debug' ? 580 : detail ? 360 : 440, area.height - 32),
           padding: 20,
           flexDirection: 'column'
         }}
       >
         <Label
-          value={detail ? 'CONFIRM ACTION' : debugToolsOpen ? 'DEBUG TOOLS' : 'SURVIVAL MENU'}
+          value={detail ? 'CONFIRM ACTION' : page === 'debug' ? 'DEBUG TOOLS' : page === 'session' ? 'SESSION' : 'SETTINGS'}
           fontSize={28}
           color={UI_INK}
           textAlign="middle-left"
@@ -78,7 +78,7 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
                 }}
               />
             </UiEntity>
-          ) : debugToolsOpen ? (
+          ) : page === 'debug' ? (
             <UiEntity uiTransform={{ width: '100%', flexDirection: 'column' }}>
               {!isDebugRun() && (
                 <SystemActionButton
@@ -119,66 +119,33 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
               <SystemActionButton
                 label="BACK"
                 onPress={() => {
-                  debugToolsOpen = false
+                  page = 'settings'
                 }}
               />
             </UiEntity>
+          ) : page === 'session' ? (
+            <UiEntity uiTransform={{ width: '100%', flexDirection: 'column' }}>
+              <SystemActionButton label="RETURN TO LOBBY" onPress={() => setSystemConfirm('lobby')} />
+              <SystemActionButton label="RESTART GAME" onPress={() => setSystemConfirm('restart')} />
+              {DEBUG_MODE && <SystemActionButton label="DEVELOPER TOOLS" onPress={() => { page = 'debug' }} />}
+              <SystemActionButton label="BACK TO SETTINGS" onPress={() => { page = 'settings' }} />
+            </UiEntity>
           ) : (
             <UiEntity uiTransform={{ width: '100%', flexDirection: 'column' }}>
-              <Label
-                value="Tools, survival help and your current session."
-                fontSize={16}
-                color={UI_MUTED}
-                textAlign="middle-left"
-                uiTransform={{ width: '100%', height: 36 }}
-              />
-              <SystemActionButton label="RESUME GAME" onPress={() => setSystemMenuOpen(false)} />
+              <SystemActionButton label={isMusicMuted() ? 'MUSIC: OFF' : 'MUSIC: ON'} onPress={toggleMusicMuted} />
               <SystemActionButton
-                label="SHOW SURVIVAL GUIDE"
+                label="SURVIVAL GUIDE"
                 onPress={() => {
                   showTutorial()
                   setSystemMenuOpen(false)
                 }}
               />
-              <Label
-                value={
-                  isMobile()
-                    ? 'Change tool with the top-right selector. Use the large item button; hold and release to cast. Stand near structures for more actions.'
-                    : 'Select tools with the bottom bar or backpack. Left-click to use; hold and release to cast. Use E / F near structures.'
-                }
-                fontSize={16}
-                color={UI_INK}
-                textAlign="top-left"
-                uiTransform={{ width: '100%', height: 90, margin: { top: 14, bottom: 8 } }}
-              />
-              <SystemActionButton label={isMusicMuted() ? 'MUSIC: OFF' : 'MUSIC: ON'} onPress={toggleMusicMuted} />
-              {DEBUG_MODE && (
-                <SystemActionButton
-                  label="DEBUG TOOLS"
-                  onPress={() => {
-                    debugToolsOpen = true
-                  }}
-                />
-              )}
-              <Label
-                value="SESSION"
-                fontSize={12}
-                color={UI_MUTED}
-                textAlign="middle-left"
-                uiTransform={{ width: '100%', height: 28 }}
-              />
               <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between' }}>
-                <SystemActionButton
-                  label="SAVE"
-                  inline
-                  onPress={() => {
-                    void requestSave()
-                  }}
-                />
-                <SystemActionButton label="LOAD" inline onPress={() => setSystemConfirm('load')} />
-                <SystemActionButton label="LOBBY" inline onPress={() => setSystemConfirm('lobby')} />
-                <SystemActionButton label="RESTART" inline onPress={() => setSystemConfirm('restart')} />
+                <SystemActionButton label="SAVE GAME" inline onPress={() => { void requestSave() }} />
+                <SystemActionButton label="LOAD GAME" inline onPress={() => setSystemConfirm('load')} />
               </UiEntity>
+              <SystemActionButton label="MORE OPTIONS" onPress={() => { page = 'session' }} />
+              <SystemActionButton label="RESUME GAME" onPress={() => setSystemMenuOpen(false)} />
             </UiEntity>
           )}
         </UiEntity>
@@ -236,7 +203,7 @@ function SystemActionButton(props: { key?: number; label: string; onPress: () =>
   return (
     <UiEntity
       uiTransform={{
-        width: props.inline ? '23%' : '100%',
+        width: props.inline ? '48%' : '100%',
         height: 48,
         flexShrink: 0,
         margin: { top: 8 },

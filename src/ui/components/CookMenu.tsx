@@ -19,7 +19,7 @@ removeFromFuelCell,
 removeFromInputCell
 } from '../cookSlots'
 import { closeCookMenu,isCookOpen } from '../cookToggle'
-import { getCatalogItem,getInventorySlot,getItemDisplayName } from '../items'
+import { INVENTORY_TOTAL_SLOTS,getCatalogItem,getInventorySlot,getItemDisplayName } from '../items'
 import { getLearnedRecipeIds } from '../learnedRecipes'
 import { Panel } from '../panel'
 import { createPressPulse } from '../pressPulse'
@@ -591,7 +591,7 @@ function cookHint(): string {
 
 function CookSupplies(): ReactEcs.JSX.Element {
   const ids = new Set<string>(collectStorageItemIds())
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < INVENTORY_TOTAL_SLOTS; i++) {
     const item = getInventorySlot(i)
     if (item) ids.add(item.id)
   }

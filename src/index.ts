@@ -6,17 +6,11 @@ import { isMobile } from '@dcl/sdk/platform'
 import { ambienceTickSystem } from './audio/ambience'
 import { musicTickSystem, setMusicTrack } from './audio/music'
 import { sfxTickSystem } from './audio/sfx'
-// import { isServer } from '@dcl/sdk/network'
-
-// import {
-//   initSaveClient,
-//   saveClientTickSystem
-// } from './client/saveClient'
-// import {
-//   initRankingClient,
-//   rankingClientTickSystem
-// } from './client/rankingClient'
-// import { runServer } from './server/server'
+import { isServer } from '@dcl/sdk/network'
+import { initSaveClient, saveClientTickSystem } from './client/saveClient'
+import { initRankingClient, rankingClientTickSystem } from './client/rankingClient'
+import { initServerConnection } from './client/serverConnection'
+import './shared/messages'
 
 import {
   GRID_ORIGIN,
@@ -91,11 +85,12 @@ import { purifierProcessSystem } from './systems/purifierProcess'
 import { worldClickGateResetSystem } from './ui/worldClickGate'
 
 export async function main(): Promise<void> {
-  // TODO: re-enable server once @dcl/sdk/server is available
-  // if (isServer()) {
-  //   runServer()
-  //   return
-  // }
+  if (isServer()) {
+    const { runServer } = await import('./server/server')
+    runServer()
+    return
+  }
+  initServerConnection()
   // Use the same full-sized world in production and local previews.
   const parcelGrid = PARCEL_GRID
   configureGridOrigin(parcelGrid)
@@ -218,14 +213,12 @@ export async function main(): Promise<void> {
   engine.addSystem(actionButtonResetSystem)
   engine.addSystem(worldClickGateResetSystem)
   // Save-system networking: register room listeners once, then run the
-  // tick system that watches for state-sync and auto-loads on the rising
-  // edge. Must come after the gameplay state modules above because the
-  // auto-load mutates them on first sync.
-  // TODO: re-enable once @dcl/sdk/network is available
-  // initSaveClient()
-  // engine.addSystem(saveClientTickSystem)
-  // initRankingClient()
-  // engine.addSystem(rankingClientTickSystem)
+  // tick system that waits for a live server, then probes for an existing
+  // save without applying it. Loading remains an explicit player action.
+  initSaveClient()
+  engine.addSystem(saveClientTickSystem)
+  initRankingClient()
+  engine.addSystem(rankingClientTickSystem)
 
   // Build the lobby world (water at y=0, raft island, bridges, portals)
   // and arm the portal-trigger handler via the scene-flow runtime. The

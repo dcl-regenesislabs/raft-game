@@ -1,0 +1,8 @@
+{
+  "asset": "waterTank",
+  "task_id": "01a0ac1a-bbf8-71e4-a48e-774ebb79c914",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0ac1a-bbf8-71e4-a48e-774ebb79c914",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

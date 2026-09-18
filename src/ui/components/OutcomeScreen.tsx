@@ -14,9 +14,9 @@ export function OutcomeScreen(props: {
   primary: { label: string; action: () => void }
   secondary?: { label: string; action: () => void }
 }): ReactEcs.JSX.Element {
-  const area = getMobileLayout()
+  const area = getMobileLayout(true)
   return (
-    <ModalFrame alpha={props.backdrop}>
+    <ModalFrame alpha={props.backdrop} deviceInset>
       {props.fade > 0 ? (
         <Panel
           uiTransform={{

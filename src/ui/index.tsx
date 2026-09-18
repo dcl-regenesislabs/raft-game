@@ -1,3 +1,4 @@
+import { MobileActionControls } from './components/MobileActionControls'
 import { RaidStatus } from './components/RaidStatus'
 import { PanelBackdrop } from './components/PanelBackdrop'
 import { BuilderHint } from './components/BuilderHint'
@@ -69,7 +70,7 @@ function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs
       </UiEntity>
     )
   }
-  const { top, left, right, bottom } = getMobileLayout()
+  const { top, left, right, bottom } = getMobileLayout(isInventoryOpen() && !isStorageOpen())
   return (
     <UiEntity
       uiTransform={{
@@ -173,6 +174,7 @@ function ui(): ReactEcs.JSX.Element {
       <NotificationOverlay />
       <ItemReceivedOverlay />
       {(!anyPanel || isEquipmentPickerOpen()) && isMobile() && <MobileHud />}
+      {!anyPanel && isMobile() && <MobileActionControls />}
       {!anyPanel && <ChargeReticle />}
       {!anyPanel && <RaidStatus />}
       {!anyPanel && <ProximityActions />}

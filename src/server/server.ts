@@ -7,6 +7,7 @@
 // player wallet. All shape validation happens on
 // the client (parseSaveBlob in src/shared/saveSchema.ts).
 
+import { engine } from '@dcl/sdk/ecs'
 import { Storage } from '@dcl/sdk/server'
 
 import { saveRoom } from '../shared/messages'
@@ -16,6 +17,14 @@ const PROGRESS_KEY = 'progress:full'
 const RANKING_PREFIX = 'ranking:full:'
 
 export function runServer(): void {
+  let heartbeatElapsedS = 2
+  engine.addSystem((dt) => {
+    heartbeatElapsedS += dt
+    if (heartbeatElapsedS < 2 || !saveRoom.isReady()) return
+    heartbeatElapsedS = 0
+    void saveRoom.send('serverHeartbeat', {}).catch((error) => console.error('[SERVER] Heartbeat failed', error))
+  })
+  console.log('[SERVER] Save and ranking service started')
   saveRoom.onMessage('save', async (data, ctx) => {
     const address = ctx?.from
     if (address === undefined || address === '') {
@@ -23,7 +32,8 @@ export function runServer(): void {
       return
     }
     try {
-      await Storage.player.set(address, PROGRESS_KEY, data.payload)
+      const stored = await Storage.player.set(address, PROGRESS_KEY, data.payload)
+      if (!stored) throw new Error('Storage write failed')
       replyAck(address, 'save', true, '')
     } catch (error) {
       replyAck(address, 'save', false, errorMessage(error))
@@ -56,7 +66,8 @@ export function runServer(): void {
     const address = ctx?.from
     if (address === undefined || address === '') return
     try {
-      await Storage.player.delete(address, PROGRESS_KEY)
+      const deleted = await Storage.player.delete(address, PROGRESS_KEY)
+      if (!deleted) throw new Error('Storage delete failed')
       replyAck(address, 'wipe', true, '')
     } catch (error) {
       replyAck(address, 'wipe', false, errorMessage(error))
@@ -77,7 +88,8 @@ export function runServer(): void {
     }
     const key = `${RANKING_PREFIX}${Date.now()}:${address}`
     try {
-      await Storage.set(key, JSON.stringify(entry))
+      const stored = await Storage.set(key, JSON.stringify(entry))
+      if (!stored) throw new Error('Storage write failed')
       replySubmitScoreAck(address, true, '')
     } catch (error) {
       replySubmitScoreAck(address, false, errorMessage(error))

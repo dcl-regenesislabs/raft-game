@@ -1,4 +1,4 @@
-import { isStateSyncronized } from '@dcl/sdk/network'
+import { isGameServerReady } from './serverConnection'
 
 import { saveRoom } from '../shared/messages'
 import { showNotification } from '../ui/notification'
@@ -31,24 +31,25 @@ export function initRankingClient(): void {
 }
 
 export function rankingClientTickSystem(_dt: number): void {
-  const synced = isStateSyncronized()
+  const synced = isGameServerReady()
   if (synced && !lastSyncState) {
     if (!probeFired && listenersRegistered) {
       probeFired = true
       requestRankings()
     }
   }
+  if (!synced) probeFired = false
   lastSyncState = synced
 }
 
 export function requestRankings(): void {
-  if (!isStateSyncronized()) return
+  if (!isGameServerReady()) return
   loading = true
   saveRoom.send('requestRankings', {})
 }
 
 export function submitScore(timeS: number, debug: boolean): void {
-  if (!isStateSyncronized()) {
+  if (!isGameServerReady()) {
     showNotification('Not connected — score could not be submitted.')
     return
   }

@@ -65,12 +65,53 @@ test('A fresh native press recovers from stale pressed state after UI dismissal'
  down = true; assert.equal(fire.toolFireJustPressed(), true)
  pressed = down = false; gate.mobileUiInputSystem(1)
 })
-test('Equipped item updates native icon even when visibility stays true', () => {
+test('Jump and generic UI pointer presses never fire mobile tools or fill cups', () => {
+ mobile = true; panel = false; selected = 0; pressed = down = up = false
+ gate.mobileUiInputSystem(1)
+ keyDown = ecs.InputAction.IA_POINTER
+ assert.equal(fire.toolFireJustPressed(), false)
+ assert.equal(fire.mobileInteractionJustPressed(ecs.InputAction.IA_POINTER), false)
+ keyDown = ecs.InputAction.IA_JUMP
+ assert.equal(fire.toolFireJustPressed(), false)
+ keyDown = ecs.InputAction.IA_ACTION_6
+ assert.equal(fire.toolFireJustPressed(), true)
+ assert.equal(fire.mobileInteractionJustPressed(ecs.InputAction.IA_POINTER), true)
+ keyDown = null
+})
+test('Releasing jump cannot release a held tool or satisfy its equipment guard', () => {
+ const oldPressed = ecs.inputSystem.isPressed, oldTriggered = ecs.inputSystem.isTriggered
+ try {
+  mobile = true; selected = 0
+  ecs.inputSystem.isPressed = action => action === ecs.InputAction.IA_ACTION_6
+  ecs.inputSystem.isTriggered = (action, type) => type === ecs.PointerEventType.PET_UP && action === ecs.InputAction.IA_POINTER
+  gate.mobileUiInputSystem(1)
+  assert.equal(fire.isToolFirePressed(), true)
+  gate.beginEquipmentTransition(); gate.mobileUiInputSystem(1)
+  assert.equal(gate.isEquipmentInputBlocked(), true)
+  ecs.inputSystem.isPressed = () => false
+  gate.mobileUiInputSystem(1)
+  assert.equal(gate.isEquipmentInputBlocked(), false)
+  assert.equal(fire.isToolFirePressed(), false)
+ } finally {
+  ecs.inputSystem.isPressed = oldPressed; ecs.inputSystem.isTriggered = oldTriggered
+ }
+})
+test('Equipped item updates custom icon without rewriting hidden native controls', () => {
  controls.touchControlsSystem(0); const first = writes.length
  items[0] = { id: 'spear', heldKind: 'spear', texture: 'spear.png', hasAction: true, selectable: true }
- controls.touchControlsSystem(0); assert.equal(writes.length, first + 1)
- assert.equal(writes.at(-1).touchInputs.find(b => b.inputAction === 0).icon.tex.texture.src, 'spear.png')
- controls.touchControlsSystem(0); assert.equal(writes.length, first + 1)
+ controls.touchControlsSystem(0); assert.equal(writes.length, first)
+ assert.equal(controls.resolveMobileControls().pointer.icon, 'spear.png')
+ assert(writes.at(-1).touchInputs.every(b => b.hide))
+ controls.touchControlsSystem(0); assert.equal(writes.length, first)
+})
+test('Collectible pickup replaces equipped tool artwork with the hand icon', () => {
+ target = 'garbage'; builderMode = 'idle'; constructionMode = 'idle'
+ const state = controls.resolveMobileControls()
+ assert.equal(state.e.icon, 'images/hud/hands.png')
+ assert.equal(state.pointer.icon, 'images/hud/main-action/hud-hands.png')
+ assert.equal(state.pointer.label, 'Collect')
+ target = null
+ assert.equal(controls.resolveMobileControls().pointer.icon, 'spear.png')
 })
 test('Empty cup uses the main action without a duplicate fill button', () => {
  selected = 1; target = 'water'; const state = controls.resolveMobileControls()
@@ -83,7 +124,7 @@ test('Purifier retains simultaneous interaction and fuel controls', () => {
 test('Ready meal icon changes without changing the grill interaction visibility', () => {
  target = 'grill'; controls.touchControlsSystem(0); const before = writes.length
  components.ActiveCook.data.set(20, { status: 2, recipeId: 'meal' }); controls.touchControlsSystem(0)
- assert.equal(writes.length, before + 1); assert.equal(controls.resolveMobileControls().e.icon, 'meal.png')
+ assert.equal(writes.length, before); assert.equal(controls.resolveMobileControls().e.icon, 'meal.png')
 })
 test('Fishing exposes catch/retract on the single native pointer action', () => {
  selected = 0; target = null; line = true; biting = true
@@ -167,7 +208,7 @@ test('Custom proximity button rejects stale targets and menus, routes separate a
  target = null; interact.pressProximityAction(20, true); assert.equal(fueled, 1)
 })
 
-test('Hammer native controls rotate and publish selected mode icon changes', () => {
+test('Hammer custom controls resolve rotation and mode icon changes', () => {
  panel = false; target = 'purifier'; builderMode = 'placing'
  let state = controls.resolveMobileControls()
  assert(state.e.visible && state.f.visible && state.shortcuts[0].visible)
@@ -177,10 +218,10 @@ test('Hammer native controls rotate and publish selected mode icon changes', () 
  assert.equal(state.shortcuts[0].icon, 'images/hud/eraser.png')
  assert.equal(state.shortcuts[1].icon, 'images/hud/eraser.png')
  controls.touchControlsSystem(0)
- assert.equal(writes.at(-1).touchInputs.find(x => x.inputAction === 1).hide, false)
+ assert.equal(writes.at(-1).touchInputs.find(x => x.inputAction === 1).hide, true)
  const before = writes.length
  builderMode = 'destroying'; controls.touchControlsSystem(0)
- assert.equal(writes.length, before + 1)
+ assert.equal(writes.length, before)
  state = controls.resolveMobileControls()
  assert(!state.e.visible && !state.f.visible)
  assert.equal(state.shortcuts[0].icon, 'images/hud/items/hammer.png')
@@ -210,7 +251,7 @@ test('All tools keep POINTER main and jump secondary; Hands is inert', () => {
    selected = 0; items[0] = { id: kind, heldKind: kind, texture: kind + '.png', hasAction: true }
    controls.touchControlsSystem(0)
    assert.equal(writes.at(-1).mainAction, ecs.InputAction.IA_POINTER)
-   assert.equal(writes.at(-1).touchInputs.find(x => x.inputAction === ecs.InputAction.IA_JUMP).hide, false)
+   assert.equal(writes.at(-1).touchInputs.find(x => x.inputAction === ecs.InputAction.IA_JUMP).hide, true)
    assert.equal(controls.resolveMobileControls().pointer.icon, kind + '.png')
  }
  selected = -1; controls.touchControlsSystem(0)
@@ -228,7 +269,7 @@ test('Ending screens hide native movement and crosshair, then restore them', () 
  ending = false; controls.touchControlsSystem(0)
  assert.equal(writes.at(-1).hideJoystick, false)
  assert.equal(writes.at(-1).hideCrosshair, false)
- assert.equal(writes.at(-1).touchInputs.find(b => b.inputAction === ecs.InputAction.IA_JUMP).hide, false)
+ assert.equal(writes.at(-1).touchInputs.find(b => b.inputAction === ecs.InputAction.IA_JUMP).hide, true)
 })
 test('Station progress text never rebuilds unchanged native action buttons', () => {
  target = 'grill'; panel = false; ending = false; builderMode = 'idle'; constructionMode = 'idle'
@@ -250,6 +291,19 @@ test('Equipment changes require release and a cooldown on both desktop and mobil
   gate.beginEquipmentTransition();pressed=down=false;up=true;gate.mobileUiInputSystem(.1);up=false;assert(gate.isEquipmentInputBlocked());gate.mobileUiInputSystem(.31);assert(!gate.isEquipmentInputBlocked());
  }
  mobile=true;pressed=down=up=false;
+})
+
+test('Native hover uses the hand glyph for salvage and restores the default afterward', () => {
+ panel = ending = false; target = null
+ controls.initTouchControls()
+ target = 'garbage'; controls.touchControlsSystem(0)
+ const primary = () => writes.at(-1).touchInputs.find(x => x.inputAction === ecs.InputAction.IA_PRIMARY)
+ assert.equal(primary().hide, true, 'native gamepad stays hidden while hover uses the icon')
+ assert.equal(primary().icon.tex.texture.src, 'images/hud/hands.png')
+ const written = writes.length; controls.touchControlsSystem(0)
+ assert.equal(writes.length, written, 'unchanged target does not rewrite controls')
+ target = null; controls.touchControlsSystem(0)
+ assert.equal(primary().icon, undefined)
 })
 
 console.log(`${count} mobile control tests passed`)

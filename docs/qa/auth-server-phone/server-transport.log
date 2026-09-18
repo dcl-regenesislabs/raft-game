@@ -1,0 +1,13 @@
+[Server] 19:51:36 pulse: configured for pulse-server.decentraland.org:7777 (base domain)
+[Server] 19:51:36 pulse: session created for pulse-server.decentraland.org:7777
+[Server] 19:51:36 pulse: no realm name yet (no peers will be visible)
+[Server] 19:51:36 pulse: no realm name yet (no peers will be visible)
+[Server] 19:51:36 pulse: local scene development realm resolved to lsd:b64-L2hvbWUva3VydWsvUHJvamVjdHMvZGVjZW50cmFsYW5kL3JhZnQtZ2FtZS1rdXJ1ay1kZXNrdG9w
+[Server] 19:51:37 pulse: connected
+[Server] 19:51:37 pulse: scene-listener handshake (1 realms, 1 rects) sent
+[Server] 19:51:37 "[SERVER] Save and ranking service started"
+[Server] 19:51:37 pulse: handshake accepted
+[Server] 19:51:38 starting livekit protocol
+[Server] 19:51:58 creating new player: 0x9758…e439 -> 2750v2#8589937342 / dcl_32v0
+[Server] 19:52:47 creating new player: 0x9758…e439 -> 2719v3#12884904607 / dcl_32v1
+[Server] 19:53:06 creating new player: 0x9758…e439 -> 2750v4#17179871934 / dcl_32v2

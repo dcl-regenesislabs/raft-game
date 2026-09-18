@@ -48,14 +48,14 @@ test('Hammer recipe spends materials and creates equippable tool',()=>{inv.addCo
 test('Guide hide/reopen retains earlier progress',()=>{tutorial.dismissTutorial();assert.equal(tutorial.isTutorialEnabled(),false);tutorial.showTutorial();assert(tutorial.hasTutorialAction('hammer'))})
 test('Full backpack cannot spend materials on a lost craft output',()=>{
  reset(); inv.addCollected('plants',4);
- while(items.serializeInventoryLayout().filter(Boolean).length<30) inv.addCollected('hammer',1);
+ while(items.serializeInventoryLayout().filter(Boolean).length<25) inv.addCollected('hammer',1);
  assert.equal(craft.startCraft('rope'),false); assert.equal(inv.getCollectedCount('plants'),4);
  assert.equal(inv.addCollected('metal',1),0); assert.equal(inv.getCollectedCount('metal'),0);
  reset()
 })
 test('Craft may use the slot freed by its last material',()=>{
  reset(); inv.addCollected('plants',2);
- while(items.serializeInventoryLayout().filter(Boolean).length<30) inv.addCollected('hammer',1);
+ while(items.serializeInventoryLayout().filter(Boolean).length<25) inv.addCollected('hammer',1);
  assert.equal(craft.startCraft('rope'),true); assert.equal(inv.getCollectedCount('rope'),1); assert.ok(slot('rope')>=0);
  reset()
 })
@@ -91,25 +91,25 @@ mock('systems/eventScheduler.ts',{notifyHungerCrossedLow:()=>{low++}})
 const survival=load('systems/survivalDrain.ts')
 test('Survival freezes during lobby and death',()=>{stats.setStat('hunger',0.5);lobby=true;survival.survivalDrainSystem(10);assert.equal(stats.getStat('hunger'),0.5);lobby=false;dead=true;survival.survivalDrainSystem(10);assert.equal(stats.getStat('hunger'),0.5);dead=false})
 test('Normal survival drains vitals and triggers game over at zero life',()=>{stats.setStat('hunger',0);stats.setStat('thirst',0);stats.setStat('life',0.001);survival.survivalDrainSystem(1);assert(dead);assert.equal(stats.getStat('life'),0)})
-test('Materials and equipment share all 30 inventory slots',()=>{
+test('Materials and equipment share all 25 inventory slots',()=>{
  reset();inv.addCollected('wood',2);inv.addCollected('hammer',1)
  assert.equal(slot('wood'),1);assert.equal(slot('hammer'),2)
- for(let i=3;i<30;i++)inv.addCollected('hammer',1)
- assert.equal(items.serializeInventoryLayout().filter(Boolean).length,30)
+ for(let i=3;i<25;i++)inv.addCollected('hammer',1)
+ assert.equal(items.serializeInventoryLayout().filter(Boolean).length,25)
  assert.equal(items.ensureCollectibleSlot('cup'),-1)
- items.clearInventorySlot(29);inv.addCollected('cup',1)
- assert.equal(slot('cup'),29);assert.equal(items.serializeInventoryLayout().length,30)
+ items.clearInventorySlot(24);inv.addCollected('cup',1)
+ assert.equal(slot('cup'),24);assert.equal(items.serializeInventoryLayout().length,25)
 })
-test('Equipment picker includes slot 29 and excludes materials',()=>{
- inv.selectSlot(29);assert.equal(inv.getSelectedSlot(),29)
- assert(inv.getEquippableSlots().includes(29));assert(!inv.getEquippableSlots().includes(1))
- inv.hydrateSelectedSlot(28);assert.equal(inv.serializeSelectedSlot(),28)
+test('Equipment picker includes slot 24 and excludes materials',()=>{
+ inv.selectSlot(24);assert.equal(inv.getSelectedSlot(),24)
+ assert(inv.getEquippableSlots().includes(24));assert(!inv.getEquippableSlots().includes(1))
+ inv.hydrateSelectedSlot(23);assert.equal(inv.serializeSelectedSlot(),23)
 })
 test('Reordering a tool preserves equipped identity and durability',()=>{
  reset();inv.consumeSlotDurability(0);const durability=items.getSlotDurability(0)
- const drag=load('ui/inventoryDrag.ts');drag.pressSlot(0);drag.pressSlot(29)
- assert.equal(inv.getSelectedSlot(),29);assert.equal(items.getInventorySlot(29).id,'hook')
- assert.equal(items.getSlotDurability(29),durability);assert.equal(items.getInventorySlot(0),null)
+ const drag=load('ui/inventoryDrag.ts');drag.pressSlot(0);drag.pressSlot(24)
+ assert.equal(inv.getSelectedSlot(),24);assert.equal(items.getInventorySlot(24).id,'hook')
+ assert.equal(items.getSlotDurability(24),durability);assert.equal(items.getInventorySlot(0),null)
 })
 test('Hands unequips without consuming a backpack slot and can re-equip',()=>{
  reset(); const before=JSON.stringify(items.serializeInventoryLayout()); const durability=items.getSlotDurability(0)
@@ -145,6 +145,19 @@ test('Consuming the final placed item cannot pass its press to the fallback hook
  fireDown=false;gate.mobileUiInputSystem(2);assert(gate.isEquipmentInputBlocked(),'held press must remain blocked beyond cooldown');
  fireHeld=false;fireUp=true;gate.mobileUiInputSystem(.01);fireUp=false;fireHeld=fireDown=true;assert(fire.toolFireJustPressed());fireHeld=fireDown=false;gate.mobileUiInputSystem(1);
 })
+
+
+const migration = load('ui/inventoryMigration.ts')
+test('Legacy tail slots retain item, selection and durability within 25 slots',()=>{
+ const layout=Array(30).fill('');layout[0]='hook';layout[29]='hammer'
+ const durabilities=Array(30).fill(-1);durabilities[29]=7
+ const restored=migration.fitInventoryToCapacity({layout,durabilities,selected:29})
+ assert.equal(restored.layout.length,25);assert.equal(restored.layout[1],'hammer')
+ assert.equal(restored.selected,1);assert.equal(restored.durabilities[1],7)
+ assert.equal(layout[29],'hammer')
+ assert.throws(()=>migration.fitInventoryToCapacity({layout:Array(30).fill('hammer'),selected:0}),/save has not been changed/)
+})
+
 for(const r of results)console.log(r.status+' '+r.name+(r.error?' — '+r.error:''))
 
 process.exitCode=results.some(result=>result.status==='FAIL')?1:0

@@ -1,0 +1,192 @@
+{
+  "workbench": {
+    "triangles": 4313,
+    "faces": 4313,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.7675780057907104,
+      0.5820310115814209
+    ],
+    "bytes": 2027668
+  },
+  "engineeringBench": {
+    "triangles": 4150,
+    "faces": 4150,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.9667969942092896,
+      0.7089849710464478,
+      1.0
+    ],
+    "bytes": 2098832
+  },
+  "armoryBench": {
+    "triangles": 4210,
+    "faces": 4210,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.6621090173721313,
+      0.7382819652557373
+    ],
+    "bytes": 2794716
+  },
+  "smelter": {
+    "triangles": 4271,
+    "faces": 4271,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.7929679751396179,
+      0.7851560115814209,
+      1.0
+    ],
+    "bytes": 2219852
+  },
+  "researchTable": {
+    "triangles": 4254,
+    "faces": 4254,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.6367180347442627,
+      0.5703120231628418
+    ],
+    "bytes": 2505732
+  },
+  "cropBed": {
+    "triangles": 4179,
+    "faces": 4179,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.6777349710464478,
+      1.0,
+      0.43945398926734924
+    ],
+    "bytes": 2292196
+  },
+  "waterTank": {
+    "triangles": 3981,
+    "faces": 3981,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.7890620231628418,
+      1.0,
+      0.8652349710464478
+    ],
+    "bytes": 1762900
+  },
+  "improvedGrill": {
+    "triangles": 4150,
+    "faces": 4150,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.6894530057907104,
+      0.5058590173721313
+    ],
+    "bytes": 2736736
+  },
+  "rainCollector": {
+    "triangles": 4295,
+    "faces": 4295,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      1.0,
+      0.8769530057907104
+    ],
+    "bytes": 2663276
+  },
+  "ammoCrate": {
+    "triangles": 4398,
+    "faces": 4398,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.7597650289535522,
+      0.47070398926734924
+    ],
+    "bytes": 2211828
+  }
+}

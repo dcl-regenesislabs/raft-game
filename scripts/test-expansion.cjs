@@ -609,4 +609,49 @@ test('Finite finale clears every reinforcement before an already-finished broadc
   }
   assert(won);assert(progress.hasProgress('finaleCleared'));assert.equal(progress.storyWins(),3)
 })
+test('Iteration-one models sit on deck, fit a rotated raft tile, retain identity and clean up', () => {
+  const { EXPANSION_MODELS } = load('expansion/models.ts')
+  const sprites = load('expansion/sprites.ts')
+  assert.equal(Object.keys(EXPANSION_MODELS).length, 10)
+  for (const [kind, model] of Object.entries(EXPANSION_MODELS)) {
+    assert(fs.existsSync(path.resolve(root, '..', model.src)))
+    const entity = ecs.engine.addEntity()
+    Transform.create(entity, { position: point(10, 20), rotation: mathModule.exports.Quaternion.fromEulerDegrees(0, 90, 0) })
+    sprites.attachPrototypeSprite(entity, kind)
+    assert.equal(sprites.getSpriteKind(entity), kind)
+    const children = [...Transform.data].filter(([, t]) => t.parent === entity)
+    const [visual, t] = children.find(([e]) => GltfContainer.getOrNull(e))
+    assert.equal(GltfContainer.get(visual).src, model.src)
+    assert.equal(GltfContainer.get(visual).visibleMeshesCollisionMask, 0)
+    assert(Math.abs(0.9 + t.position.y + model.min[1] * t.scale.y - 0.2) < 1e-6, kind + ' floats or sinks')
+    const radius = Math.hypot(Math.max(Math.abs(model.min[0]), Math.abs(model.max[0])), Math.max(Math.abs(model.min[2]), Math.abs(model.max[2]))) * model.scale
+    assert(radius < 1.5, kind + ' leaves tile at an arbitrary yaw')
+    sprites.removePrototypeEntity(entity)
+    assert.equal(sprites.getSpriteKind(entity), undefined)
+    children.forEach(([e]) => assert.equal(Transform.getOrNull(e), null))
+  }
+})
+test('Model placement ghosts match committed transforms and never collide', () => {
+  const { EXPANSION_MODELS } = load('expansion/models.ts')
+  ecs.GltfNodeModifiers = component()
+  mock('factories/construction.ts', {
+    getConstructionVisualSize: (kind) => EXPANSION_MODELS[kind]?.scale ?? 1,
+    getConstructionGlb: (kind) => EXPANSION_MODELS[kind]?.src ?? '',
+    getConstructionDeckOffset: (kind) => EXPANSION_MODELS[kind]?.deckOffset ?? 0.9
+  })
+  const ghosts = load('factories/spectralConstruction.ts')
+  for (const [kind, model] of Object.entries(EXPANSION_MODELS)) {
+    const ghost = ghosts.createSpectralConstruction(kind)
+    ghosts.showSpectralConstructionAt(ghost, { x: 10, y: 16, z: 20 }, 90)
+    const t = Transform.get(ghost)
+    assert.equal(t.scale.x, model.scale)
+    assert.equal(t.position.y, 16 + model.deckOffset)
+    assert.equal(GltfContainer.get(ghost).visibleMeshesCollisionMask, 0)
+    assert.equal(GltfContainer.get(ghost).invisibleMeshesCollisionMask, 0)
+    ghosts.tickSpectralConstructionBlink(ghost, 0.3)
+    assert(ecs.GltfNodeModifiers.get(ghost).modifiers.length)
+    ghosts.hideSpectralConstruction(ghost)
+    assert.equal(Transform.get(ghost).scale.x, 0)
+  }
+})
 console.log(passed + ' expansion tests passed')

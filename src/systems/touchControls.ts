@@ -5,7 +5,6 @@ import { BUILD_ICON, ERASE_ICON, ROTATE_CW_ICON, ROTATE_CCW_ICON } from '../ui/b
 import { NATIVE_SLOT_ACTIONS } from './nativeEquipment'
 import { getInventorySlot, getCatalogItem } from '../ui/items'
 import { getCookableById } from '../ui/cookableItems'
-import { getLookAtGarbageKind } from './lookAtTarget'
 import { isFishingBiting } from './fishingRod'
 import { isCrafting } from '../ui/craftSession'
 import { Entity, InputAction, TouchScreenControls, engine } from '@dcl/sdk/ecs'
@@ -36,31 +35,8 @@ import { getProximityConstruction, getLookAtGrillPlatform, getLookAtPointerHit, 
 import { getRaftBuilderMode } from './raftBuilder'
 import { USE_NATIVE_POINTER } from './toolFire'
 
-// Drives the native mobile on-screen gamepad (TouchScreenControls on the
-// RootEntity, honored by touch clients — a no-op on desktop). Declutter
-// policy:
-//   - Hide 1/2/3/4: equipment selection lives in the labeled dropdown.
-//   - E / F only show while the matching interaction would actually
-//     fire, mirroring each interact system's own conditions (see
-//     computeDesired below).
-//   - POINTER always shows the equipped item (or idle Hands) as the main action.
-//   - Jump, the joystick and the crosshair stay (knobs below).
-//
-// NOTE: import `TouchScreenControls` only via '@dcl/sdk/ecs'. A stale
-// @dcl/ecs 7.23.1 without the component may linger at the node_modules
-// top level via @dcl/asset-packs' peer range.
-//
-// The component's convenience helpers (hideAll / hide / ...) merge into
-// the current value and offer no per-button un-hide, so this module
-// composes the full desired state and createOrReplace()s it — writing
-// only on change to avoid per-frame CRDT churn.
-
-const KEEP_JUMP = true
-const KEEP_JOYSTICK = true
-const KEEP_CROSSHAIR = true
-// Keep equipped-item action central on every tool; jump remains secondary.
-const MAIN_ACTION = InputAction.IA_POINTER
-
+// Native movement and crosshair remain client-owned. All action buttons,
+// including jump, are scene UI entities bound to real InputActions.
 type DesiredButtons = {
   e: boolean
   f: boolean
@@ -84,8 +60,7 @@ export function resolveMobileControls(): MobileControlState {
   let eLabel = 'Interact'
   if (target === 'water') eLabel = 'Fill cup'
   if (target === 'garbage') {
-    const kind = getLookAtGarbageKind()
-    eIcon = getCatalogItem(kind === 'barrel' ? 'wood' : (kind ?? 'wood'))?.texture
+    eIcon = HANDS_ICON
     eLabel = 'Collect'
   }
   if (target === 'storage') eLabel = 'Open storage'
@@ -126,7 +101,8 @@ export function resolveMobileControls(): MobileControlState {
     scrapArmor: 'Wear armor',
     salvageAxe: 'Salvage'
   }
-  const pointerLabel = !item
+  const grabbing = target === 'garbage' && getRaftBuilderMode() === 'idle' && getConstructionPlacementMode() === 'idle'
+  const pointerLabel = grabbing ? 'Collect' : !item
     ? 'Hands'
     : isEmptyCupHeld()
       ? target === 'water'
@@ -155,7 +131,7 @@ export function resolveMobileControls(): MobileControlState {
   return {
     pointer: {
       visible: desired.pointer,
-      icon: getMainActionIcon(builder !== 'idle' ? modeIcon : (item?.texture ?? HANDS_ICON)),
+      icon: getMainActionIcon(grabbing ? HANDS_ICON : builder !== 'idle' ? modeIcon : (item?.texture ?? HANDS_ICON)),
       label: pointerLabel
     },
     e: {
@@ -186,45 +162,27 @@ export function initTouchControls(): void {
 }
 
 export function touchControlsSystem(_dt: number): void {
-  const state = resolveMobileControls()
-  const menu =
-    isGameOver() ||
-    isWinActive() ||
-    isCrafting() ||
-    (isInventoryOpen() && !isEquipmentPickerOpen()) ||
-    isCraftOpen() ||
-    isCookOpen() ||
-    isStorageOpen() ||
-    isSystemMenuOpen()
-  const proximity =
-    getProximityConstruction() !== null && getRaftBuilderMode() === 'idle' && getConstructionPlacementMode() === 'idle'
-  const visual = (action: ControlAction) => ({ visible: action.visible, icon: action.icon })
-  const signature = JSON.stringify({
-    pointer: visual(state.pointer),
-    e: visual(state.e),
-    f: visual(state.f),
-    shortcuts: state.shortcuts.map(visual),
-    menu,
-    proximity
-  })
+  const menu = worldControlsHidden() || isEquipmentPickerOpen()
+  // Explorer also uses touch-input glyphs in its native hover tooltip.
+  const grabIcon = !menu && getLookAtTarget() === 'garbage' ? HANDS_ICON : undefined
+  const signature = JSON.stringify([menu, grabIcon])
   if (lastWritten === signature) return
   lastWritten = signature
-  const button = (inputAction: InputAction, action: ControlAction) => ({
-    inputAction,
-    hide: !action.visible,
-    ...(action.icon ? { icon: { tex: { $case: 'texture' as const, texture: { src: action.icon } } } } : {})
-  })
   TouchScreenControls.createOrReplace(engine.RootEntity, {
     touchInputs: [
-      ...NATIVE_SLOT_ACTIONS.map((action, index) => button(action, state.shortcuts[index])),
-      button(InputAction.IA_POINTER, state.pointer),
-      button(InputAction.IA_PRIMARY, proximity ? { ...state.e, visible: false } : state.e),
-      button(InputAction.IA_SECONDARY, proximity ? { ...state.f, visible: false } : state.f),
-      { inputAction: InputAction.IA_JUMP, hide: menu || !KEEP_JUMP }
-    ],
-    mainAction: MAIN_ACTION,
-    hideJoystick: menu || !KEEP_JOYSTICK,
-    hideCrosshair: menu || !KEEP_CROSSHAIR
+      ...NATIVE_SLOT_ACTIONS,
+      InputAction.IA_POINTER, InputAction.IA_PRIMARY,
+      InputAction.IA_SECONDARY, InputAction.IA_JUMP
+    ].map(inputAction => ({
+      inputAction,
+      hide: true,
+      icon: inputAction === InputAction.IA_PRIMARY && grabIcon
+        ? { tex: { $case: 'texture' as const, texture: { src: grabIcon } } }
+        : undefined
+    })),
+    mainAction: InputAction.IA_POINTER,
+    hideJoystick: menu,
+    hideCrosshair: menu
   })
 }
 
@@ -245,7 +203,7 @@ function worldControlsHidden(): boolean {
 function computeDesired(): DesiredButtons {
   if (worldControlsHidden()) return { e: false, f: false, pointer: false }
 
-  // Placement previews use native E/F rotation icons; POINTER commits.
+  // Placement previews use custom E/F rotation icons; POINTER commits.
   const placementActive = getRaftBuilderMode() !== 'idle' || getConstructionPlacementMode() !== 'idle'
   if (placementActive) {
     const rotating = getRaftBuilderMode() === 'placing' || getConstructionPlacementMode() !== 'idle'
