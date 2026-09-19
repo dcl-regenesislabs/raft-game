@@ -1,3 +1,5 @@
+import { getUpdateNotice } from '../client/multiplayerState'
+import { UpdateScreen } from './components/UpdateScreen'
 import { isMultiplayer, multiplayerReady, multiplayerStatus } from '../client/multiplayerState'
 import { MobileActionControls } from './components/MobileActionControls'
 import { RaidStatus } from './components/RaidStatus'
@@ -85,6 +87,7 @@ function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs
 }
 
 function ui(): ReactEcs.JSX.Element {
+  if (isMultiplayer() && getUpdateNotice()) return <UpdateScreen />
   if (isMultiplayer() && !multiplayerReady()) return (
     <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute', alignItems: 'center', justifyContent: 'center' }} uiBackground={{ color: Color4.create(0.02, 0.08, 0.12, 0.95) }}>
       <Label value={multiplayerStatus()} fontSize={22} uiTransform={{ width: '90%', height: 90 }} />

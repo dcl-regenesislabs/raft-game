@@ -1,4 +1,4 @@
-import { MULTIPLAYER_MAX_TILES, MULTIPLAYER_MAX_DEVICES } from '../config/gameConfig'
+import { MULTIPLAYER_MAX_TILES, MULTIPLAYER_MAX_DEVICES, MULTIPLAYER_INITIAL_RAFT_SIZE } from '../config/gameConfig'
 import { recipeAvailable } from '../progression/unlocks'
 import { PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from '../factories/sceneLevels'
 import { getCatalogItem } from '../ui/items'
@@ -27,8 +27,10 @@ export const tilePosition = (tile: { x: number; z: number }): Vec => ({
 export const distance = (a: Vec, b: Vec): number => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
 export function freshWorld(generation = 1): WorldState {
   const tiles: Record<string, Tile> = {}
-  for (let x = -4; x <= 4; x++)
-    for (let z = -4; z <= 4; z++) {
+  const start = -Math.floor(MULTIPLAYER_INITIAL_RAFT_SIZE / 2)
+  const end = start + MULTIPLAYER_INITIAL_RAFT_SIZE
+  for (let x = start; x < end; x++)
+    for (let z = start; z < end; z++) {
       const id = cellId(x, z)
       tiles[id] = { id, x, z, health: 100, device: null }
     }

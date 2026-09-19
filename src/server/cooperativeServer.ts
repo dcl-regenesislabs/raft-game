@@ -1,3 +1,7 @@
+import { RELEASE } from '../config/release'
+import { IS_PRODUCTION } from '../config/env'
+import { Release, handoffKey, isNewerRelease, readPublishedRelease, releaseNamespace } from '../multiplayer/releases'
+import { inheritReleaseWorld } from './releaseWorld'
 import { engine, PlayerIdentityData, Transform } from '@dcl/sdk/ecs'
 import { worldRoom } from '../shared/messages'
 import {
@@ -39,7 +43,22 @@ type Peer = {
 }
 export function runCooperativeServer(): void {
   const server = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2)
-  const repository = new WorldRepository(worldStorage, server)
+  const repository = new WorldRepository(worldStorage, server, releaseNamespace(RELEASE.id))
+  let lastVersionCheck = -Infinity,
+    versionPollAt = 0,
+    versionBusy = false
+  let replacement: Release | null = null,
+    drained = false,
+    drainBusy = false,
+    drainRetryAt = 0
+  let inheritanceStartedAt = 0
+  const versionAllowed = (): boolean => !IS_PRODUCTION || (!replacement && Date.now() - lastVersionCheck < 30000)
+  const releaseMessage = (): string =>
+    JSON.stringify({
+      release: replacement ?? RELEASE,
+      phase: replacement ? (drained ? 'reload' : 'updating') : versionAllowed() ? 'active' : 'checking'
+    })
+  const versions = new Map<string, { session: string; release: string; at: number }>()
   const peers = new Map<string, Peer>()
   const requests: { address: string; request: Request }[] = []
   let coordinator: LiveAuthority | null = null
@@ -99,6 +118,24 @@ export function runCooperativeServer(): void {
     peer.outgoing = splitMessage(`${server}:${w.revision}:${++transferSequence}`, packet)
     peer.snapshot = snapshot
   }
+  worldRoom.onMessage('worldClientVersion', (data, ctx) => {
+    const address = (ctx?.from ?? '').toLowerCase()
+    if (!/^0x[0-9a-f]{40}$/.test(address) || data.payload.length > 400) return
+    for (const [wallet, version] of versions) if (Date.now() - version.at > 8000) versions.delete(wallet)
+    if (!versions.has(address) && versions.size >= MULTIPLAYER_MAX_PLAYERS * 2) return
+    try {
+      const version = JSON.parse(data.payload)
+      if (
+        typeof version.session !== 'string' ||
+        !/^[a-zA-Z0-9-]{1,80}$/.test(version.session) ||
+        typeof version.release !== 'string'
+      )
+        return
+      versions.set(address, { session: version.session, release: version.release, at: Date.now() })
+    } catch {
+      /* malformed version envelopes cannot join */
+    }
+  })
   worldRoom.onMessage('worldHello', (data, ctx) => {
     const address = (ctx?.from ?? '').toLowerCase()
     if (
@@ -107,6 +144,11 @@ export function runCooperativeServer(): void {
       data.protocol !== PROTOCOL_VERSION
     )
       return
+    const version = versions.get(address)
+    if (IS_PRODUCTION && (version?.session !== data.session || version?.release !== RELEASE.id)) {
+      void worldRoom.send('worldRelease', { payload: releaseMessage() }, { to: [address] }).catch(() => {})
+      return
+    }
     const reject = (error: string): void => {
       void worldRoom.send('worldJoinRejected', { session: data.session, error }, { to: [address] }).catch(() => {})
     }
@@ -172,15 +214,26 @@ export function runCooperativeServer(): void {
     }
   })
   async function work(): Promise<void> {
-    if (stopped || busy || Date.now() < retryAt) return
+    if (!versionAllowed() || stopped || busy || Date.now() < retryAt) return
     busy = true
     try {
       if (!coordinator) {
         if (!peers.size) return
         const saved = await repository.load()
-        coordinator = new LiveAuthority(saved ?? freshWorld(), repository)
+        let inherited = null
+        if (!saved && RELEASE.id !== 'dev') {
+          if (!inheritanceStartedAt) inheritanceStartedAt = Date.now()
+          const transfer = await inheritReleaseWorld(worldStorage, RELEASE, Date.now() - inheritanceStartedAt >= 20000)
+          if (transfer.waiting) {
+            status = 'Transferring shared raft from the previous version…'
+            return
+          }
+          inherited = transfer.world
+        }
+        const initial = saved ?? inherited ?? freshWorld()
+        coordinator = new LiveAuthority(initial, repository)
         startupPersisted = saved !== null
-        if (!saved) coordinator.stage(freshWorld())
+        if (!saved) coordinator.stage(initial)
       }
       const revisionBefore = coordinator.state.revision
       if (!startupPersisted) {
@@ -283,6 +336,55 @@ export function runCooperativeServer(): void {
     sendTokens = 20
   engine.addSystem((dt) => {
     if (!worldRoom.isReady()) return
+    if (IS_PRODUCTION && !versionBusy && Date.now() >= versionPollAt) {
+      versionBusy = true
+      versionPollAt = Date.now() + 5000
+      void readPublishedRelease()
+        .then((latest) => {
+          lastVersionCheck = Date.now()
+          if (isNewerRelease(RELEASE, latest)) replacement = latest
+        })
+        .catch((error) => {
+          console.error('[SERVER] Release check unavailable', error)
+        })
+        .finally(() => {
+          versionBusy = false
+        })
+    }
+    if (!versionAllowed()) {
+      ready = false
+      status = replacement
+        ? 'A new version is available. Re-enter the world to continue.'
+        : 'Checking deployed version…'
+    }
+    if (replacement && !drained && !busy && !drainBusy && Date.now() >= drainRetryAt) {
+      drainBusy = true
+      requests.length = 0
+      const target = replacement
+      void (async () => {
+        if (coordinator) {
+          // First reconcile an uncertain older write, then save the final live state.
+          await coordinator.checkpoint()
+          await coordinator.checkpoint()
+          if (
+            !(await worldStorage.write(handoffKey(RELEASE.id, target.id), {
+              from: RELEASE.id,
+              to: target.id,
+              revision: coordinator.state.revision
+            }))
+          )
+            throw Error('Handoff acknowledgement was not saved')
+        }
+        drained = true
+      })()
+        .catch((error) => {
+          drainRetryAt = Date.now() + 5000
+          console.error('[SERVER] Final handoff backup pending', error)
+        })
+        .finally(() => {
+          drainBusy = false
+        })
+    }
     elapsed += Math.max(0, dt)
     backupElapsed += Math.max(0, dt)
     if (
@@ -323,6 +425,7 @@ export function runCooperativeServer(): void {
     if (pulse >= MULTIPLAYER_HEARTBEAT_S) {
       pulse = 0
       void worldRoom.send('worldPulse', { server, status }).catch(() => {})
+      void worldRoom.send('worldRelease', { payload: releaseMessage() }).catch(() => {})
     }
     if (
       batch >= MULTIPLAYER_BATCH_S &&

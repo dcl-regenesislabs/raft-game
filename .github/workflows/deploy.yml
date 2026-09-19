@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: 22.x
       - run: npm install
+      - name: Verify regression suites
+        run: |
+          for test in scripts/test-*.cjs; do node "$test" || exit 1; done
       - name: Deploy game to raft.dcl.eth
         env:
           DCL_PRIVATE_KEY: ${{ secrets.DCL_PRIVATE_KEY }}

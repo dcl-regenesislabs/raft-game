@@ -10,7 +10,6 @@ export interface DurableStorage {
   write(key: string, value: unknown): Promise<boolean>
   remove(key: string): Promise<boolean>
 }
-const ROOT = 'cooperative:v1:manifest'
 const PART_SIZE = 48000
 export type Manifest = {
   version: number
@@ -188,10 +187,11 @@ export class WorldRepository {
   private obsolete: string[][] = []
   constructor(
     private storage: DurableStorage,
-    private writer: string
+    private writer: string,
+    private namespace = 'cooperative:v1'
   ) {}
   async load(): Promise<WorldState | null> {
-    const root = await this.storage.read(ROOT)
+    const root = await this.storage.read(this.namespace + ':manifest')
     if (root.kind === 'missing') return null
     const m = root.value as Manifest
     if (
@@ -202,7 +202,7 @@ export class WorldRepository {
       !Array.isArray(m.chunks) ||
       !m.chunks.length ||
       m.chunks.length > 100 ||
-      m.chunks.some((k) => typeof k !== 'string' || !k.startsWith('cooperative:v1:chunk:'))
+      m.chunks.some((k) => typeof k !== 'string' || !k.startsWith(this.namespace + ':chunk:'))
     )
       throw new Error('Invalid world manifest')
     let raw = ''
@@ -226,10 +226,10 @@ export class WorldRepository {
     const commit = `${this.writer}:${world.generation}:${world.revision}:${hash}`
     const chunks = Array.from(
       { length: Math.ceil(raw.length / PART_SIZE) },
-      (_, i) => `cooperative:v1:chunk:${commit}:${i}`
+      (_, i) => `${this.namespace}:chunk:${commit}:${i}`
     )
     // Checking ownership detects an unexpected second writer; host deployment must still provide exclusive ownership.
-    const current = await this.storage.read(ROOT)
+    const current = await this.storage.read(this.namespace + ':manifest')
     const existing = current.kind === 'found' ? (current.value as Manifest) : null
     if (existing?.commit === commit) {
       this.manifest = existing
@@ -247,8 +247,8 @@ export class WorldRepository {
       chunks,
       hash
     }
-    if (!(await this.storage.write(ROOT, next))) {
-      const check = await this.storage.read(ROOT)
+    if (!(await this.storage.write(this.namespace + ':manifest', next))) {
+      const check = await this.storage.read(this.namespace + ':manifest')
       if (check.kind !== 'found' || (check.value as Manifest).commit !== commit) throw new Error('World commit pending')
     }
     if (this.manifest) this.obsolete.push(this.manifest.chunks)

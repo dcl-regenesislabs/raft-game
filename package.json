@@ -4,7 +4,7 @@
   "description": "Raft Game — survive on a raft in Decentraland: fish, scavenge, craft, and build.",
   "scripts": {
     "start": "sdk-commands start",
-    "deploy": "npm run prepare:scene && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org --multi-scene",
+    "deploy": "node scripts/prepare-release.mjs && npm run prepare:scene && node scripts/force-production.mjs && sdk-commands deploy --target-content https://worlds-content-server.decentraland.org --multi-scene",
     "build": "sdk-commands build",
     "check:textures": "python3 scripts/check_gltf_textures.py",
     "fix:textures": "python3 scripts/check_gltf_textures.py --fix",

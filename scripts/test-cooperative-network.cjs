@@ -7,7 +7,7 @@ const esbuild = require('esbuild')
 const root = path.resolve(__dirname, '..')
 const bundle = esbuild.buildSync({
   stdin: {
-    contents: `export * from './src/multiplayer/liveAuthority'; export * from './src/multiplayer/prediction'; export * from './src/multiplayer/world'; export * from './src/multiplayer/types'; export * from './src/multiplayer/authority'; export * from './src/multiplayer/persistence'; export * from './src/multiplayer/inventory'; export * from './src/multiplayer/transport'; export * from './src/multiplayer/simulation';`,
+    contents: `export * from './src/config/release'; export * from './src/multiplayer/releases'; export * from './src/server/releaseWorld'; export * from './src/multiplayer/liveAuthority'; export * from './src/multiplayer/prediction'; export * from './src/multiplayer/world'; export * from './src/multiplayer/types'; export * from './src/multiplayer/authority'; export * from './src/multiplayer/persistence'; export * from './src/multiplayer/inventory'; export * from './src/multiplayer/transport'; export * from './src/multiplayer/simulation';`,
     resolveDir: root
   },
   bundle: true,
@@ -128,6 +128,10 @@ async function main() {
     '../multiplayer/authority': m,
     '../multiplayer/liveAuthority': m,
     '../multiplayer/persistence': m,
+    '../config/release': m,
+    '../config/env': { IS_PRODUCTION: false },
+    '../multiplayer/releases': m,
+    './releaseWorld': m,
     './worldStorage': { worldStorage: storage },
     '../multiplayer/types': m,
     '../multiplayer/world': m,
@@ -158,6 +162,9 @@ async function main() {
       '../multiplayer/prediction': m,
       '../multiplayer/world': m,
       './multiplayerState': state,
+      '../config/release': m,
+      '../config/env': { IS_PRODUCTION: false },
+      '../multiplayer/releases': m,
       './worldRenderer': { renderWorld: (snap) => rendered.push(snap.world.revision) },
       '../ui/notification': { showNotification() {} },
       '../ui/systemSession': { isSystemMenuOpen: () => false },
@@ -206,26 +213,26 @@ async function main() {
     'Concurrent joins failed to recover lost snapshot chunk'
   )
   assert.equal(dropped, 1)
-  assert.equal(Object.keys(a.state.getMultiplayerSnapshot().world.tiles).length, 81)
+  assert.equal(Object.keys(a.state.getMultiplayerSnapshot().world.tiles).length, 16)
   assert.equal(a.state.getMultiplayerSnapshot().player.address, A)
   assert.equal(b.state.getMultiplayerSnapshot().player.address, B)
   assert(!('players' in a.state.getMultiplayerSnapshot().world))
   console.log('PASS simultaneous joins, private snapshots, missing chunk recovery and SDK callback context')
-  const build = { kind: 'build', x: 5, z: 0, slot: 2 }
+  const build = { kind: 'build', x: 2, z: 0, slot: 2 }
   assert(a.state.sendWorldAction(build))
   assert(b.state.sendWorldAction(build))
-  assert(a.state.getMultiplayerSnapshot().world.tiles['5,0'], 'Prediction must place a collider before a network tick')
-  assert(b.state.getMultiplayerSnapshot().world.tiles['5,0'], 'Both contenders predict their own placement')
+  assert(a.state.getMultiplayerSnapshot().world.tiles['2,0'], 'Prediction must place a collider before a network tick')
+  assert(b.state.getMultiplayerSnapshot().world.tiles['2,0'], 'Both contenders predict their own placement')
   assert.equal(m.count(a.state.getMultiplayerSnapshot().player.slots, 'wood'), 2)
   assert.equal(m.count(b.state.getMultiplayerSnapshot().player.slots, 'wood'), 2)
   await until(
-    () => a.state.getMultiplayerSnapshot().world.tiles['5,0'] && b.state.getMultiplayerSnapshot().world.tiles['5,0'],
+    () => a.state.getMultiplayerSnapshot().world.tiles['2,0'] && b.state.getMultiplayerSnapshot().world.tiles['2,0'],
     'Build did not converge'
   )
   await step(20)
   const bags = [a, b].map((c) => m.count(c.state.getMultiplayerSnapshot().player.slots, 'wood')).sort()
   assert.deepEqual(bags, [2, 4])
-  assert(!(await new m.WorldRepository(storage, 'not-per-action').load()).tiles['5,0'], 'Normal actions must not write the database')
+  assert(!(await new m.WorldRepository(storage, 'not-per-action').load()).tiles['2,0'], 'Normal actions must not write the database')
   console.log('PASS competing predictions converge with exactly one debit and lost-ack recovery, without per-action writes')
   unavailable = true
   dropChunk = true
@@ -272,7 +279,7 @@ async function main() {
   console.log('PASS empty-world pause, reconnect persistence and duplicate wallet exclusion')
   // Inspect persisted state after coordinator commits, independent from the clients.
   const saved = await new m.WorldRepository(storage, 'cold-start').load()
-  assert(saved.tiles['5,0'])
+  assert(saved.tiles['2,0'])
   assert.equal(saved.players[A].slots[12].id, 'potato')
   const admin = client(m.RESET_ADMIN)
   await until(() => admin.state.multiplayerReady(), 'Admin failed to join')
@@ -283,7 +290,7 @@ async function main() {
     () => a.state.getMultiplayerSnapshot().world.generation === 2 && a.state.multiplayerReady(),
     'Connected player failed to rejoin reset world'
   )
-  assert.equal(Object.keys(a.state.getMultiplayerSnapshot().world.tiles).length, 81)
+  assert.equal(Object.keys(a.state.getMultiplayerSnapshot().world.tiles).length, 16)
   assert.equal(m.count(a.state.getMultiplayerSnapshot().player.slots, 'hammer'), 0)
   disconnected.delete(B)
   await until(
@@ -293,6 +300,16 @@ async function main() {
   assert.equal(m.count(b.state.getMultiplayerSnapshot().player.slots, 'hammer'), 0)
   assert.equal(m.count(b.state.getMultiplayerSnapshot().player.slots, 'potato'), 2)
   console.log('PASS committed reset resynchronizes online players and invalidates offline bags')
+  a.handlers.get('worldRelease')({ payload: JSON.stringify({
+    release: { ...m.RELEASE, id: 'next-build', sequence: 100, compatibility: 2 }, phase: 'reload'
+  }) })
+  await step(2)
+  assert.equal(a.state.multiplayerReady(), false)
+  assert.equal(a.state.getUpdateNotice().incompatible, true)
+  assert.equal(a.state.sendWorldAction({ kind: 'respawn' }), false)
+  await step(30)
+  assert.equal(a.state.multiplayerReady(), false, 'Old heartbeats must not dismiss the update gate')
+  console.log('PASS outdated clients stop actions and retain the fullscreen update gate')
   console.log('Cooperative server/client integration passed')
 }
 main().catch((error) => {

@@ -9,3 +9,6 @@ yarn-debug.log*
 yarn-error.log*
 .claude/
 skills-lock.json
+
+# Generated publication identity.
+raft-release.json

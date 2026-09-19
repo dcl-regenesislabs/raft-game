@@ -25,17 +25,17 @@ async function main() {
     generation: 1,
     session: 'test',
     sequence: 1,
-    action: { kind: 'build', x: 5, z: 0, slot: 2 }
+    action: { kind: 'build', x: 2, z: 0, slot: 2 }
   }
   const predicted = m.predictSnapshot(base, [request])
-  assert(predicted.world.tiles['5,0'])
-  assert(!base.world.tiles['5,0'])
+  assert(predicted.world.tiles['2,0'])
+  assert(!base.world.tiles['2,0'])
   assert.equal(m.count(base.player.slots, 'wood'), 4)
   assert.equal(m.count(predicted.player.slots, 'wood'), 2)
   const winner = m.executeRequest(w, address, request).world
   const lost = { ...base, world: m.publicWorld(winner) }
   const reconciled = m.predictSnapshot(lost, [])
-  assert(reconciled.world.tiles['5,0'])
+  assert(reconciled.world.tiles['2,0'])
   assert.equal(
     m.count(reconciled.player.slots, 'wood'),
     4,

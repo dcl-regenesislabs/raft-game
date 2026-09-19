@@ -48,3 +48,13 @@ export function canResetWorld(): boolean {
 export function sendWorldAction(action: Action): boolean {
   return enabled && ready && sender !== null && sender(action)
 }
+
+export type UpdateNotice = { phase: 'checking' | 'updating' | 'reload'; incompatible: boolean; build: string }
+let updateNotice: UpdateNotice | null = null
+export function getUpdateNotice(): UpdateNotice | null {
+  return updateNotice
+}
+export function setUpdateNotice(value: UpdateNotice | null): void {
+  updateNotice = value
+  if (value) ready = false
+}

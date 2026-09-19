@@ -1,3 +1,6 @@
+import { RELEASE } from '../config/release'
+import { IS_PRODUCTION } from '../config/env'
+import { isNewerRelease, parseRelease, readPublishedRelease } from '../multiplayer/releases'
 import { isCraftOpen } from '../ui/craftToggle'
 import { isCookOpen } from '../ui/cookToggle'
 import { isStorageOpen } from '../ui/storageToggle'
@@ -11,6 +14,8 @@ import { tileObjectId } from '../multiplayer/world'
 import { applyDelta, Assembler } from '../multiplayer/transport'
 import {
   enableMultiplayer,
+  getUpdateNotice,
+  setUpdateNotice,
   getMultiplayerSnapshot,
   multiplayerReady,
   setMultiplayerSnapshot,
@@ -61,6 +66,25 @@ export function initCooperativeClient(): void {
     present()
     return true
   })
+  function requireUpdate(release: typeof RELEASE, phase: 'updating' | 'reload'): void {
+    pending.length = 0
+    if (confirmed) present()
+    setUpdateNotice({ phase, incompatible: release.compatibility !== RELEASE.compatibility, build: release.id })
+  }
+  worldRoom.onMessage('worldRelease', (data) => {
+    try {
+      const message = JSON.parse(data.payload)
+      const release = parseRelease(message.release)
+      if (isNewerRelease(RELEASE, release)) requireUpdate(release, message.phase === 'updating' ? 'updating' : 'reload')
+      else if (release.id === RELEASE.id && !getUpdateNotice()?.build) {
+        setUpdateNotice(message.phase === 'checking' ? { phase: 'checking', incompatible: false, build: '' } : null)
+      }
+    } catch {
+      /* malformed notices cannot unlock gameplay */
+    }
+  })
+  let versionPollAt = 0,
+    versionBusy = false
   // Pinned SDK Room filters client callbacks to AUTH_SERVER_PEER_ID and intentionally omits context.
   worldRoom.onMessage('worldPulse', (pulse) => {
     if (server !== pulse.server) {
@@ -178,9 +202,27 @@ export function initCooperativeClient(): void {
   })
   engine.addSystem(() => {
     const now = Date.now()
+    if (IS_PRODUCTION && !versionBusy && now >= versionPollAt) {
+      versionBusy = true
+      versionPollAt = now + 15000
+      void readPublishedRelease()
+        .then((latest) => {
+          if (isNewerRelease(RELEASE, latest)) requireUpdate(latest, 'reload')
+        })
+        .catch(() => {})
+        .finally(() => {
+          versionBusy = false
+        })
+    }
     const live = isStateSyncronized() && now - heartbeat < 8000
     if (!live) needsSnapshot = true
-    const ready = live && !joinError && !needsSnapshot && serverStatus === 'ready' && !!getMultiplayerSnapshot()
+    const ready =
+      !getUpdateNotice() &&
+      live &&
+      !joinError &&
+      !needsSnapshot &&
+      serverStatus === 'ready' &&
+      !!getMultiplayerSnapshot()
     setMultiplayerStatus(
       joinError ||
         (ready
@@ -196,7 +238,10 @@ export function initCooperativeClient(): void {
     )
     if (isStateSyncronized() && now - lastHello > 2000) {
       lastHello = now
-      void worldRoom.send('worldHello', { protocol: PROTOCOL_VERSION, session, resync: needsSnapshot }).catch(() => {})
+      void worldRoom
+        .send('worldClientVersion', { payload: JSON.stringify({ session, release: RELEASE.id }) })
+        .then(() => worldRoom.send('worldHello', { protocol: PROTOCOL_VERSION, session, resync: needsSnapshot }))
+        .catch(() => {})
     }
     if (ready && pending.length && now - lastSend > 500) {
       lastSend = now

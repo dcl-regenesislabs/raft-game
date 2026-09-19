@@ -64,10 +64,10 @@ class MemoryStorage {
   }
 }
 ;(async () => {
-  await test('Initial world has exactly 81 empty platforms, a protected center and personal starter supplies', () => {
+  await test('Initial world has exactly 16 empty platforms, a protected center and personal starter supplies', () => {
     const w = setup()
-    assert.equal(Object.keys(w.tiles).length, 81)
-    assert(Object.values(w.tiles).every((t) => t.x >= -4 && t.x <= 4 && t.z >= -4 && t.z <= 4 && !t.device))
+    assert.equal(Object.keys(w.tiles).length, 16)
+    assert(Object.values(w.tiles).every((t) => t.x >= -2 && t.x <= 1 && t.z >= -2 && t.z <= 1 && !t.device))
     assert.equal(m.count(w.players[A].slots, 'hook'), 1)
     assert.equal(m.count(w.players[A].slots, 'potato'), 2)
     assert.equal(m.validateWorld(m.clone(w)).generation, 1)
@@ -75,7 +75,7 @@ class MemoryStorage {
   await test('Conflicting builds debit only the winner and retries are idempotent', () => {
     let w = setup()
     for (const a of [A, B]) supply(w.players[a], { hammer: 1, wood: 4, plastic: 4, rope: 2 })
-    const action = { kind: 'build', x: 5, z: 0, slot: slot(w.players[A], 'hammer') }
+    const action = { kind: 'build', x: 2, z: 0, slot: slot(w.players[A], 'hammer') }
     const first = command(w, A, action)
     assert(first.result.ok)
     w = first.world
@@ -159,7 +159,7 @@ class MemoryStorage {
     assert(reset.result.ok)
     assert.equal(reset.world.generation, 2)
     assert(!reset.world.players[A])
-    assert.equal(Object.keys(reset.world.tiles).length, 81)
+    assert.equal(Object.keys(reset.world.tiles).length, 16)
     assert(
       !m.executeRequest(reset.world, m.RESET_ADMIN, {
         protocol: 1,

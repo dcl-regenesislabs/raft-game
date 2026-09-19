@@ -52,5 +52,8 @@ export const worldRoom = registerMessages({
   worldCommand: Schemas.Map({ payload: Schemas.String }),
   worldPulse: Schemas.Map({ server: Schemas.String, status: Schemas.String }),
   worldChunk: Schemas.Map({ id: Schemas.String, index: Schemas.Int, total: Schemas.Int, hash: Schemas.String, body: Schemas.String }),
-  worldResult: Schemas.Map({ payload: Schemas.String })
+  worldResult: Schemas.Map({ payload: Schemas.String }),
+  // Append only: preserve the original message layouts/ordering for old loaded scenes.
+  worldRelease: Schemas.Map({ payload: Schemas.String }),
+  worldClientVersion: Schemas.Map({ payload: Schemas.String })
 })
