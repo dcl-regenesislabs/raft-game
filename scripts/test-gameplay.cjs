@@ -26,7 +26,8 @@ mock('ui/gameOver.ts',{isGameOver:()=>dead,triggerGameOver:()=>{dead=true}})
 mock('ui/winScreen.ts',{isWinActive:()=>false})
 mock('ui/craftContext.ts', { recipeMatchesContext: () => true })
 mock('expansion/runtime.ts',{hasCraftStation:()=>true,resetExpansion:()=>{}})
-mock('factories/heldItem.ts',{setHeldItem:()=>{},setHeldFood:()=>{},setHeldCup:()=>{},setHeldViewmodelHidden:()=>{}})
+let viewmodelHidden=false
+mock('factories/heldItem.ts',{setHeldItem:()=>{},setHeldFood:()=>{},setHeldCup:()=>{},setHeldViewmodelHidden:hidden=>{viewmodelHidden=hidden}})
 mock('ui/inventoryToggle.ts',{isInventoryOpen:()=>false,setInventoryOpen:()=>{}})
 for (const [file,fn] of [['fishingRod','cancelFishingForEquipmentChange'],['hookThrower','cancelHookCharge'],['anchorThrower','cancelAnchorCharge'],['constructionPlacement','cancelConstructionPreview'],['raftBuilder','cancelRaftPreview']]) mock('systems/'+file+'.ts',{[fn]:()=>{}})
 mock('ui/actionButton.ts',{actionButtonJustPressed:()=>false,isActionButtonPressed:()=>false})
@@ -41,6 +42,15 @@ function reset(){items.resetInventoryLayout();inv.resetInventoryState();tutorial
 function slot(id){for(let i=0;i<items.INVENTORY_TOTAL_SLOTS;i++)if(items.getInventorySlot(i)?.id===id)return i;return -1}
 reset()
 test('Normal starter loadout contains only the hook',()=>{assert.equal(items.getInventorySlot(0).id,'hook');assert.equal(items.serializeInventoryLayout().filter(Boolean).length,1)})
+test('Placeable selection hides the previous tool and restores it on tool selection',()=>{
+ reset();inv.addCollected('grill',1);inv.addCollected('purifier',1)
+ for(const id of ['grill','purifier']){
+  inv.selectSlot(0);assert.equal(viewmodelHidden,false)
+  inv.selectSlot(slot(id));assert.equal(viewmodelHidden,true,id)
+  inv.refreshHeldForSelectedSlot();assert.equal(viewmodelHidden,true,id+' refresh')
+ }
+ inv.selectSlot(0);assert.equal(viewmodelHidden,false)
+})
 test('Debris collection deposits resources and advances tutorial',()=>{bank.bankGarbageKind('plants');assert.equal(inv.getCollectedCount('plants'),1);assert(tutorial.hasTutorialAction('collect'))})
 test('Insufficient materials do not craft or advance tutorial',()=>{assert.equal(craft.startCraft('rope'),false);assert.equal(inv.getCollectedCount('plants'),1);assert.equal(tutorial.hasTutorialAction('rope'),false)})
 test('Rope recipe deducts two plants and advances tutorial',()=>{bank.bankGarbageKind('plants');assert(craft.startCraft('rope'));assert.equal(inv.getCollectedCount('plants'),0);assert.equal(inv.getCollectedCount('rope'),1);assert(tutorial.hasTutorialAction('rope'))})

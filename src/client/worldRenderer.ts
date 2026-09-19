@@ -42,7 +42,6 @@ import { hydrateProgress } from '../progression/state'
 import { setPlayTimeS } from '../systems/playTimer'
 import { hydratePlayerPosition } from '../ui/playerPosition'
 import { dismissStartupGate } from '../ui/startupGate'
-import { setHeldViewmodelHidden } from '../factories/heldItem'
 import { setGateOpen, attachPrototypeSprite, removePrototypeEntity } from '../expansion/sprites'
 import { setMultiplayerDeath } from '../ui/gameOver'
 import { closeStorageMenu } from '../ui/storageToggle'
@@ -400,6 +399,6 @@ export function renderWorld(snapshot: Snapshot, previous: Snapshot | null): void
       )
     }
     dismissStartupGate()
-    setHeldViewmodelHidden(false)
+    refreshHeldForSelectedSlot()
   })
 }

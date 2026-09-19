@@ -126,7 +126,7 @@ export function selectSlot(i: number): void {
   if (def === null) return
   const warning = FOOD_WARNINGS[def.id]
   if (warning !== undefined) showNotification(warning)
-  setHeldViewmodelHidden(false)
+  setHeldViewmodelHidden(def.heldKind === null)
   applyHeldFromDef(def)
 }
 
@@ -139,14 +139,13 @@ export function selectSlot(i: number): void {
 // since drag swaps happen while the panel is open.
 export function refreshHeldForSelectedSlot(): void {
   const def = slotDef(selected)
-  setHeldViewmodelHidden(def === null || !def.selectable)
+  setHeldViewmodelHidden(def === null || !def.selectable || def.heldKind === null)
   if (def === null) return
   if (!def.selectable) return
   applyHeldFromDef(def)
 }
 
 function applyHeldFromDef(def: ItemDef): void {
-  if (isMobile()) setHeldViewmodelHidden(def.heldKind === null)
   // Consumables (food) equip as a textured plane held in front of the
   // camera. The actual eating is deferred to `systems/foodEat.ts`,
   // which watches for the fire input and runs the consume animation.
