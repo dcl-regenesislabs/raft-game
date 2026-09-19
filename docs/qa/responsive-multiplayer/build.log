@@ -1,0 +1,12 @@
+
+> raft-game@1.0.0 build
+> sdk-commands build
+
+@dcl/sdk-commands build v7.29.1-35154657340.commit-e2bbcc9
+[1/2] Bundling file /home/kuruk/Projects/decentraland/raft-game/src/index.ts
+debug: [composite]   .composite: assets/scene/main.composite
+debug: [composite]   .composite: assets/scene/main.composite
+debug: [composite]   .composite: assets/scene/main.composite
+Bundle saved bin/index.js
+[2/2] Running type checker
+Type checking completed without errors

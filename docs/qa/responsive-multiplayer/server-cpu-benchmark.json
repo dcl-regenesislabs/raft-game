@@ -1,0 +1,20 @@
+[
+  {
+    "scenario": "81 starting tiles, 64 production devices, 32 players, 80 salvage, 8 enemies",
+    "batches": 100,
+    "milliseconds_p50": 4.657774000000018,
+    "milliseconds_p95": 11.16470499999997,
+    "milliseconds_max": 39.531081,
+    "world_bytes": 73734,
+    "note": "Node 22 CPU benchmark; excludes network, storage service latency, ECS rendering and GPU. Not phone FPS."
+  },
+  {
+    "scenario": "256 starting tiles, 64 production devices, 32 players, 80 salvage, 8 enemies",
+    "batches": 100,
+    "milliseconds_p50": 6.668777000000091,
+    "milliseconds_p95": 31.88188799999989,
+    "milliseconds_max": 35.9352429999999,
+    "world_bytes": 84428,
+    "note": "Node 22 CPU benchmark; excludes network, storage service latency, ECS rendering and GPU. Not phone FPS."
+  }
+]

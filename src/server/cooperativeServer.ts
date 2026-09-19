@@ -5,10 +5,12 @@ import {
   MULTIPLAYER_MAX_PLAYERS,
   MULTIPLAYER_BATCH_S,
   MULTIPLAYER_CHECKPOINT_S,
+  MULTIPLAYER_BACKUP_S,
   MULTIPLAYER_HEARTBEAT_S,
   MULTIPLAYER_TIMEOUT_S
 } from '../config/gameConfig'
-import { CommitCoordinator, executeRequest } from '../multiplayer/authority'
+import { executeRequest } from '../multiplayer/authority'
+import { LiveAuthority } from '../multiplayer/liveAuthority'
 import { WorldRepository } from '../multiplayer/persistence'
 import { worldStorage } from './worldStorage'
 import {
@@ -40,7 +42,9 @@ export function runCooperativeServer(): void {
   const repository = new WorldRepository(worldStorage, server)
   const peers = new Map<string, Peer>()
   const requests: { address: string; request: Request }[] = []
-  let coordinator: CommitCoordinator | null = null
+  let coordinator: LiveAuthority | null = null
+  let startupPersisted = false
+  let stopped = false
   let ready = false,
     busy = false,
     elapsed = 0,
@@ -48,6 +52,11 @@ export function runCooperativeServer(): void {
     status = 'Loading shared world',
     retryAt = 0
   let receipts: { address: string; result: ActionResult }[] = []
+  let backupElapsed = 0,
+    backupBusy = false,
+    backupRequested = false,
+    backupRetryAt = 0
+  let resetCandidate: import('../multiplayer/types').WorldState | null = null
   let oldGeneration = 0
   let transferSequence = 0
   let publishedWorld: PublicWorld | null = null
@@ -62,7 +71,7 @@ export function runCooperativeServer(): void {
   }
   const sendState = (address: string, peer: Peer, full = false): void => {
     if (!coordinator || !peer.joined) return
-    const w = coordinator.committed
+    const w = coordinator.state
     const player = w.players[address]
     if (!player?.sessions[peer.session]) {
       peer.joined = false
@@ -101,7 +110,7 @@ export function runCooperativeServer(): void {
     const reject = (error: string): void => {
       void worldRoom.send('worldJoinRejected', { session: data.session, error }, { to: [address] }).catch(() => {})
     }
-    const saved = coordinator?.committed.players[address]
+    const saved = coordinator?.state.players[address]
     const createdAt = parseInt(data.session.split('-')[0], 36)
     if (
       !Number.isSafeInteger(createdAt) ||
@@ -163,22 +172,32 @@ export function runCooperativeServer(): void {
     }
   })
   async function work(): Promise<void> {
-    if (busy || Date.now() < retryAt) return
+    if (stopped || busy || Date.now() < retryAt) return
     busy = true
     try {
       if (!coordinator) {
         if (!peers.size) return
         const saved = await repository.load()
-        coordinator = new CommitCoordinator(saved ?? freshWorld(), repository)
+        coordinator = new LiveAuthority(saved ?? freshWorld(), repository)
+        startupPersisted = saved !== null
         if (!saved) coordinator.stage(freshWorld())
       }
-      if (!coordinator.pending) {
+      const revisionBefore = coordinator.state.revision
+      if (!startupPersisted) {
+        await coordinator.checkpoint()
+        startupPersisted = true
+      }
+      if (resetCandidate) {
+        await coordinator.reset(resetCandidate)
+        resetCandidate = null
+      } else {
         const verified = positions()
-        const next = clone(coordinator.committed)
+        const next = clone(coordinator.state)
         const online = new Set<string>()
         for (const [address, peer] of peers) {
           if (Date.now() - peer.at > MULTIPLAYER_TIMEOUT_S * 1000) {
             peers.delete(address)
+            backupRequested = true
             continue
           }
           const position = verified.get(address)
@@ -220,14 +239,19 @@ export function runCooperativeServer(): void {
           receipts.push({ address: entry.address, result: applied.result })
           if (candidate.generation !== next.generation) break
         }
-        oldGeneration = coordinator.committed.generation
-        if (!ready || JSON.stringify(candidate) !== JSON.stringify(coordinator.committed)) coordinator.stage(candidate)
+        oldGeneration = coordinator.state.generation
+        if (candidate.generation !== oldGeneration) {
+          resetCandidate = candidate
+          await coordinator.reset(candidate)
+          resetCandidate = null
+        } else if (!ready || JSON.stringify(candidate) !== JSON.stringify(coordinator.state))
+          coordinator.stage(candidate)
       }
-      const changed = await coordinator.flush()
+      const changed = revisionBefore !== coordinator.state.revision
       ready = true
       status = 'ready'
       for (const [address, peer] of peers) {
-        const exists = !!coordinator.committed.players[address]?.sessions[peer.session]
+        const exists = !!coordinator.state.players[address]?.sessions[peer.session]
         if (!exists) {
           peer.joined = false
           peer.playing = false
@@ -237,10 +261,10 @@ export function runCooperativeServer(): void {
         }
         const first = !peer.joined
         peer.joined = true
-        if (changed || first) sendState(address, peer, first || oldGeneration !== coordinator.committed.generation)
+        if (changed || first) sendState(address, peer, first || oldGeneration !== coordinator.state.generation)
       }
       for (const receipt of receipts.splice(0)) {
-        receipt.result.revision = coordinator.committed.revision
+        receipt.result.revision = coordinator.state.revision
         void worldRoom
           .send('worldResult', { payload: JSON.stringify(receipt.result) }, { to: [receipt.address] })
           .catch(() => {})
@@ -254,10 +278,46 @@ export function runCooperativeServer(): void {
     }
   }
   let batch = 0,
-    sendBusy = false
+    sendBusy = false,
+    sendCursor = 0,
+    sendTokens = 20
   engine.addSystem((dt) => {
     if (!worldRoom.isReady()) return
     elapsed += Math.max(0, dt)
+    backupElapsed += Math.max(0, dt)
+    if (
+      ready &&
+      coordinator &&
+      !backupBusy &&
+      !resetCandidate &&
+      Date.now() >= backupRetryAt &&
+      (backupRequested || backupElapsed >= MULTIPLAYER_BACKUP_S)
+    ) {
+      backupRequested = false
+      backupElapsed = 0
+      backupBusy = true
+      const recovering = backupRetryAt > 0
+      void coordinator
+        .checkpoint()
+        .then(() => {
+          // After reconciling an old uncertain backup, immediately capture the newer live state once.
+          if (recovering) backupRequested = true
+          backupRetryAt = 0
+        })
+        .catch((error) => {
+          backupRequested = true
+          backupRetryAt = Date.now() + 5000
+          if (String(error).includes('Another server changed')) {
+            stopped = true
+            ready = false
+            status = 'Another authority owns this world. Reconnect.'
+          }
+          console.error('[SERVER] Backup delayed; gameplay remains in memory:', error)
+        })
+        .finally(() => {
+          backupBusy = false
+        })
+    }
     batch += dt
     pulse += dt
     if (pulse >= MULTIPLAYER_HEARTBEAT_S) {
@@ -271,14 +331,18 @@ export function runCooperativeServer(): void {
       batch = 0
       void work()
     }
+    sendTokens = Math.min(20, sendTokens + Math.max(0, dt) * 200)
     if (!sendBusy) {
       const jobs: Promise<unknown>[] = []
-      for (const [address, peer] of peers)
-        for (let i = 0; i < 2 && peer.outgoing.length && jobs.length < 16; i++) {
-          const chunk = peer.outgoing.shift()!
-          jobs.push(worldRoom.send('worldChunk', chunk, { to: [address] }))
-          if (jobs.length >= 16) break
+      // Bound host calls and rotate recipients so a large snapshot cannot starve later joins.
+      const recipients = [...peers.entries()]
+      for (let n = 0; n < recipients.length && jobs.length < 16 && sendTokens >= 1; n++) {
+        const [address, peer] = recipients[sendCursor++ % recipients.length]
+        for (let i = 0; i < 2 && peer.outgoing.length && jobs.length < 16 && sendTokens >= 1; i++) {
+          sendTokens--
+          jobs.push(worldRoom.send('worldChunk', peer.outgoing.shift()!, { to: [address] }))
         }
+      }
       if (jobs.length) {
         sendBusy = true
         void Promise.all(jobs)

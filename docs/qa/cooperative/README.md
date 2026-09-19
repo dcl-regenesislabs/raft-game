@@ -1,3 +1,5 @@
+> Update: the [responsive multiplayer revision](../responsive-multiplayer/README.md) replaces per-action database commits with live memory, periodic backups and prediction. Historical results below describe the original implementation.
+
 # Persistent cooperative raft — implementation and verification
 
 Date: 2026-09-19. Local preview only; **not released to raft.dcl.eth**.

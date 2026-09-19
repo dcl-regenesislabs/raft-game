@@ -262,7 +262,13 @@ function placeRaft(gridX: number, gridZ: number): void {
     showNotification('Not enough materials to build a platform.')
     return
   }
-  if (isMultiplayer()) { sendWorldAction({ kind: 'build', x: gridX, z: gridZ, slot: getSelectedSlot() }); return }
+  if (isMultiplayer()) {
+    if (sendWorldAction({ kind: 'build', x: gridX, z: gridZ, slot: getSelectedSlot() })) {
+      triggerHammerSwing()
+      playSfx('hammerPlace')
+    }
+    return
+  }
   spendPlatformCost()
   createPlatform(gridCellToWorld(gridX, gridZ), {
     gridX,

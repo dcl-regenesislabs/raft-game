@@ -1,4 +1,4 @@
-import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
+import { getMultiplayerSnapshot, isMultiplayer, sendWorldAction } from '../client/multiplayerState'
 import { worldEntityId } from '../client/worldEntities'
 import { Entity, PointerEvents, Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
@@ -27,6 +27,7 @@ import {
   hideRope,
   updateRopeBetween
 } from '../factories'
+import { createFloatingGarbage, GarbageKind } from '../factories/floatingGarbage'
 import { bankGarbageKind } from '../factories/garbageBank'
 import { isHeldViewmodelHidden } from '../factories/heldItem'
 import { WATER_LEVEL } from '../factories/sceneLevels'
@@ -74,6 +75,7 @@ type GrabbedItem = {
   // detected (defensive — shouldn't happen with current factory).
   visual: Entity
   kind: string
+  target?: string
   offsetX: number
   offsetY: number
   offsetZ: number
@@ -344,7 +346,7 @@ function despawnHook(): void {
   // it was dragging and remove the entities. Done before the hook itself
   // is removed so we don't leave orphaned children behind for one frame.
   for (const item of grabbedItems) {
-    bankGarbageKind(item.kind)
+    if (!isMultiplayer()) bankGarbageKind(item.kind)
     // Remove the visual child first (parent-removal does NOT cascade in
     // SDK7 — see `destroyFloatingGarbage`). engine.RootEntity (id 0)
     // means the entity never had a visual child (defensive).
@@ -418,7 +420,25 @@ function collectGarbageNearHook(hookX: number, hookZ: number): void {
     const ex = pos.x - hookX
     const ez = pos.z - hookZ
     if (ex * ex + ez * ez > radiusSq) continue
-    if (isMultiplayer()) { sendWorldAction({ kind: 'collect', target: worldEntityId(entity), slot: getSelectedSlot(), hook: true }); return }
+    if (isMultiplayer()) {
+      const kind = FloatingGarbage.get(entity).kind as GarbageKind
+      const position = { ...pos }
+      const target = worldEntityId(entity)
+      if (sendWorldAction({ kind: 'collect', target, slot: getSelectedSlot(), hook: true })) {
+        // A cosmetic copy rides the hook; reconciliation owns the original world object.
+        const cosmetic = createFloatingGarbage({ kind, position, velocity: Vector3.Zero(), maxLifetime: 10 })
+        const visual = FloatingGarbage.get(cosmetic).visual
+        FloatingGarbage.deleteFrom(cosmetic)
+        PointerEvents.deleteFrom(cosmetic)
+        const offset = computeGrabOffset(grabbedItems.length)
+        grabbedItems.push({
+          entity: cosmetic, visual, kind, target,
+          offsetX: offset.x, offsetY: offset.y, offsetZ: offset.z
+        })
+        collectedAny = true
+      }
+      continue
+    }
     const data = FloatingGarbage.get(entity)
     const kind = data.kind
     const visual = data.visual
@@ -473,7 +493,15 @@ function computeGrabOffset(index: number): { x: number; y: number; z: number } {
 function followGrabbedItems(): void {
   if (hookEntity === null || grabbedItems.length === 0) return
   const hookPos = Transform.get(hookEntity).position
-  for (const item of grabbedItems) {
+  for (let i = grabbedItems.length - 1; i >= 0; i--) {
+    const item = grabbedItems[i]
+    // A rejected pickup reappears in authoritative water state; discard its speculative reel visual.
+    if (item.target && getMultiplayerSnapshot()?.world.debris[item.target]) {
+      if (item.visual !== engine.RootEntity) engine.removeEntity(item.visual)
+      engine.removeEntity(item.entity)
+      grabbedItems.splice(i, 1)
+      continue
+    }
     const tr = Transform.getMutable(item.entity)
     tr.position = Vector3.create(
       hookPos.x + item.offsetX,

@@ -1,0 +1,167 @@
+PASS immediate multiplayer hook visuals, rejection cleanup, bounded allocations and no double grants
+PASS storage adapter separates confirmed absence, malformed values and service errors
+PASS simultaneous joins, private snapshots, missing chunk recovery and SDK callback context
+PASS competing predictions converge with exactly one debit and lost-ack recovery, without per-action writes
+PASS immediate prediction and server confirmation remain available during storage outage
+PASS empty-world pause, reconnect persistence and duplicate wallet exclusion
+PASS committed reset resynchronizes online players and invalidates offline bags
+Cooperative server/client integration passed
+PASS instant prediction, isolated inventory and collision reconciliation
+PASS asynchronous immutable backups, in-flight gameplay and uncertain-write retry
+PASS continuous motion, bounded extrapolation and frame-rate independent correction
+PASS Initial world has exactly 81 empty platforms, a protected center and personal starter supplies
+PASS Conflicting builds debit only the winner and retries are idempotent
+PASS Pickup race and failed barrel capacity cannot duplicate or lose resources
+PASS Full inventory crafting rolls back costs; earned unlocks are shared
+PASS Storage withdrawals are atomic, preserve tool durability and reject stale slot state
+PASS Death affects only one player; respawn retains inventory and shared structures
+PASS Only authenticated admin resets, clearing offline bags and rejecting old generations
+PASS Empty worlds freeze, offline players take no damage and production resumes
+PASS Durable manifest reload preserves the complete state and confirmed request deduplication
+PASS Partial writes leave last commit intact; failed commit never advances visible state
+PASS Ambiguous successful storage writes reconcile without duplicate effects
+PASS Storage errors and corruption never initialize a new world
+PASS Conflicting writers stop instead of overwriting another committed revision
+PASS Chunk transport survives duplication and reordering, detects corruption and stays below 13 KB
+PASS Deltas converge and missing revisions demand resynchronization; private bags never broadcast
+PASS Headless cooking, water and production commit their outputs without full-bag loss
+PASS Fishing and combat enforce server timers, ammo and duplicate request receipts
+PASS Slow chunk transfers retain progress and corrupted oversized chunks fail closed
+PASS Delayed object actions cannot mutate a replacement in the same cell
+19 cooperative tests passed
+PASS custom input bindings, native jump binding, safe insets, fixed jump position, proximity deduplication, hammer controls, equipment icon, pressed/bite feedback and hidden-state removal
+PASS tool picker fits contents, expands beyond old cap and respects shorter safe areas
+PASS All recipes craft exclusively at their own workplace, never via a global unlock
+PASS Moving away or destroying a table invalidates crafting immediately
+PASS A different nearby worktable cannot authorize the selected table recipes
+PASS Station interaction opens only that station context and requires proximity
+PASS Research payment is required once for the table, then opens its own menu
+PASS Smelter queues paid batches, pauses without fuel, retains outputs when pack full
+PASS Improved grill cooks three portions only after fuel is supplied
+PASS Crop requires a seed and fresh cup, then yields exactly three potatoes
+PASS Water tank preserves cups and stops at capacity
+PASS Rain collection pauses outside rain and cannot overflow storage
+PASS Tower loading caps at twenty and secondary action rotates its arc
+PASS Towers resupply from nearby storage and leave distant storage untouched
+PASS Power relay bridges distance; ordinary consumers do not bridge networks
+PASS Autowiring reconnects from placement alone and disconnects removed or distant relays
+PASS Batteries pay only unmet power and cannot double-spend across consumers
+PASS Battery charges through relay and generator supply does not discharge it
+PASS Radio pauses without power or antenna and resumes toward victory
+PASS Radio installation consumes a core and starts a announced defensive raid
+PASS Closed barriers divert boarders; an unavoidable barrier can be attacked
+PASS Repair consumes a kit only for damage and panels suppress tool actions
+PASS Bandage heals gradually and incoming damage interrupts recovery
+PASS Sail and engine produce selected salvage only while operating
+PASS Restart removes live raiders and clears raid and healing state
+PASS Sprite roots own cleanup, retain support identity and keep stairs physically walkable
+PASS Every expansion item has transparent source art, a world sprite and a matching icon
+PASS Campaign craft authorization cannot bypass milestones using an existing station
+PASS Queue cannot consume a sixth batch
+PASS Real combat advances three story raids once, retains full-pack core, permits loss recovery
+PASS Finite finale clears every reinforcement before an already-finished broadcast wins
+PASS Expansion models sit on deck, fit cardinal tile rotations, retain identity and clean up
+PASS Model placement ghosts match committed transforms and never collide
+PASS Gate swings clear of the centre and closes without drifting at every cardinal yaw
+PASS Raised structures leave under-deck space open and spikes do not block walking
+33 expansion tests passed
+PASS Normal starter loadout contains only the hook
+PASS Debris collection deposits resources and advances tutorial
+PASS Insufficient materials do not craft or advance tutorial
+PASS Rope recipe deducts two plants and advances tutorial
+PASS Hammer recipe spends materials and creates equippable tool
+PASS Guide hide/reopen retains earlier progress
+PASS Full backpack cannot spend materials on a lost craft output
+PASS Craft may use the slot freed by its last material
+PASS Every craft recipe resolves an inventory output and material definitions
+PASS Crafting cup, filling, drinking and retaining empty cup
+PASS Salt water reduces thirst and does not complete drink objective
+PASS Eating cooked food restores hunger and advances tutorial
+PASS Fresh tutorial reset clears completed objectives
+PASS Bonus hunger survives the next survival drain tick
+PASS Purifier converts water while fueled and stops when empty
+PASS Purifier does not convert water without fuel
+PASS Purifier lag spike cannot convert more than remaining fuel permits
+PASS All cooking recipes match regardless of ingredient order and have valid outputs
+PASS Cooking rejects an unrecognized ingredient combination
+PASS Cooking menu preview does not spend ingredients
+PASS Cooking requires fuel and a valid grill
+PASS Starting cooking consumes exact recipe quantities and prevents double cooking
+PASS Survival freezes during lobby and death
+PASS Normal survival drains vitals and triggers game over at zero life
+PASS Materials and equipment share all 25 inventory slots
+PASS Equipment picker includes slot 24 and excludes materials
+PASS Reordering a tool preserves equipped identity and durability
+PASS Hands unequips without consuming a backpack slot and can re-equip
+PASS Only eating cooked food completes the campaign meal milestone
+PASS Ammo batches check the entire output cap before spending
+PASS Crafting equipment immediately equips it; resources and ammo keep that selection
+PASS Consuming the final placed item cannot pass its press to the fallback hook
+PASS Legacy tail slots retain item, selection and durability within 25 slots
+PASS UI touch blocks fire until release, including a long held touch
+PASS A fresh native press recovers from stale pressed state after UI dismissal
+PASS Jump and generic UI pointer presses never fire mobile tools or fill cups
+PASS Releasing jump cannot release a held tool or satisfy its equipment guard
+PASS Equipped item updates custom icon without rewriting hidden native controls
+PASS Collectible pickup replaces equipped tool artwork with the hand icon
+PASS Empty cup uses the main action without a duplicate fill button
+PASS Purifier retains simultaneous interaction and fuel controls
+PASS Ready meal icon changes without changing the grill interaction visibility
+PASS Fishing exposes catch/retract on the single native pointer action
+PASS Cook and salt-water actions use catalog artwork
+PASS Menus hide all native world actions
+PASS Virtual safe area preserves physical insets at different resolutions
+PASS Equipment selection cancels every pending world action
+PASS Tool picker closes inventory before selecting and rejects empty slots
+PASS Release guard does not hide native action buttons and equip shortcuts stay hidden
+PASS Mobile UI gate leaves desktop fire bindings unaffected
+PASS Custom proximity actions hide duplicate native E/F buttons
+PASS Custom proximity button rejects stale targets and menus, routes separate actions
+PASS Hammer custom controls resolve rotation and mode icon changes
+PASS Building rejects stale proximity actions and structure placement retains rotation
+PASS All tools keep POINTER main and jump secondary; Hands is inert
+PASS Ending screens hide native movement and crosshair, then restore them
+PASS Station progress text never rebuilds unchanged native action buttons
+PASS Equipment changes require release and a cooldown on both desktop and mobile
+PASS Native hover uses the hand glyph for salvage and restores the default afterward
+26 mobile control tests passed
+PASS Milestones accept out-of-order events and tutorial-independent progress
+PASS The recipe spine opens the counter before each threat
+PASS Ambient attacks defer through intro, recovery and finale
+PASS Rewards retain unclaimed capacity and cannot be claimed twice
+PASS Campaign serialization is deep and preserves unlocks/rewards
+PASS Malformed progression cannot poison clocks or rewards
+PASS Seeded salvage and geometry randomness repeat exactly
+PASS Production respects queue count, total fuel and remainder
+PASS Chapter checkpoint restores, never merges, and can be retried repeatedly
+PASS Tutorial reveals recipes by successful actions and keeps recovery supplies available
+PASS Skipping unlocks investigation recipes, persists through restore, and preserves story gates
+PASS Starting with tutorial disabled unlocks all normal recipes immediately
+PASS Skip and reopen consume UI touches, keep unlocks, and restore the skipped guide state
+PASS Craft opening pulse settles, remains finite, and restarts on a new opening
+14 progression tests passed
+PASS raft.dcl.eth metadata matches the complete runtime parcel grid and contains all spawn points
+[SERVER] Save and ranking service started
+PASS server heartbeat, cold start, reconnect, wallet-scoped persistence and failure acknowledgements
+PASS Ending ignores taps during fade, then gates input before continuing
+PASS Outcome fits a narrow safe area and keeps primary/secondary touch targets
+PASS Outcome centers in device insets independently of asymmetric Explorer controls
+PASS All twenty-five equipment slots plus Hands are reachable through touch pages
+PASS Pages clamp after inventory shrinks and reserve footer space
+PASS Every guide step fits concise copy and water steps name the correct action
+PASS Desktop guide uses keyboard water instructions
+PASS Desktop lists retain all entries and wheel scrolling
+PASS Outside release closes every menu and protects the next world action
+PASS Panel interior consumes input without dismissing menus
+PASS Craft categories cover every implemented recipe and include expansion groups
+PASS Filtered selection remains valid after materials are spent
+PASS Mobile shows category icons beside recipes and details with one-tap switching
+PASS Craft keeps unavailable recipes visible and has no availability filter
+PASS Craft action lives in a fixed footer outside the scrolling details
+PASS Compact category pagination reserves room for full-size stacked controls
+PASS Every category has an existing transparent texture asset
+PASS Basic crafting hides every specialized recipe and entire advanced categories
+PASS Every worktable lists only its recipes and resets stale category selection
+PASS Guided crafting selects the marked recipe on open and follows tutorial unlocks
+PASS Investigation goals and recipe rewards paginate inside the existing craft panel
+21 UI review tests passed

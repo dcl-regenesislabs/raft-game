@@ -169,8 +169,8 @@ function ui(): ReactEcs.JSX.Element {
           {!anyPanel && !isMobile() && <InventoryButton />}
           {!anyPanel && !isMobile() && <CraftButton />}
           {!anyPanel && !isMobile() && <SystemButton />}
-          {isMultiplayer() && multiplayerStatus() === 'Saving action…' && <Label
-            value="Saving action…" fontSize={16}
+          {isMultiplayer() && multiplayerStatus() === 'Confirming…' && <Label
+            value="Confirming…" fontSize={16}
             uiTransform={{ positionType: 'absolute', position: { bottom: 16, left: '50%' }, margin: { left: -120 }, width: 240, height: 36 }}
           />}
           <InventoryPanel />

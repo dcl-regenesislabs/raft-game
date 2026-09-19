@@ -308,7 +308,10 @@ function commitPlacement(): void {
   if (now - lastPlaceMs < PLACE_COOLDOWN_MS) return
   lastPlaceMs = now
 
-  if (isMultiplayer()) { sendWorldAction({ kind: 'place', target: worldEntityId(platform), slot: getSelectedSlot(), yawDeg: getPlacementRotationDeg() }); return }
+  if (isMultiplayer()) {
+    if (sendWorldAction({ kind: 'place', target: worldEntityId(platform), slot: getSelectedSlot(), yawDeg: getPlacementRotationDeg() })) playSfx('constructionPlace')
+    return
+  }
   beginEquipmentTransition()
   subtractCollected(mode, 1)
   const previous = PlatformConstruction.getOrNull(platform)

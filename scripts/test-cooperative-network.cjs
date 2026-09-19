@@ -7,7 +7,7 @@ const esbuild = require('esbuild')
 const root = path.resolve(__dirname, '..')
 const bundle = esbuild.buildSync({
   stdin: {
-    contents: `export * from './src/multiplayer/world'; export * from './src/multiplayer/types'; export * from './src/multiplayer/authority'; export * from './src/multiplayer/persistence'; export * from './src/multiplayer/inventory'; export * from './src/multiplayer/transport'; export * from './src/multiplayer/simulation';`,
+    contents: `export * from './src/multiplayer/liveAuthority'; export * from './src/multiplayer/prediction'; export * from './src/multiplayer/world'; export * from './src/multiplayer/types'; export * from './src/multiplayer/authority'; export * from './src/multiplayer/persistence'; export * from './src/multiplayer/inventory'; export * from './src/multiplayer/transport'; export * from './src/multiplayer/simulation';`,
     resolveDir: root
   },
   bundle: true,
@@ -92,6 +92,8 @@ async function main() {
     onMessage: (name, fn) => serverHandlers.set(name, fn),
     async send(name, data, options) {
       assert(Buffer.byteLength(JSON.stringify(data)) < 13000)
+      // Lost action acknowledgements recover from the receipt in owner snapshots.
+      if (name === 'worldResult') return
       if (name === 'worldChunk' && dropChunk) {
         dropChunk = false
         dropped++
@@ -117,12 +119,14 @@ async function main() {
     '../config/gameConfig': {
       MULTIPLAYER_MAX_PENDING: 64,
       MULTIPLAYER_MAX_PLAYERS: 32,
-      MULTIPLAYER_BATCH_S: 0.25,
-      MULTIPLAYER_CHECKPOINT_S: 1,
+      MULTIPLAYER_BATCH_S: 0.05,
+      MULTIPLAYER_CHECKPOINT_S: 0.2,
+      MULTIPLAYER_BACKUP_S: 60,
       MULTIPLAYER_HEARTBEAT_S: 2,
       MULTIPLAYER_TIMEOUT_S: 8
     },
     '../multiplayer/authority': m,
+    '../multiplayer/liveAuthority': m,
     '../multiplayer/persistence': m,
     './worldStorage': { worldStorage: storage },
     '../multiplayer/types': m,
@@ -144,12 +148,15 @@ async function main() {
     load('src/client/cooperativeClient.ts', {
       '@dcl/sdk/ecs': {
         engine: { PlayerEntity: 1, addSystem: (fn) => ticks.push(fn) },
+        Transform: { getOrNull: () => ({ position: { ...m.ORIGIN, y: m.ORIGIN.y + 1 } }) },
         InputModifier: { createOrReplace() {}, Mode: { Standard: (x) => x } }
       },
       '@dcl/sdk/network': { isStateSyncronized: () => !disconnected.has(address) },
       '../shared/messages': { worldRoom: clientRoom },
       '../multiplayer/types': m,
       '../multiplayer/transport': m,
+      '../multiplayer/prediction': m,
+      '../multiplayer/world': m,
       './multiplayerState': state,
       './worldRenderer': { renderWorld: (snap) => rendered.push(snap.world.revision) },
       '../ui/notification': { showNotification() {} },
@@ -207,6 +214,10 @@ async function main() {
   const build = { kind: 'build', x: 5, z: 0, slot: 2 }
   assert(a.state.sendWorldAction(build))
   assert(b.state.sendWorldAction(build))
+  assert(a.state.getMultiplayerSnapshot().world.tiles['5,0'], 'Prediction must place a collider before a network tick')
+  assert(b.state.getMultiplayerSnapshot().world.tiles['5,0'], 'Both contenders predict their own placement')
+  assert.equal(m.count(a.state.getMultiplayerSnapshot().player.slots, 'wood'), 2)
+  assert.equal(m.count(b.state.getMultiplayerSnapshot().player.slots, 'wood'), 2)
   await until(
     () => a.state.getMultiplayerSnapshot().world.tiles['5,0'] && b.state.getMultiplayerSnapshot().world.tiles['5,0'],
     'Build did not converge'
@@ -214,8 +225,10 @@ async function main() {
   await step(20)
   const bags = [a, b].map((c) => m.count(c.state.getMultiplayerSnapshot().player.slots, 'wood')).sort()
   assert.deepEqual(bags, [2, 4])
-  console.log('PASS competing placements converge with exactly one debit')
+  assert(!(await new m.WorldRepository(storage, 'not-per-action').load()).tiles['5,0'], 'Normal actions must not write the database')
+  console.log('PASS competing predictions converge with exactly one debit and lost-ack recovery, without per-action writes')
   unavailable = true
+  dropChunk = true
   assert(
     a.state.sendWorldAction({
       kind: 'swap',
@@ -224,14 +237,23 @@ async function main() {
       expected: m.clone(a.state.getMultiplayerSnapshot().player.slots[1])
     })
   )
-  await step(40)
-  assert.equal(a.state.getMultiplayerSnapshot().player.slots[1].id, 'potato')
+  for (const [from, to] of [[12, 13], [13, 12]]) {
+    assert(a.state.sendWorldAction({ kind: 'swap', a: from, b: to,
+      expected: m.clone(a.state.getMultiplayerSnapshot().player.slots[from]) }))
+    assert.equal(a.state.getMultiplayerSnapshot().player.slots[to].id, 'potato', 'Queued actions predict immediately')
+  }
+  await step(610)
+  assert.notEqual(a.state.multiplayerStatus(), 'Confirming…', 'Lost deltas must resynchronize and drain the prediction queue')
+  assert.equal(a.state.getMultiplayerSnapshot().player.slots[12].id, 'potato')
+  assert(a.state.multiplayerReady(), 'Storage outages must not freeze gameplay')
   unavailable = false
   await until(
     () => a.state.getMultiplayerSnapshot().player.slots[12].id === 'potato',
     'Failed transaction did not retry'
   )
-  console.log('PASS failed storage commit remains invisible and exact transaction retries')
+  console.log('PASS immediate prediction and server confirmation remain available during storage outage')
+  await step(610)
+  assert.equal((await new m.WorldRepository(storage, 'minute-backup').load()).players[A].slots[12].id, 'potato')
   disconnected.add(A)
   disconnected.add(B)
   await step(100)

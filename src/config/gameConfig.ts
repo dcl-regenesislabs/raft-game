@@ -149,8 +149,10 @@ export const FISH_BITE_PULSE_HZ = 4
 
 // Multiplayer network and persistence budgets. Gameplay never falls back to a local authority.
 export const MULTIPLAYER_ENABLED = true
-export const MULTIPLAYER_BATCH_S = 0.25
-export const MULTIPLAYER_CHECKPOINT_S = 1
+export const MULTIPLAYER_BATCH_S = 0.05
+export const MULTIPLAYER_CHECKPOINT_S = 0.2
+// Durable backup interval; live simulation and action confirmations do not wait for storage.
+export const MULTIPLAYER_BACKUP_S = 60
 export const MULTIPLAYER_HEARTBEAT_S = 2
 export const MULTIPLAYER_TIMEOUT_S = 8
 export const MULTIPLAYER_MAX_PENDING = 64

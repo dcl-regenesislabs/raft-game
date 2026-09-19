@@ -16,6 +16,7 @@ import {
   StorageContents,
   StructureHealth,
   FloatingIsland,
+  FloatingGarbage,
   IslandChest
 } from '../components'
 import { createPlatform, destroyPlatformEntity, gridCellToWorld } from '../factories/platform'
@@ -51,11 +52,45 @@ import { setInventoryOpen } from '../ui/inventoryToggle'
 import { setSystemMenuOpen } from '../ui/systemSession'
 import { cancelMultiplayerHook } from '../systems/hookThrower'
 import { cancelFishingForEquipmentChange } from '../systems/fishingRod'
-import { Snapshot, Tile } from '../multiplayer/types'
+import { advanceMotion, MotionSample } from '../multiplayer/motion'
+import { Snapshot, Tile, Vec } from '../multiplayer/types'
 import { ORIGIN, tileObjectId } from '../multiplayer/world'
 import { applyingWorld } from './multiplayerState'
 import { identifyWorldEntity, forgetWorldEntity } from './worldEntities'
 
+const motion = new Map<Entity, MotionSample>()
+let motionSystemStarted = false
+let sampleSeconds = -1
+function trackMotion(entity: Entity, position: Vec, velocity: Vec, fresh: boolean): void {
+  if (fresh || !motion.has(entity)) motion.set(entity, { position: { ...position }, velocity: { ...velocity }, age: 0 })
+}
+function tickMotion(dt: number): void {
+  for (const [entity, sample] of motion) {
+    const transform = Transform.getMutableOrNull(entity)
+    if (!transform) {
+      motion.delete(entity)
+      continue
+    }
+    const oldY = transform.position.y
+    transform.position = advanceMotion(transform.position, sample, dt)
+    const garbage = FloatingGarbage.getMutableOrNull(entity)
+    if (garbage) {
+      garbage.lifetime += dt
+      garbage.bobPhase += Math.PI * 0.4 * dt
+      const pos = transform.position
+      const cell = `${Math.round((pos.x - ORIGIN.x) / 3)},${Math.round((pos.z - ORIGIN.z) / 3)}`
+      const y = platforms.has(cell)
+        ? garbage.baseY - (garbage.kind === 'barrel' ? 1.5 : 0.6)
+        : garbage.baseY + Math.sin(garbage.bobPhase) * garbage.bobAmplitude
+      pos.y = oldY + (y - oldY) * (1 - Math.exp(-6 * Math.max(0, dt)))
+      transform.rotation = Quaternion.fromEulerDegrees(
+        Math.sin(garbage.bobPhase + 0.7) * garbage.rollAmplitude * 0.6,
+        garbage.baseYawDeg + (garbage.spinSpeed * garbage.lifetime * 180) / Math.PI,
+        Math.sin(garbage.bobPhase * 1.3) * garbage.rollAmplitude
+      )
+    }
+  }
+}
 const platforms = new Map<string, Entity>()
 const debris = new Map<string, Entity>()
 const enemies = new Map<string, Entity>()
@@ -161,7 +196,14 @@ function applyTile(tile: Tile, before?: Tile): void {
   }
 }
 export function renderWorld(snapshot: Snapshot, previous: Snapshot | null): void {
+  if (!motionSystemStarted) {
+    engine.addSystem(tickMotion)
+    motionSystemStarted = true
+  }
   applyingWorld(() => {
+    const freshMotion = sampleSeconds !== snapshot.world.progress.seconds
+    const sampleDt = snapshot.world.progress.seconds - sampleSeconds
+    sampleSeconds = snapshot.world.progress.seconds
     const reset = !!previous && previous.world.generation !== snapshot.world.generation
     if (reset) {
       setInventoryOpen(false)
@@ -198,6 +240,7 @@ export function renderWorld(snapshot: Snapshot, previous: Snapshot | null): void
     for (const [id, entity] of debris)
       if (!snapshot.world.debris[id]) {
         forgetWorldEntity(entity)
+        motion.delete(entity)
         destroyFloatingGarbage(entity)
         debris.delete(id)
       }
@@ -213,11 +256,12 @@ export function renderWorld(snapshot: Snapshot, previous: Snapshot | null): void
         debris.set(d.id, entity)
         identifyWorldEntity(entity, d.id)
       }
-      Transform.getMutable(entity).position = { ...d.position }
+      trackMotion(entity, d.position, d.velocity, freshMotion)
     }
     for (const [id, entity] of enemies)
       if (!snapshot.world.enemies[id]) {
         forgetWorldEntity(entity)
+        motion.delete(entity)
         removePrototypeEntity(entity)
         enemies.delete(id)
       }
@@ -247,7 +291,16 @@ export function renderWorld(snapshot: Snapshot, previous: Snapshot | null): void
           (Math.atan2(e.position.x - old.position.x, e.position.z - old.position.z) * 180) / Math.PI,
           0
         )
-      t.position = { ...e.position }
+      const previousPosition = motion.get(entity)?.position
+      const velocity =
+        previousPosition && sampleDt > 0 && sampleDt < 2
+          ? {
+              x: (e.position.x - previousPosition.x) / sampleDt,
+              y: (e.position.y - previousPosition.y) / sampleDt,
+              z: (e.position.z - previousPosition.z) / sampleDt
+            }
+          : { x: 0, y: 0, z: 0 }
+      trackMotion(entity, e.position, velocity, freshMotion)
     }
     // Event visuals have no independent timers; their lifetime follows the committed world.
     const events = snapshot.world.events
@@ -265,9 +318,17 @@ export function renderWorld(snapshot: Snapshot, previous: Snapshot | null): void
         break
       }
     }
-    if (island !== null && events.islandPosition) Transform.getMutable(island).position = events.islandPosition
+    if (island !== null && events.islandPosition) {
+      const old = motion.get(island)?.position
+      const velocity =
+        old && sampleDt > 0 && sampleDt < 2
+          ? { x: (events.islandPosition.x - old.x) / sampleDt, y: 0, z: (events.islandPosition.z - old.z) / sampleDt }
+          : { x: 0, y: 0, z: 0 }
+      trackMotion(island, events.islandPosition, velocity, freshMotion)
+    }
     if (island !== null && !events.islandPosition) {
       forgetWorldEntity(island)
+      motion.delete(island)
       deactivateFloatingIsland()
       island = null
     }
