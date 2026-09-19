@@ -1,3 +1,4 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
 import { hydratePlayerPosition } from './playerPosition'
 import { GRID_ORIGIN } from '../factories/platform'
 import { FloatingGarbage } from '../components'
@@ -105,6 +106,7 @@ function clearTransientActions(): void {
   protectPanelDismissal()
 }
 export function retryChapter(): void {
+  if (isMultiplayer()) { sendWorldAction({ kind: 'respawn' }); return }
   clearTransientActions()
   if (!restoreCheckpoint()) { playAgain(); return }
   metric('retries')
@@ -117,6 +119,7 @@ export function startTestMode(mode: CampaignMode): void {
   playAgain()
 }
 export function playAgain(): void {
+  if (isMultiplayer()) { sendWorldAction({ kind: 'respawn' }); return }
   clearTransientActions()
   resetProgress(campaignMode())
   clearCheckpoint()
@@ -182,4 +185,8 @@ function destroyNonMainPlatforms(): void {
     victims.push(entity)
   }
   for (const entity of victims) destroyPlatformEntity(entity)
+}
+
+export function setMultiplayerDeath(value: boolean): void {
+  if (dead !== value) { dead = value; elapsedSec = 0; lastModifierApplied = null }
 }

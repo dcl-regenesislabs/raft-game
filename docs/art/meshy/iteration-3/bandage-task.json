@@ -1,0 +1,8 @@
+{
+  "asset": "bandage",
+  "task_id": "01a0b6b7-ee5f-709b-bad8-76c4379b30ac",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b7-ee5f-709b-bad8-76c4379b30ac",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

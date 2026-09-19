@@ -1,0 +1,309 @@
+{
+  "iteration": 4,
+  "approved_credits": 150,
+  "settings": {
+    "ai_model": "meshy-t2",
+    "model_type": "smart-topology",
+    "target_polycount": 4000,
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "target_formats": [
+      "glb"
+    ]
+  },
+  "assets": [
+    {
+      "id": "engine",
+      "task_id": "01a0b6b9-cca5-76d5-a33d-93aaae57ddd1",
+      "source": "images/concepts/expansion/engine.png",
+      "output": "assets/scene/items/expansion/engine.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4021,
+        "faces": 4021,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.9199219942092896,
+          0.9140620231628418
+        ],
+        "bytes": 1742424
+      }
+    },
+    {
+      "id": "zombie",
+      "task_id": "01a0b6b9-f732-7224-b62f-cfc80795bf1f",
+      "source": "images/concepts/expansion/zombie.png",
+      "output": "assets/scene/items/expansion/zombie.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4113,
+        "faces": 4113,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.5605469942092896,
+          0.35351601243019104,
+          1.0
+        ],
+        "bytes": 3581052
+      }
+    },
+    {
+      "id": "powerRelay",
+      "task_id": "01a0b6b9-dffb-7401-8e64-56f9bff3f7e6",
+      "source": "images/concepts/expansion/powerRelay.png",
+      "output": "assets/scene/items/expansion/powerRelay.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4260,
+        "faces": 4260,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.5332030057907104,
+          0.5292969942092896,
+          1.0
+        ],
+        "bytes": 1928348
+      }
+    },
+    {
+      "id": "alarmBell",
+      "task_id": "01a0b6b9-f117-7456-9d66-834943b71512",
+      "source": "images/concepts/expansion/alarmBell.png",
+      "output": "assets/scene/items/expansion/alarmBell.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4183,
+        "faces": 4183,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.4130859971046448,
+          1.0,
+          0.8007820248603821
+        ],
+        "bytes": 1896936
+      }
+    },
+    {
+      "id": "rescueRadio",
+      "task_id": "01a0b6b9-ead9-7697-84f6-941714e2085a",
+      "source": "images/concepts/expansion/rescueRadio.png",
+      "output": "assets/scene/items/expansion/rescueRadio.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4386,
+        "faces": 4386,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.6445320248603821,
+          0.4111329913139343
+        ],
+        "bytes": 2083844
+      }
+    },
+    {
+      "id": "steeringWheel",
+      "task_id": "01a0b6b9-c697-76d9-976e-e6e5d0c4da82",
+      "source": "images/concepts/expansion/steeringWheel.png",
+      "output": "assets/scene/items/expansion/steeringWheel.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4138,
+        "faces": 4138,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.8476560115814209,
+          0.2744140028953552,
+          1.0
+        ],
+        "bytes": 1976592
+      }
+    },
+    {
+      "id": "batteryBank",
+      "task_id": "01a0b6b9-d9c9-74b8-8da5-3838e04d453e",
+      "source": "images/concepts/expansion/batteryBank.png",
+      "output": "assets/scene/items/expansion/batteryBank.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4404,
+        "faces": 4404,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.5410150289535522,
+          0.7714849710464478
+        ],
+        "bytes": 2183804
+      }
+    },
+    {
+      "id": "sail",
+      "task_id": "01a0b6b9-bf61-7625-a1be-8a851833b27e",
+      "source": "images/concepts/expansion/sail.png",
+      "output": "assets/scene/items/expansion/sail.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4263,
+        "faces": 4263,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.5117179751396179,
+          1.0
+        ],
+        "bytes": 2381048
+      }
+    },
+    {
+      "id": "antennaMast",
+      "task_id": "01a0b6b9-e584-7252-a306-20b9ce80ba59",
+      "source": "images/concepts/expansion/antennaMast.png",
+      "output": "assets/scene/items/expansion/antennaMast.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4402,
+        "faces": 4402,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.7460939884185791,
+          0.3632810115814209,
+          1.0
+        ],
+        "bytes": 2206560
+      }
+    },
+    {
+      "id": "generator",
+      "task_id": "01a0b6b9-d2dd-71ec-8731-fd142f812253",
+      "source": "images/concepts/expansion/generator.png",
+      "output": "assets/scene/items/expansion/generator.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4363,
+        "faces": 4363,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.6796879768371582,
+          1.0,
+          0.6386709809303284
+        ],
+        "bytes": 1641144
+      }
+    }
+  ],
+  "integration_status": "NOT_STARTED",
+  "status": "GENERATION_COMPLETE",
+  "consumed_credits": 150
+}

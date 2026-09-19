@@ -1,3 +1,6 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
+import { getMultiplayerSnapshot } from '../client/multiplayerState'
+import { worldEntityId } from '../client/worldEntities'
 // Per-entity storage contents + the pick/place state machine that spans
 // both panes of the storage menu. Each placed storage carries its own
 // `StorageContents` component (created in `factories/construction.ts`),
@@ -17,7 +20,7 @@
 // out (count drops to 0; `addCollected` re-uses the same slot on the
 // way back). Non-stackables clear the player slot entirely on transfer.
 
-import { Entity, engine } from '@dcl/sdk/ecs'
+import { Entity, Transform, engine } from '@dcl/sdk/ecs'
 
 import {
   STORAGE_MAX_STACK,
@@ -83,7 +86,11 @@ export function readStorageSlot(
 export function getStorageCount(id: string): number {
   if (id === '') return 0
   let total = 0
-  for (const [, contents] of engine.getEntitiesWith(StorageContents)) {
+  for (const [entity, contents] of engine.getEntitiesWith(StorageContents)) {
+    if (isMultiplayer()) {
+      const a = Transform.getOrNull(engine.PlayerEntity)?.position, b = Transform.getOrNull(entity)?.position
+      if (!a || !b || Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) > 12) continue
+    }
     for (const slot of contents.slots) {
       if (slot.id === id) total += slot.count
     }
@@ -142,7 +149,11 @@ export function subtractFromAll(id: string, count: number): number {
 export function collectStorageItemIds(): string[] {
   const ids: string[] = []
   const seen = new Set<string>()
-  for (const [, contents] of engine.getEntitiesWith(StorageContents)) {
+  for (const [entity, contents] of engine.getEntitiesWith(StorageContents)) {
+    if (isMultiplayer()) {
+      const a = Transform.getOrNull(engine.PlayerEntity)?.position, b = Transform.getOrNull(entity)?.position
+      if (!a || !b || Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) > 12) continue
+    }
     for (const slot of contents.slots) {
       if (slot.id === '' || slot.count <= 0) continue
       if (seen.has(slot.id)) continue
@@ -201,6 +212,14 @@ export function pressStorageSlot(
     return
   }
 
+  if (isMultiplayer()) {
+    const target = worldEntityId(storage)
+    const snapshot = getMultiplayerSnapshot()
+    const expected = picked.side === 'player' ? snapshot?.player.slots[picked.index] : snapshot?.world.tiles[target.split('@')[0]]?.device?.contents[picked.index]
+    if (expected) sendWorldAction({ kind: 'transfer', target, from: picked.side, to: side, a: picked.index, b: index, expected })
+    picked = null
+    return
+  }
   if (picked.side === side) {
     if (side === 'player') {
       swapInventorySlots(picked.index, index)

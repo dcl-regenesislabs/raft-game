@@ -1,0 +1,8 @@
+{
+  "asset": "deckCannon",
+  "task_id": "01a0b6b7-dd1b-726d-a5a7-e0916afc65d7",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b7-dd1b-726d-a5a7-e0916afc65d7",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

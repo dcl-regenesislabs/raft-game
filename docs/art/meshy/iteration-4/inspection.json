@@ -1,0 +1,192 @@
+{
+  "sail": {
+    "triangles": 4263,
+    "faces": 4263,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.5117179751396179,
+      1.0
+    ],
+    "bytes": 2381048
+  },
+  "steeringWheel": {
+    "triangles": 4138,
+    "faces": 4138,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.8476560115814209,
+      0.2744140028953552,
+      1.0
+    ],
+    "bytes": 1976592
+  },
+  "engine": {
+    "triangles": 4021,
+    "faces": 4021,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.9199219942092896,
+      0.9140620231628418
+    ],
+    "bytes": 1742424
+  },
+  "generator": {
+    "triangles": 4363,
+    "faces": 4363,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.6796879768371582,
+      1.0,
+      0.6386709809303284
+    ],
+    "bytes": 1641144
+  },
+  "batteryBank": {
+    "triangles": 4404,
+    "faces": 4404,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.5410150289535522,
+      0.7714849710464478
+    ],
+    "bytes": 2183804
+  },
+  "powerRelay": {
+    "triangles": 4260,
+    "faces": 4260,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.5332030057907104,
+      0.5292969942092896,
+      1.0
+    ],
+    "bytes": 1928348
+  },
+  "antennaMast": {
+    "triangles": 4402,
+    "faces": 4402,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.7460939884185791,
+      0.3632810115814209,
+      1.0
+    ],
+    "bytes": 2206560
+  },
+  "rescueRadio": {
+    "triangles": 4386,
+    "faces": 4386,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.6445320248603821,
+      0.4111329913139343
+    ],
+    "bytes": 2083844
+  },
+  "alarmBell": {
+    "triangles": 4183,
+    "faces": 4183,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.4130859971046448,
+      1.0,
+      0.8007820248603821
+    ],
+    "bytes": 1896936
+  },
+  "zombie": {
+    "triangles": 4113,
+    "faces": 4113,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.5605469942092896,
+      0.35351601243019104,
+      1.0
+    ],
+    "bytes": 3581052
+  }
+}

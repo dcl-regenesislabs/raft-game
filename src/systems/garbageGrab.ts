@@ -1,3 +1,5 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
+import { worldEntityId } from '../client/worldEntities'
 import { mobileInteractionJustPressed } from './toolFire'
 import {
   Entity,
@@ -79,6 +81,7 @@ export function garbageGrabSystem(_dt: number): void {
 }
 
 function grabGarbage(entity: Entity): void {
+  if (isMultiplayer()) { sendWorldAction({ kind: 'collect', target: worldEntityId(entity), slot: -1, hook: false }); consumeWorldClick(); return }
   // Defensive: the entity could have been despawned (lifetime / scene
   // bounds) or hooked between the look-at sweep and the input read.
   const data = FloatingGarbage.getOrNull(entity)

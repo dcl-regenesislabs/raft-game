@@ -1,3 +1,4 @@
+import { isMultiplayer, multiplayerReady, multiplayerStatus } from '../client/multiplayerState'
 import { MobileActionControls } from './components/MobileActionControls'
 import { RaidStatus } from './components/RaidStatus'
 import { PanelBackdrop } from './components/PanelBackdrop'
@@ -9,7 +10,7 @@ import { getMobileLayout } from './mobileLayout'
 import { Tutorial } from './components/Tutorial'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { isMobile } from '@dcl/sdk/platform'
-import ReactEcs, { ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
+import ReactEcs, { ReactEcsRenderer, UiEntity, Label } from '@dcl/sdk/react-ecs'
 
 import { ActionButton } from './components/ActionButton'
 import { DebugPanel } from './components/DebugPanel'
@@ -84,6 +85,11 @@ function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs
 }
 
 function ui(): ReactEcs.JSX.Element {
+  if (isMultiplayer() && !multiplayerReady()) return (
+    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute', alignItems: 'center', justifyContent: 'center' }} uiBackground={{ color: Color4.create(0.02, 0.08, 0.12, 0.95) }}>
+      <Label value={multiplayerStatus()} fontSize={22} uiTransform={{ width: '90%', height: 90 }} />
+    </UiEntity>
+  )
   // Boot-time title/gate sits ABOVE everything else, ignoring the safe
   // area so the black backdrop covers the full canvas. Suppresses all
   // regular HUD until the player picks NEW GAME or LOAD LAST GAME.
@@ -163,6 +169,10 @@ function ui(): ReactEcs.JSX.Element {
           {!anyPanel && !isMobile() && <InventoryButton />}
           {!anyPanel && !isMobile() && <CraftButton />}
           {!anyPanel && !isMobile() && <SystemButton />}
+          {isMultiplayer() && multiplayerStatus() === 'Saving action…' && <Label
+            value="Saving action…" fontSize={16}
+            uiTransform={{ positionType: 'absolute', position: { bottom: 16, left: '50%' }, margin: { left: -120 }, width: 240, height: 36 }}
+          />}
           <InventoryPanel />
           <CraftDoubleMenu />
           <CookMenu />

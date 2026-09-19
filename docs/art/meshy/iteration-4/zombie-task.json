@@ -1,0 +1,8 @@
+{
+  "asset": "zombie",
+  "task_id": "01a0b6b9-f732-7224-b62f-cfc80795bf1f",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b9-f732-7224-b62f-cfc80795bf1f",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

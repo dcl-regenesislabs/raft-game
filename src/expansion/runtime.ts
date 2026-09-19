@@ -1,3 +1,5 @@
+import { isMultiplayer, sendWorldAction, getMultiplayerSnapshot } from '../client/multiplayerState'
+import { worldEntityId } from '../client/worldEntities'
 import { captureCheckpoint } from '../progression/checkpoint'
 import { CAMPAIGN } from '../progression/config'
 import { isSandbox, chapter, storyWins, raidGate, completeStoryRaid, recordProgress, queueReward, claimRewards, pendingRewards, metric, hasProgress, setAssaultActive, beginRecovery } from '../progression/state'
@@ -207,6 +209,14 @@ export function expansionActions(
 }
 
 export function interactExpansion(e: Entity, secondary: boolean): boolean {
+  if (isMultiplayer()) {
+    const pc = PlatformConstruction.getOrNull(e)
+    if (!pc || !getExpansionItem(pc.kind)) return false
+    if (!secondary && (['workbench', 'armoryBench', 'engineeringBench'].includes(pc.kind) || pc.kind === 'researchTable' && ExpansionState.getOrNull(e)?.installed)) setCraftOpen(true, e)
+    else if (!secondary && pc.kind === 'ammoCrate') openStorageMenu(e)
+    else sendWorldAction({ kind: 'interact', target: worldEntityId(e), secondary, slot: getSelectedSlot() })
+    return true
+  }
   const pc = PlatformConstruction.getOrNull(e),
     s = ExpansionState.getMutableOrNull(e)
   if (!pc || !s || !near(e)) return false
@@ -655,7 +665,19 @@ function shot(from: Vector3, to: Vector3): void {
   })
   shots.push({ entity: e, remaining: 0.12 })
 }
+let sharedStatusRevision = -1
+let sharedStatus: string | null = null
 export function getExpansionStatus(): string | null {
+  if (isMultiplayer()) {
+    const w = getMultiplayerSnapshot()?.world
+    if (!w) return null
+    if (sharedStatusRevision === w.revision) return sharedStatus
+    sharedStatusRevision = w.revision
+    const e = w.events
+    const radio = Object.values(w.tiles).find(t => t.device?.kind === 'rescueRadio' && t.device.active)?.device
+    sharedStatus = w.progress.won ? 'RESCUE COMPLETE · Keep building together' : e.raidDelay > 0 ? `RAID ${e.wave} · Incoming in ${Math.ceil(e.raidDelay)}s` : e.raidActive ? `RAID ${e.wave} · ${Object.values(w.enemies).filter(enemy => enemy.kind !== 'shark').length} enemies remaining` : radio ? `RESCUE ${Math.floor(radio.progress / CAMPAIGN.broadcastSeconds * 100)}% · Keep the radio powered` : null
+    return sharedStatus
+  }
   const radio = [...engine.getEntitiesWith(ExpansionState, PlatformConstruction)].find(
     ([, s, c]) => c.kind === 'rescueRadio' && s.active
   )

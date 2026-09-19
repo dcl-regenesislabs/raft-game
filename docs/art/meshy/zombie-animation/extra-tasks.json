@@ -1,0 +1,30 @@
+{
+  "idle": {
+    "task_id": "01a0b725-5185-7277-bedf-548c8cc2f71e",
+    "status": "SUCCEEDED",
+    "message": "Animation task created successfully. Task ID: 01a0b725-5185-7277-bedf-548c8cc2f71e",
+    "estimated_time": "1-2 minutes",
+    "consumed_credits": 3
+  },
+  "attack": {
+    "task_id": "01a0b725-5443-75b6-bdca-ea8b31076baa",
+    "status": "SUCCEEDED",
+    "message": "Animation task created successfully. Task ID: 01a0b725-5443-75b6-bdca-ea8b31076baa",
+    "estimated_time": "1-2 minutes",
+    "consumed_credits": 3
+  },
+  "hit": {
+    "task_id": "01a0b725-5631-7420-9d1c-f31b99ac7004",
+    "status": "SUCCEEDED",
+    "message": "Animation task created successfully. Task ID: 01a0b725-5631-7420-9d1c-f31b99ac7004",
+    "estimated_time": "1-2 minutes",
+    "consumed_credits": 3
+  },
+  "death": {
+    "task_id": "01a0b725-57b5-73d3-8160-30f632b845e8",
+    "status": "SUCCEEDED",
+    "message": "Animation task created successfully. Task ID: 01a0b725-57b5-73d3-8160-30f632b845e8",
+    "estimated_time": "1-2 minutes",
+    "consumed_credits": 3
+  }
+}

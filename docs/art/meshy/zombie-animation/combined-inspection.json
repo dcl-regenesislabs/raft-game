@@ -1,0 +1,116 @@
+{
+  "idle": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "texture_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.1782467365264893,
+      1.1871485710144043,
+      1.8342653512954712
+    ],
+    "bytes": 6774796
+  },
+  "walk": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "texture_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.8747201561927795,
+      0.9929662942886353,
+      1.650446891784668
+    ],
+    "bytes": 6774796
+  },
+  "run": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "texture_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.846298098564148,
+      1.2489142417907715,
+      1.6330639123916626
+    ],
+    "bytes": 6774796
+  },
+  "attack": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "texture_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.8335896730422974,
+      1.5448760986328125,
+      1.5466536283493042
+    ],
+    "bytes": 6774796
+  },
+  "hit": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "texture_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.7007232904434204,
+      1.1191465854644775,
+      1.7664092779159546
+    ],
+    "bytes": 6774796
+  },
+  "death": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "texture_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.2053050994873047,
+      1.9220860004425049,
+      0.546002984046936
+    ],
+    "bytes": 6774796
+  }
+}

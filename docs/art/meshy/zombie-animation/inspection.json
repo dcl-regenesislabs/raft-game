@@ -1,0 +1,78 @@
+{
+  "zombie-tpose": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.3076170086860657,
+      0.9960939884185791
+    ],
+    "bytes": 3617936
+  },
+  "zombie-rigged": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "texture_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.7000000476837158,
+      0.5229492783546448,
+      1.6933598518371582
+    ],
+    "bytes": 6545420
+  },
+  "zombie-walk": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "texture_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.8793449997901917,
+      0.9729939699172974,
+      1.651997685432434
+    ],
+    "bytes": 6558200
+  },
+  "zombie-run": {
+    "triangles": 4301,
+    "faces": 4301,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "texture_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.8404476642608643,
+      1.2667350769042969,
+      1.620534896850586
+    ],
+    "bytes": 6553584
+  }
+}

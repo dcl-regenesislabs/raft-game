@@ -1,3 +1,5 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
+import { worldEntityId } from '../client/worldEntities'
 // Place-and-wait cooking. Pressing COOK debits the recipe's quantities,
 // closes the menu, spawns the flame + ingredient sprites on the grill
 // platform that the menu was opened on, and writes an `ActiveCook`
@@ -70,6 +72,13 @@ export function canStartCook(): boolean {
 }
 
 export function startCook(): boolean {
+  if (isMultiplayer()) {
+    const recipe = getMatchingRecipe()
+    if (!recipe || !activeCookGrill) return false
+    const sent = sendWorldAction({ kind: 'cook', recipe: recipe.id, target: worldEntityId(activeCookGrill) })
+    if (sent) closeCookMenu()
+    return sent
+  }
   if (!canStartCook()) return false
   const recipe = getMatchingRecipe()
   if (recipe === null) return false

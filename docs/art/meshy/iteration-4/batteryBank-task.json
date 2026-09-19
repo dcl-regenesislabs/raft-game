@@ -1,0 +1,8 @@
+{
+  "asset": "batteryBank",
+  "task_id": "01a0b6b9-d9c9-74b8-8da5-3838e04d453e",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b9-d9c9-74b8-8da5-3838e04d453e",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

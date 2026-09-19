@@ -1,3 +1,6 @@
+import { requiredChapter, recipeAvailable } from './unlocks'
+export { requiredChapter } from './unlocks'
+import { isMultiplayer, isApplyingWorld } from '../client/multiplayerState'
 import { DEBUG_MODE, TUTORIAL_ENABLED } from '../config/gameConfig'
 import { CAMPAIGN, OPENING_SALVAGE, WORKSHOP_SALVAGE } from './config'
 export type CampaignMode = 'campaign' | 'sandbox' | 'progression-test'
@@ -29,6 +32,7 @@ export function chapter(): number {
 }
 export function metric(name: string, amount = 1): void { state.metrics[name] = (state.metrics[name] ?? 0) + amount }
 export function recordProgress(event: string): void {
+  if (isMultiplayer() && !isApplyingWorld()) return
   if (hasProgress(event)) return
   const before = chapter()
   state.events.push(event)
@@ -59,20 +63,6 @@ export function raidGate(finale = false): string | null {
   if (chapter() < 3) return 'Make your first metal plate before starting a raid.'
   return null
 }
-const starter = ['rope', 'hook', 'hammer', 'cup', 'purifier', 'grill', 'spear', 'fishingRod']
-const home = ['workbench', 'storage', 'smelter', 'metalPlate', 'cropBed', 'rainCollector']
-const defense = ['nails', 'waterTank', 'improvedGrill', 'metalHook', 'salvageAxe', 'armoryBench', 'bow', 'arrows', 'wall', 'gate', 'railing', 'ropeBarricade', 'spikeStrip', 'alarmBell']
-const engineering = ['wire', 'gears', 'engineeringBench', 'ballista', 'bolts', 'ammoCrate', 'lookoutPost', 'sail', 'steeringWheel', 'engine', 'anchor', 'stairs', 'upperFloor', 'towerPlatform']
-const advanced = ['researchTable', 'netLauncher', 'nets', 'harpoonTower', 'harpoons', 'deckCannon', 'cannonballs', 'boardingShield', 'scrapArmor', 'armoredFoundation', 'generator', 'batteryBank', 'powerRelay', 'antennaMast', 'rescueRadio', 'circuitBoard']
-export function requiredChapter(id: string): number {
-  if (starter.includes(id)) return 1
-  if (home.includes(id)) return 2
-  if (defense.includes(id)) return 3
-  if (engineering.includes(id)) return 4
-  if (advanced.includes(id)) return 5
-  if (id === 'transmitterCore') return 6
-  return Infinity
-}
 // Skipping guidance is a persistent recipe bypass, not a combat/story victory.
 export const investigationBypassed = () => isSandbox() || hasProgress('guidanceSkipped')
 export function skipInvestigation(): void { recordProgress('guidanceSkipped'); revision++ }
@@ -81,14 +71,7 @@ export function recipeUnlocked(id: string): boolean {
   if (isSandbox()) return true
   if (id === 'transmitterCore') return false
   if (investigationBypassed()) return true
-  if (chapter() < requiredChapter(id)) return false
-  if (chapter() > 1) return true
-  // Keep replacement hooks and their rope available so early mistakes cannot strand a run.
-  if (id === 'rope' || id === 'hook') return true
-  if (id === 'hammer') return hasProgress('rope')
-  if (id === 'purifier' || id === 'cup') return hasProgress('expand')
-  if (id === 'grill' || id === 'fishingRod') return hasProgress('drink')
-  return hasProgress('cookedMeal')
+  return recipeAvailable(chapter(), state.events, id)
 }
 export function guidedRecipe(): string | null {
   if (investigationBypassed()) return null

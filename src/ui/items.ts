@@ -1,3 +1,4 @@
+import { isMultiplayer, isApplyingWorld, sendWorldAction, getMultiplayerPlayer } from '../client/multiplayerState'
 import { EXPANSION_ITEMS, expansionIcon } from '../expansion/catalog'
 // Single source of truth for every item the player can hold or collect.
 // The inventory is one shared 25-slot list. The desktop hotbar provides
@@ -551,6 +552,11 @@ export function resetInventoryLayout(): void {
 // calls are silently ignored so callers can pass the raw drag-source /
 // drag-target pair without pre-validating.
 export function swapInventorySlots(a: number, b: number): void {
+  if (isMultiplayer() && !isApplyingWorld()) {
+    const expected = getMultiplayerPlayer()?.slots[a]
+    if (expected) sendWorldAction({ kind: 'swap', a, b, expected })
+    return
+  }
   if (a === b) return
   if (a < 0 || a >= layout.length) return
   if (b < 0 || b >= layout.length) return

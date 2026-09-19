@@ -1,3 +1,4 @@
+import { multiplayerReady } from '../client/multiplayerState'
 import { isWinActive } from './winScreen'
 import { beginUiTouch, isMobileUiInputBlocked, isEquipmentInputBlocked } from './mobileControlsState'
 import { recordTutorialAction } from './tutorialState'
@@ -69,7 +70,7 @@ export function isInventoryOpen(): boolean {
 // running.
 export function isInventoryActionLocked(): boolean {
   return (
-    isMobileUiInputBlocked() || isEquipmentInputBlocked() ||
+    !multiplayerReady() || isMobileUiInputBlocked() || isEquipmentInputBlocked() ||
     open ||
     postCloseLockoutSec > 0 ||
     isCraftOpen() ||

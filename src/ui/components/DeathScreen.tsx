@@ -1,9 +1,11 @@
+import { isMultiplayer, sendWorldAction } from '../../client/multiplayerState'
 import { hasCheckpoint } from '../../progression/checkpoint'
 import ReactEcs from '@dcl/sdk/react-ecs'
 import { getGameOverBackdropFade,getGameOverPanelFade,playAgain,retryChapter } from '../gameOver'
 import { OutcomeScreen } from './OutcomeScreen'
 
 export function DeathScreen(): ReactEcs.JSX.Element {
+  if (isMultiplayer()) return <OutcomeScreen title="YOU DIED" message="Your items and the shared raft are safe." backdrop={getGameOverBackdropFade()} fade={getGameOverPanelFade()} primary={{ label: 'RESPAWN', action: () => { sendWorldAction({ kind: 'respawn' }) } }} />
   return (
     <OutcomeScreen
       title="GAME OVER"

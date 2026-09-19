@@ -1,3 +1,6 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
+import { getCraftStation } from './craftContext'
+import { worldEntityId } from '../client/worldEntities'
 import { equipCraftedItem } from '../systems/nativeEquipment'
 import { recipeUnlocked, metric, recordProgress } from '../progression/state'
 import { recipeMatchesContext } from './craftContext'
@@ -55,6 +58,7 @@ export function canStartCraft(id: string): boolean {
 }
 
 export function startCraft(id: string): boolean {
+  if (isMultiplayer()) return sendWorldAction({ kind: 'craft', item: id, station: worldEntityId(getCraftStation()) })
   if (isCrafting()) return false
   const item = getCraftableById(id)
   if (item === null) return false

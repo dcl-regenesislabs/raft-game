@@ -1,3 +1,6 @@
+import { isMultiplayer, sendWorldAction } from '../../client/multiplayerState'
+import { worldEntityId } from '../../client/worldEntities'
+import { getSelectedSlot } from '../../ui/inventoryState'
 import { isMobile } from '@dcl/sdk/platform'
 import {
   Entity,
@@ -152,6 +155,7 @@ export function commitDestroyFromHover(): boolean {
   const target = destroyHoverEntity
   destroyHoverEntity = null
   hideDestroyOverlay()
+  if (isMultiplayer()) return sendWorldAction({ kind: 'destroy', target: worldEntityId(target), slot: getSelectedSlot() })
   destroyPlatformEntity(target)
   triggerHammerSwing()
   playSfx('woodBreak')
@@ -176,6 +180,7 @@ function attachDestroyClick(entity: Entity): void {
       }
       if (destroyHoverEntity === entity) destroyHoverEntity = null
       hideDestroyOverlay()
+      if (isMultiplayer()) { sendWorldAction({ kind: 'destroy', target: worldEntityId(entity), slot: getSelectedSlot() }); return }
       destroyPlatformEntity(entity)
       triggerHammerSwing()
       playSfx('woodBreak')

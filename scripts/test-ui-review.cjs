@@ -242,6 +242,7 @@ test('Panel interior consumes input without dismissing menus', () => {
 const { CRAFTABLE_ITEMS } = load('ui/craftableItems.ts')
 const { getCraftCategories, getContextCraftRecipes, filterCraftRecipes, resolveCraftSelection } = load('ui/craftCategories.ts')
 test('Craft categories cover every implemented recipe and include expansion groups', () => {
+  load('progression/state.ts').resetProgress('sandbox')
   const categories = getCraftCategories(CRAFTABLE_ITEMS).map((c) => c.id)
   assert.ok(CRAFTABLE_ITEMS.length >= 50)
   assert.ok(CRAFTABLE_ITEMS.every((item) => categories.includes(item.category)))

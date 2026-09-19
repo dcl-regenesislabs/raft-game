@@ -1,0 +1,8 @@
+{
+  "asset": "powerRelay",
+  "task_id": "01a0b6b9-dffb-7401-8e64-56f9bff3f7e6",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b9-dffb-7401-8e64-56f9bff3f7e6",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

@@ -1,3 +1,5 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
+import { worldEntityId } from '../client/worldEntities'
 // Player picks up the cooked food (or coal) from a grill. Awards the
 // item to the inventory and tears down the world-side sprites and the
 // `ActiveCook` component on the grill, so the grill goes back to
@@ -15,6 +17,7 @@ import { addCollected } from './inventoryState'
 import { notifyItemReceived } from './itemReceivedNotification'
 
 export function grabCookOutput(platform: Entity, itemId: string): boolean {
+  if (isMultiplayer()) return sendWorldAction({ kind: 'interact', target: worldEntityId(platform), secondary: false, slot: -1 })
   const cook = ActiveCook.getOrNull(platform)
   if (cook === null) return false
   addCollected(itemId, 1)

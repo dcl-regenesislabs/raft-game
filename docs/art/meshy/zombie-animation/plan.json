@@ -1,0 +1,30 @@
+{
+  "approved_credits": 32,
+  "additional_credits_pending": 0,
+  "source": "images/concepts/expansion/zombie.png",
+  "settings": {
+    "ai_model": "meshy-t2",
+    "model_type": "smart-topology",
+    "target_polycount": 4000,
+    "texture_resolution": "2k",
+    "pose_mode": "t-pose",
+    "target_formats": [
+      "glb"
+    ]
+  },
+  "rig_height_meters": 1.7,
+  "included_clips": [
+    "walk",
+    "run"
+  ],
+  "catalog": "https://docs.meshy.ai/en/api/animation-library",
+  "integration_status": "NOT_STARTED",
+  "extra_clips": {
+    "idle": 0,
+    "attack": 191,
+    "hit": 178,
+    "death": 8
+  },
+  "generation_status": "SUCCEEDED",
+  "consumed_credits": 32
+}

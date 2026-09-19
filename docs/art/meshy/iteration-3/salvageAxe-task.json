@@ -1,0 +1,8 @@
+{
+  "asset": "salvageAxe",
+  "task_id": "01a0b6b7-f714-726d-92ff-ef7a7c21afdf",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b7-f714-726d-92ff-ef7a7c21afdf",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

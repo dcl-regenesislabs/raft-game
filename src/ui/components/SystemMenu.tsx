@@ -1,3 +1,4 @@
+import { canResetWorld, isMultiplayer, multiplayerStatus, sendWorldAction } from '../../client/multiplayerState'
 import { startChapterFixture, startTutorialCraftFixture } from '../../progression/fixtures'
 import { triggerGameOver, playAgain } from '../gameOver'
 import { startTestMode } from '../gameOver'
@@ -31,13 +32,30 @@ type SystemStatus
 import { CRAFT_TEXT_DIM_COLOR } from '../theme'
 import { CloseButton as XButton } from './CloseButton'
 
+let resetConfirm = false
 let page: 'settings' | 'session' | 'debug' = 'settings'
 
 export function SystemMenu(): ReactEcs.JSX.Element | null {
   if (!isSystemMenuOpen()) {
+    resetConfirm = false
     page = 'settings'
     return null
   }
+  if (isMultiplayer()) return (
+    <ModalFrame deviceInset>
+      <Panel uiTransform={{ width: Math.min(420, getMobileLayout(true).width - 32), padding: 20, flexDirection: 'column' }}>
+        <Label value="SETTINGS" fontSize={28} uiTransform={{ width: '100%', height: 48 }} />
+        <SystemActionButton label={isMusicMuted() ? 'MUSIC: OFF' : 'MUSIC: ON'} onPress={toggleMusicMuted} />
+        <Label value={multiplayerStatus()} fontSize={16} uiTransform={{ width: '100%', height: 50 }} />
+        {canResetWorld() && (resetConfirm ? <UiEntity uiTransform={{ width: '100%', flexDirection: 'column' }}>
+          <Label value="Reset the raft and ALL players' items and progress, including offline players?" fontSize={16} uiTransform={{ width: '100%', height: 80 }} />
+          <SystemActionButton label="CANCEL" onPress={() => { resetConfirm = false }} />
+          <SystemActionButton label="CONFIRM RESET FOR EVERYONE" onPress={() => { if (sendWorldAction({ kind: 'reset' })) { resetConfirm = false; setSystemMenuOpen(false) } }} />
+        </UiEntity> : <SystemActionButton label="RESET WORLD FOR EVERYONE" onPress={() => { resetConfirm = true }} />)}
+        <SystemActionButton label="RESUME GAME" onPress={() => { resetConfirm = false; setSystemMenuOpen(false) }} />
+      </Panel>
+    </ModalFrame>
+  )
   const confirm = getSystemConfirm()
   const detail = confirm ? describeConfirm(confirm) : null
   const area = getMobileLayout(true)

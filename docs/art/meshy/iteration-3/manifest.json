@@ -1,0 +1,309 @@
+{
+  "iteration": 3,
+  "approved_credits": 150,
+  "settings": {
+    "ai_model": "meshy-t2",
+    "model_type": "smart-topology",
+    "target_polycount": 4000,
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "target_formats": [
+      "glb"
+    ]
+  },
+  "assets": [
+    {
+      "id": "bandage",
+      "task_id": "01a0b6b7-ee5f-709b-bad8-76c4379b30ac",
+      "source": "images/concepts/expansion/bandage.png",
+      "output": "assets/scene/items/expansion/bandage.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4071,
+        "faces": 4071,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.9199219942092896,
+          1.0,
+          0.65625
+        ],
+        "bytes": 3877304
+      }
+    },
+    {
+      "id": "netLauncher",
+      "task_id": "01a0b6b7-c918-75b7-ab0d-1ff6312d95c0",
+      "source": "images/concepts/expansion/netLauncher.png",
+      "output": "assets/scene/items/expansion/netLauncher.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4057,
+        "faces": 4057,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.9804679751396179,
+          0.6738290190696716,
+          1.0
+        ],
+        "bytes": 2530168
+      }
+    },
+    {
+      "id": "harpoonTower",
+      "task_id": "01a0b6b7-d700-715b-9f76-fe709e7412e7",
+      "source": "images/concepts/expansion/harpoonTower.png",
+      "output": "assets/scene/items/expansion/harpoonTower.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4001,
+        "faces": 4001,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.703125,
+          0.9960939884185791,
+          1.0
+        ],
+        "bytes": 2180212
+      }
+    },
+    {
+      "id": "scrapArmor",
+      "task_id": "01a0b6b8-0f77-74bb-a2da-cebddaae2749",
+      "source": "images/concepts/expansion/scrapArmor.png",
+      "output": "assets/scene/items/expansion/scrapArmor.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4044,
+        "faces": 4044,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.6132810115814209,
+          0.7988280057907104
+        ],
+        "bytes": 3584856
+      }
+    },
+    {
+      "id": "bow",
+      "task_id": "01a0b6b7-fe75-73fd-abd1-c3ab7b225987",
+      "source": "images/concepts/expansion/bow.png",
+      "output": "assets/scene/items/expansion/bow.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 3938,
+        "faces": 3938,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.13037100434303284,
+          0.9980469942092896
+        ],
+        "bytes": 4080120
+      }
+    },
+    {
+      "id": "boardingShield",
+      "task_id": "01a0b6b8-05cf-730f-9313-fa47673bf30a",
+      "source": "images/concepts/expansion/boardingShield.png",
+      "output": "assets/scene/items/expansion/boardingShield.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4067,
+        "faces": 4067,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.7421879768371582,
+          0.469726026058197,
+          1.0
+        ],
+        "bytes": 3544208
+      }
+    },
+    {
+      "id": "deckCannon",
+      "task_id": "01a0b6b7-dd1b-726d-a5a7-e0916afc65d7",
+      "source": "images/concepts/expansion/deckCannon.png",
+      "output": "assets/scene/items/expansion/deckCannon.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4269,
+        "faces": 4269,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.7617180347442627,
+          0.8007820248603821
+        ],
+        "bytes": 1830228
+      }
+    },
+    {
+      "id": "repairKit",
+      "task_id": "01a0b6b7-e458-7587-82ee-d51014765781",
+      "source": "images/concepts/expansion/repairKit.png",
+      "output": "assets/scene/items/expansion/repairKit.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 3829,
+        "faces": 3829,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.7089840173721313,
+          0.6796879768371582
+        ],
+        "bytes": 2774840
+      }
+    },
+    {
+      "id": "salvageAxe",
+      "task_id": "01a0b6b7-f714-726d-92ff-ef7a7c21afdf",
+      "source": "images/concepts/expansion/salvageAxe.png",
+      "output": "assets/scene/items/expansion/salvageAxe.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 3834,
+        "faces": 3834,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          0.90625,
+          0.20068299770355225,
+          1.0
+        ],
+        "bytes": 3622512
+      }
+    },
+    {
+      "id": "ballista",
+      "task_id": "01a0b6b7-d0b6-73ed-ba5e-196bdee723cd",
+      "source": "images/concepts/expansion/ballista.png",
+      "output": "assets/scene/items/expansion/ballista.glb",
+      "status": "SUCCEEDED",
+      "consumed_credits": 15,
+      "animations": 0,
+      "skins": 0,
+      "inspection": {
+        "triangles": 4295,
+        "faces": 4295,
+        "mesh_objects": 1,
+        "materials": 1,
+        "textures": [
+          {
+            "name": "Image_0",
+            "width": 2048,
+            "height": 2048
+          }
+        ],
+        "dimensions": [
+          1.0,
+          0.8730469942092896,
+          0.5644530057907104
+        ],
+        "bytes": 2565384
+      }
+    }
+  ],
+  "integration_status": "NOT_STARTED",
+  "status": "GENERATION_COMPLETE",
+  "consumed_credits": 150
+}

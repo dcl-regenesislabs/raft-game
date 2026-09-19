@@ -1,3 +1,5 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
+import { worldEntityId } from '../client/worldEntities'
 import { Entity, PointerEvents, Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
@@ -416,6 +418,7 @@ function collectGarbageNearHook(hookX: number, hookZ: number): void {
     const ex = pos.x - hookX
     const ez = pos.z - hookZ
     if (ex * ex + ez * ez > radiusSq) continue
+    if (isMultiplayer()) { sendWorldAction({ kind: 'collect', target: worldEntityId(entity), slot: getSelectedSlot(), hook: true }); return }
     const data = FloatingGarbage.get(entity)
     const kind = data.kind
     const visual = data.visual
@@ -482,3 +485,10 @@ function followGrabbedItems(): void {
 
 
 export function cancelHookCharge(): void { cancelCharge() }
+
+// World generation changes must remove local cast entities, not only forget their handles.
+export function cancelMultiplayerHook(): void {
+  cancelCharge()
+  despawnHook()
+  if (ropeEntity !== null) { engine.removeEntity(ropeEntity); ropeEntity = null }
+}

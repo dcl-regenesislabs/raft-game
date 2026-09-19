@@ -1,3 +1,5 @@
+import { isMultiplayer, sendWorldAction } from '../../client/multiplayerState'
+import { getSelectedSlot } from '../../ui/inventoryState'
 import { isMobile } from '@dcl/sdk/platform'
 import { recordTutorialAction } from '../../ui/tutorialState'
 import {
@@ -260,6 +262,7 @@ function placeRaft(gridX: number, gridZ: number): void {
     showNotification('Not enough materials to build a platform.')
     return
   }
+  if (isMultiplayer()) { sendWorldAction({ kind: 'build', x: gridX, z: gridZ, slot: getSelectedSlot() }); return }
   spendPlatformCost()
   createPlatform(gridCellToWorld(gridX, gridZ), {
     gridX,

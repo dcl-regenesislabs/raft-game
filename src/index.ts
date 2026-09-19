@@ -1,3 +1,8 @@
+import { multiplayerInputSystem } from './client/multiplayerInput'
+import { MULTIPLAYER_ENABLED } from './config/gameConfig'
+import { initCooperativeClient } from './client/cooperativeClient'
+import { createSeabed } from './factories/seabed'
+import { createWaterFloorV2 } from './factories/water2'
 import { progressionSystem } from './progression/director'
 import { expansionSystem } from './expansion/runtime'
 import { mobileUiInputSystem } from './ui/mobileControlsState'
@@ -86,8 +91,13 @@ import { worldClickGateResetSystem } from './ui/worldClickGate'
 
 export async function main(): Promise<void> {
   if (isServer()) {
-    const { runServer } = await import('./server/server')
-    runServer()
+    if (MULTIPLAYER_ENABLED) {
+      const { runCooperativeServer } = await import('./server/cooperativeServer')
+      runCooperativeServer()
+    } else {
+      const { runServer } = await import('./server/server')
+      runServer()
+    }
     return
   }
   initServerConnection()
@@ -115,7 +125,8 @@ export async function main(): Promise<void> {
   engine.addSystem(ambienceTickSystem)
   engine.addSystem(firstPersonItemSwaySystem)
   engine.addSystem(inventoryInputSystem)
-  engine.addSystem(spearAttackSystem)
+  if (MULTIPLAYER_ENABLED) engine.addSystem(multiplayerInputSystem)
+  else engine.addSystem(spearAttackSystem)
   engine.addSystem(hammerSwingSystem)
   // lookAtTargetSystem owns the camera-forward raycast that classifies
   // what the player is currently aiming at (water / purifier / grill).
@@ -140,56 +151,56 @@ export async function main(): Promise<void> {
   // below — only the lobby exists at boot. Systems below stay
   // registered because their queries no-op on empty entity sets.
   engine.addSystem(waterScrollSystem)
-  engine.addSystem(sharkOrbitSystem)
-  engine.addSystem(sharkDirectorSystem)
-  engine.addSystem(sharkAttackSystem)
-  engine.addSystem(sharkPointerEventsSystem)
-  engine.addSystem(lobbyPortalSystem)
-  engine.addSystem(lobbyButtonHoverSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(sharkOrbitSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(sharkDirectorSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(sharkAttackSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(sharkPointerEventsSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(lobbyPortalSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(lobbyButtonHoverSystem)
   // Director MUST run before chefDialogSystem — on the WAITING → INTERACTING
   // click frame it swaps the chef's dialog script and resets
   // `dialogLineIndex = -1`, so the dialog system's `(idx + 1) % stateCount`
   // on the same frame lands on 0 and shows the new script's first line.
-  engine.addSystem(boatChefDirectorSystem)
-  engine.addSystem(chefDialogSystem)
-  engine.addSystem(chefAnimDebugSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(boatChefDirectorSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(chefDialogSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(chefAnimDebugSystem)
   engine.addSystem(chefIdleStarterSystem)
   // One-shot pool init: builds the (hidden) floating-island hierarchy so
   // the spawner/lifetime systems can flip visibility instead of creating
   // and destroying entities every cycle. Must happen before the systems
   // below run their first tick, but order vs. the lobby/game build is
   // irrelevant because the entity starts inactive.
-  createFloatingIslandPool()
+  if (!MULTIPLAYER_ENABLED) createFloatingIslandPool()
   // One scheduler decides which scripted event fires this frame —
   // sharks (fixed cadence), islands (fixed cadence), or chef (event
   // driven). Registered after the directors so the falling-edge
   // detector observes this-frame chef state and so the `armX`/`triggerX`
   // calls land before the directors re-run next frame.
-  engine.addSystem(eventSchedulerSystem)
-  engine.addSystem(floatingIslandSystem)
-  engine.addSystem(islandChestSystem)
-  engine.addSystem(anchorInterpolationSystem)
-  engine.addSystem(anchorThrowerSystem)
-  engine.addSystem(garbageSpawnerSystem)
-  engine.addSystem(floatingGarbageSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(eventSchedulerSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(floatingIslandSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(islandChestSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(anchorInterpolationSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(anchorThrowerSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(garbageSpawnerSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(floatingGarbageSystem)
   // Direct grab — runs before the inventory hotkey reader so the slot-5
   // (E key) hotkey can suppress itself when this frame's press grabbed a
   // looked-at item. Order vs. floatingGarbageSystem doesn't matter; the
   // grab checks `FloatingGarbage.getOrNull` defensively.
   engine.addSystem(garbageGrabSystem)
   engine.addSystem(grillFireSystem)
-  engine.addSystem(grillCookSystem)
-  engine.addSystem(createFallRescueSystem(GRID_ORIGIN))
-  engine.addSystem(lobbyWaterRescueSystem)
-  engine.addSystem(survivalDrainSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(grillCookSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(createFallRescueSystem(GRID_ORIGIN))
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(lobbyWaterRescueSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(survivalDrainSystem)
   engine.addSystem(raftBuilderSystem)
   engine.addSystem(constructionPlacementSystem)
   engine.addSystem(hookThrowerSystem)
   engine.addSystem(fishingRodSystem)
-  engine.addSystem(expansionSystem)
-  engine.addSystem(progressionSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(expansionSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(progressionSystem)
   engine.addSystem(craftSessionTickSystem)
-  engine.addSystem(purifierProcessSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(purifierProcessSystem)
   engine.addSystem(purifierFillSystem)
   engine.addSystem(mobileUiInputSystem)
   engine.addSystem(inventoryToggleResetSystem)
@@ -198,8 +209,8 @@ export async function main(): Promise<void> {
   engine.addSystem(systemToggleTickSystem)
   engine.addSystem(gameOverInputLockSystem)
   engine.addSystem(winScreenInputLockSystem)
-  engine.addSystem(playTimerSystem)
-  engine.addSystem(rankingPanelRefreshSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(playTimerSystem)
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(rankingPanelRefreshSystem)
   engine.addSystem(startupGateInputLockSystem)
   engine.addSystem(pressPulseTickSystem)
   engine.addSystem(tickNotification)
@@ -215,10 +226,10 @@ export async function main(): Promise<void> {
   // Save-system networking: register room listeners once, then run the
   // tick system that waits for a live server, then probes for an existing
   // save without applying it. Loading remains an explicit player action.
-  initSaveClient()
-  engine.addSystem(saveClientTickSystem)
-  initRankingClient()
-  engine.addSystem(rankingClientTickSystem)
+  if (!MULTIPLAYER_ENABLED) initSaveClient()
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(saveClientTickSystem)
+  if (!MULTIPLAYER_ENABLED) initRankingClient()
+  if (!MULTIPLAYER_ENABLED) engine.addSystem(rankingClientTickSystem)
 
   // Build the lobby world (water at y=0, raft island, bridges, portals)
   // and arm the portal-trigger handler via the scene-flow runtime. The
@@ -230,7 +241,12 @@ export async function main(): Promise<void> {
   // Direct entry starts a normal game. Keep the lobby configuration available
   // for the optional BACK TO LOBBY action.
   bootstrapSceneFlow(parcelGrid)
-  if (SKIP_LOBBY) {
+  if (MULTIPLAYER_ENABLED) {
+    createSeabed(parcelGrid)
+    createWaterFloorV2(parcelGrid)
+    setMusicTrack('game')
+    initCooperativeClient()
+  } else if (SKIP_LOBBY) {
     startGameDirectly(parcelGrid)
   } else {
     createLobby(parcelGrid)

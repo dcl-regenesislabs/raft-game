@@ -1,0 +1,8 @@
+{
+  "asset": "netLauncher",
+  "task_id": "01a0b6b7-c918-75b7-ab0d-1ff6312d95c0",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b7-c918-75b7-ab0d-1ff6312d95c0",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

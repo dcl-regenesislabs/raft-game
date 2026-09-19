@@ -1,3 +1,5 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
+import { worldEntityId } from '../client/worldEntities'
 import { getExpansionItem } from '../expansion/catalog'
 import { interactExpansion } from '../expansion/runtime'
 import { getRaftBuilderMode } from './raftBuilder'
@@ -137,6 +139,7 @@ function performConstructionPrimary(platform: Entity): void {
 //   - freshAmount == 0 + holding salt-water cup → pour: cup becomes empty,
 //     salt bowl fills to 100%
 function handlePurifierPrimary(platform: import('@dcl/sdk/ecs').Entity): void {
+  if (isMultiplayer()) { sendWorldAction({ kind: 'interact', target: worldEntityId(platform), secondary: false, slot: getSelectedSlot() }); return }
   const state = PurifierState.getMutableOrNull(platform)
   if (state === null) return
 
@@ -172,6 +175,7 @@ function handlePurifierPrimary(platform: import('@dcl/sdk/ecs').Entity): void {
 // 1 wood in inventory; consumes one log and adds FUEL_PER_WOOD_SEC of
 // burn time. Lights the flame sprite via `addFuelToPurifier`.
 function handlePurifierFuel(platform: import('@dcl/sdk/ecs').Entity): void {
+  if (isMultiplayer()) { sendWorldAction({ kind: 'interact', target: worldEntityId(platform), secondary: true, slot: getSelectedSlot() }); return }
   if (PurifierState.getOrNull(platform) === null) return
   if (getCollectedCount('wood') < 1) {
     showNotification('Need wood to add fuel.')

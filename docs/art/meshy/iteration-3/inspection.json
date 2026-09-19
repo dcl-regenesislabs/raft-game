@@ -1,0 +1,192 @@
+{
+  "netLauncher": {
+    "triangles": 4057,
+    "faces": 4057,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.9804679751396179,
+      0.6738290190696716,
+      1.0
+    ],
+    "bytes": 2530168
+  },
+  "ballista": {
+    "triangles": 4295,
+    "faces": 4295,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.8730469942092896,
+      0.5644530057907104
+    ],
+    "bytes": 2565384
+  },
+  "harpoonTower": {
+    "triangles": 4001,
+    "faces": 4001,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.703125,
+      0.9960939884185791,
+      1.0
+    ],
+    "bytes": 2180212
+  },
+  "deckCannon": {
+    "triangles": 4269,
+    "faces": 4269,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.7617180347442627,
+      0.8007820248603821
+    ],
+    "bytes": 1830228
+  },
+  "repairKit": {
+    "triangles": 3829,
+    "faces": 3829,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.7089840173721313,
+      0.6796879768371582
+    ],
+    "bytes": 2774840
+  },
+  "bandage": {
+    "triangles": 4071,
+    "faces": 4071,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.9199219942092896,
+      1.0,
+      0.65625
+    ],
+    "bytes": 3877304
+  },
+  "salvageAxe": {
+    "triangles": 3834,
+    "faces": 3834,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.90625,
+      0.20068299770355225,
+      1.0
+    ],
+    "bytes": 3622512
+  },
+  "bow": {
+    "triangles": 3938,
+    "faces": 3938,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.13037100434303284,
+      0.9980469942092896
+    ],
+    "bytes": 4080120
+  },
+  "boardingShield": {
+    "triangles": 4067,
+    "faces": 4067,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      0.7421879768371582,
+      0.469726026058197,
+      1.0
+    ],
+    "bytes": 3544208
+  },
+  "scrapArmor": {
+    "triangles": 4044,
+    "faces": 4044,
+    "mesh_objects": 1,
+    "materials": 1,
+    "textures": [
+      {
+        "name": "Image_0",
+        "width": 2048,
+        "height": 2048
+      }
+    ],
+    "dimensions": [
+      1.0,
+      0.6132810115814209,
+      0.7988280057907104
+    ],
+    "bytes": 3584856
+  }
+}

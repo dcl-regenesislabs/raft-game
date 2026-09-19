@@ -1,3 +1,5 @@
+import { isMultiplayer, sendWorldAction, getMultiplayerPlayer } from '../client/multiplayerState'
+import { getMultiplayerSnapshot } from '../client/multiplayerState'
 import { Entity, Transform, engine } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
@@ -294,6 +296,7 @@ function advanceLine(dt: number, handPos: Vector3): void {
         state.phase = FishingPhase.Reeling
       } else {
         state.phase = FishingPhase.Idle
+        if (isMultiplayer()) sendWorldAction({ kind: 'fishStart', slot: getSelectedSlot() })
         state.idleElapsed = 0
         state.reactElapsed = 0
       }
@@ -329,7 +332,7 @@ function advanceLine(dt: number, handPos: Vector3): void {
       HOOK_REEL_WOBBLE_SCALE
     )
     transform.rotation = composeHeading(dx, 0, dz, w.x, w.y, w.z)
-    if (state.idleElapsed >= state.nextBiteIn) {
+    if (isMultiplayer() ? !!getMultiplayerPlayer()?.fishing && (getMultiplayerSnapshot()?.world.progress.seconds ?? 0) >= getMultiplayerPlayer()!.fishing!.readyAt : state.idleElapsed >= state.nextBiteIn) {
       state.phase = FishingPhase.Biting
       state.reactElapsed = 0
     } else if (firePressedThisFrame()) {
@@ -359,12 +362,13 @@ function advanceLine(dt: number, handPos: Vector3): void {
       state.phase = FishingPhase.Reeling
       biteIntensity = 0
       startLoop('reelPulling')
-    } else if (state.reactElapsed >= FISH_REACT_WINDOW_S) {
+    } else if (isMultiplayer() ? (getMultiplayerSnapshot()?.world.progress.seconds ?? 0) > (getMultiplayerPlayer()?.fishing?.expiresAt ?? Infinity) : state.reactElapsed >= FISH_REACT_WINDOW_S) {
       // Fish escaped — return to Idle and roll a fresh delay so the
       // player can keep waiting on the same cast.
       state.phase = FishingPhase.Idle
       state.idleElapsed = 0
       state.nextBiteIn = rollBiteDelay()
+      if (isMultiplayer()) sendWorldAction({ kind: 'fishStart', slot: getSelectedSlot() })
       biteIntensity = 0
     }
   } else if (state.phase === FishingPhase.Reeling) {
@@ -437,6 +441,7 @@ function firePressedThisFrame(): boolean {
 }
 
 function catchFish(): void {
+  if (isMultiplayer()) { sendWorldAction({ kind: 'fishCatch', slot: getSelectedSlot() }); return }
   // One use per successful catch (not per cast). The rod's 10-catch
   // budget is what the player feels — running out of empty casts
   // wouldn't read as a worn-out tool. Done before the count roll so

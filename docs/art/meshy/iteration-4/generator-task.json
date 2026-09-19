@@ -1,0 +1,8 @@
+{
+  "asset": "generator",
+  "task_id": "01a0b6b9-d2dd-71ec-8731-fd142f812253",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b9-d2dd-71ec-8731-fd142f812253",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

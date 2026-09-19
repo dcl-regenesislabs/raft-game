@@ -1,0 +1,8 @@
+{
+  "asset": "alarmBell",
+  "task_id": "01a0b6b9-f117-7456-9d66-834943b71512",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b9-f117-7456-9d66-834943b71512",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

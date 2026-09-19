@@ -1,3 +1,4 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
 import { mobileInteractionJustPressed } from './toolFire'
 import {
   Entity,
@@ -88,6 +89,7 @@ export function cupFillSystem(_dt: number): void {
   if (!tappedWater && !actionButtonFire) return
 
   const slot = getSelectedSlot()
+  if (isMultiplayer()) { sendWorldAction({ kind: 'fillCup', slot }); consumeWorldClick(); return }
   if (transmuteContainerSlot(slot, 'saltWater')) {
     playSfx('cupFill')
     showNotification('Cup filled with salt water.')

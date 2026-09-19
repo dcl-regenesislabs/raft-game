@@ -18,7 +18,7 @@
 //
 // Flip to `false` before deploying if you want a clean lobby with only
 // NEW WORLD and LOAD WORLD visible to players.
-export const DEBUG_MODE = true
+export const DEBUG_MODE = false
 
 // Start directly on the starter raft. Set false to restore the lobby.
 // DEBUG_MODE determines whether direct entry includes the debug test setup.
@@ -146,3 +146,17 @@ export const FISH_REACT_WINDOW_S = 2
 // Pulse frequency (Hz) of the screaming bite highlight on the action
 // button. Drives both the scale pulse and the texture flash.
 export const FISH_BITE_PULSE_HZ = 4
+
+// Multiplayer network and persistence budgets. Gameplay never falls back to a local authority.
+export const MULTIPLAYER_ENABLED = true
+export const MULTIPLAYER_BATCH_S = 0.25
+export const MULTIPLAYER_CHECKPOINT_S = 1
+export const MULTIPLAYER_HEARTBEAT_S = 2
+export const MULTIPLAYER_TIMEOUT_S = 8
+export const MULTIPLAYER_MAX_PENDING = 64
+export const MULTIPLAYER_MAX_PLAYERS = 32
+export const MULTIPLAYER_MAX_WORLD_BYTES = 4 * 1024 * 1024
+
+// Initial cooperative rendering budgets; raise only after device stress testing.
+export const MULTIPLAYER_MAX_TILES = 256
+export const MULTIPLAYER_MAX_DEVICES = 64

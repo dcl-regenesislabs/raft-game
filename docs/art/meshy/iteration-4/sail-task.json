@@ -1,0 +1,8 @@
+{
+  "asset": "sail",
+  "task_id": "01a0b6b9-bf61-7625-a1be-8a851833b27e",
+  "status": "SUCCEEDED",
+  "message": "3D generation task created successfully. Task ID: 01a0b6b9-bf61-7625-a1be-8a851833b27e",
+  "estimated_time": "2-3 minutes",
+  "consumed_credits": 15
+}

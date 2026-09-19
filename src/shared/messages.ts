@@ -44,3 +44,13 @@ export type SaveMessages = typeof SAVE_MESSAGES
 
 // Registered during module loading, before the ECS engine seals.
 export const saveRoom = registerMessages(SAVE_MESSAGES)
+
+// The authority is the only accepted sender of heartbeat, chunks and results.
+export const worldRoom = registerMessages({
+  worldHello: Schemas.Map({ protocol: Schemas.Int, session: Schemas.String, resync: Schemas.Boolean }),
+  worldJoinRejected: Schemas.Map({ session: Schemas.String, error: Schemas.String }),
+  worldCommand: Schemas.Map({ payload: Schemas.String }),
+  worldPulse: Schemas.Map({ server: Schemas.String, status: Schemas.String }),
+  worldChunk: Schemas.Map({ id: Schemas.String, index: Schemas.Int, total: Schemas.Int, hash: Schemas.String, body: Schemas.String }),
+  worldResult: Schemas.Map({ payload: Schemas.String })
+})

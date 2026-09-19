@@ -1,3 +1,5 @@
+import { isMultiplayer, sendWorldAction } from '../client/multiplayerState'
+import { worldEntityId } from '../client/worldEntities'
 import { removePrototypeEntity } from '../expansion/sprites'
 import { ExpansionState } from '../components'
 import { TOWERS } from '../expansion/rules'
@@ -306,6 +308,7 @@ function commitPlacement(): void {
   if (now - lastPlaceMs < PLACE_COOLDOWN_MS) return
   lastPlaceMs = now
 
+  if (isMultiplayer()) { sendWorldAction({ kind: 'place', target: worldEntityId(platform), slot: getSelectedSlot(), yawDeg: getPlacementRotationDeg() }); return }
   beginEquipmentTransition()
   subtractCollected(mode, 1)
   const previous = PlatformConstruction.getOrNull(platform)

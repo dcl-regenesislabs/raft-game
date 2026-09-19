@@ -30,6 +30,7 @@ export interface FloatingIslandParams {
   position: Vector3
   velocity: Vector3
   maxLifetime: number
+  visualSeed?: number
 }
 
 // Pool state — populated by createFloatingIslandPool() once at scene boot.
@@ -99,6 +100,8 @@ export function activateFloatingIsland(params: FloatingIslandParams): void {
     return
   }
   const { position, velocity, maxLifetime } = params
+  let seed = params.visualSeed ?? 0
+  const random = params.visualSeed === undefined ? Math.random : () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296 }
 
   const rootTransform = Transform.getMutable(pooledRoot)
   rootTransform.position.x = position.x
@@ -115,18 +118,18 @@ export function activateFloatingIsland(params: FloatingIslandParams): void {
   island.deflecting = false
   island.active = true
 
-  const variant = Math.floor(Math.random() * ISLAND_COUNT) + 1
+  const variant = Math.floor(random() * ISLAND_COUNT) + 1
   GltfContainer.createOrReplace(pooledVisual, {
     src: `assets/scene/island-v2-${variant}.glb`,
     visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS,
     invisibleMeshesCollisionMask: 0
   })
   const visualTransform = Transform.getMutable(pooledVisual)
-  visualTransform.rotation = Quaternion.fromEulerDegrees(0, Math.random() * 360, 0)
+  visualTransform.rotation = Quaternion.fromEulerDegrees(0, random() * 360, 0)
 
   // Re-randomize palm transforms each activation so repeat appearances
   // don't read as the same island.
-  rerollPalmTransforms()
+  rerollPalmTransforms(random)
 
   // Reset chest interaction state and visual.
   const chestState = IslandChest.getMutableOrNull(pooledChest)
@@ -184,17 +187,17 @@ function spawnPalmPool(root: Entity): void {
   }
 }
 
-function rerollPalmTransforms(): void {
+function rerollPalmTransforms(random = Math.random): void {
   for (const palm of pooledPalms) {
-    const angle = Math.random() * Math.PI * 2
-    const radius = PALM_RADIUS_MIN + Math.random() * (PALM_RADIUS_MAX - PALM_RADIUS_MIN)
+    const angle = random() * Math.PI * 2
+    const radius = PALM_RADIUS_MIN + random() * (PALM_RADIUS_MAX - PALM_RADIUS_MIN)
     const x = Math.cos(angle) * radius
     const z = Math.sin(angle) * radius
 
-    const s = PALM_BASE_SCALE + (Math.random() * 2 - 1) * PALM_SCALE_JITTER
-    const yawDeg = Math.random() * 360
-    const leanDeg = Math.random() * 8
-    const leanAxisRad = Math.random() * Math.PI * 2
+    const s = PALM_BASE_SCALE + (random() * 2 - 1) * PALM_SCALE_JITTER
+    const yawDeg = random() * 360
+    const leanDeg = random() * 8
+    const leanAxisRad = random() * Math.PI * 2
 
     const t = Transform.getMutable(palm)
     t.position.x = x

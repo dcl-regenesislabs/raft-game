@@ -1,3 +1,4 @@
+import { isMultiplayer, isApplyingWorld, sendWorldAction, getMultiplayerPlayer } from '../client/multiplayerState'
 import { beginEquipmentTransition } from './mobileControlsState'
 import { recordProgress } from '../progression/state'
 import { getCookableById } from './cookableItems'
@@ -175,6 +176,7 @@ export function drinkContainerSlot(
   slotIndex: number,
   containerId: string
 ): boolean {
+  if (isMultiplayer()) return sendWorldAction({ kind: 'consume', slot: slotIndex })
   const def = getInventorySlot(slotIndex)
   if (def === null) return false
   if (def.id !== containerId) return false
@@ -202,6 +204,7 @@ export function drinkContainerSlot(
 // underlying value to exceed 1 as a reserve. Returns true when one was
 // actually consumed so the caller can gate animation/feedback on success.
 export function consumeFoodById(id: string): boolean {
+  if (isMultiplayer()) return sendWorldAction({ kind: 'consume', slot: getMultiplayerPlayer()?.slots.findIndex(s => s.id === id) ?? -1 })
   const taken = subtractCollected(id, 1)
   if (taken === 0) return false
   const effect = getFoodEffect(id)
@@ -287,6 +290,7 @@ const collectedCounts = new Map<string, number>()
 // withdrawals leave the remainder in the chest). Items without a
 // `maxStackSize` (legacy / non-stackable) accept the full count.
 export function addCollected(kind: string, count: number = 1): number {
+  if (isMultiplayer() && !isApplyingWorld()) return 0
   if (count <= 0) return 0
   // Make sure the item has a visible slot before bumping the count.
   // Looks up materials and craftables; for ids already in the starter
@@ -330,6 +334,7 @@ export function getCollectedCount(kind: string): number {
 // demand by `ensureCollectibleSlot` so none of them are pinned to a fixed
 // slot. The hook starter is non-stackable so it never reaches this path.
 export function subtractCollected(kind: string, count: number = 1): number {
+  if (isMultiplayer() && !isApplyingWorld()) return 0
   if (count <= 0) return 0
   const cur = collectedCounts.get(kind) ?? 0
   const taken = Math.min(cur, count)
@@ -347,6 +352,7 @@ export function subtractCollected(kind: string, count: number = 1): number {
 // viewmodel, mirroring the cascade that `clearEmptyStackableSlot`
 // runs for consumed stackables. Returns true iff a use was consumed.
 export function consumeSlotDurability(slotIndex: number): boolean {
+  if (isMultiplayer() && !isApplyingWorld()) return false
   const before = getSlotDurability(slotIndex)
   if (before === null || before <= 0) return false
   const def = getInventorySlot(slotIndex)
