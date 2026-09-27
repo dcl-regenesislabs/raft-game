@@ -15,8 +15,10 @@ import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import {
   MainPlatform,
   Platform,
+  PlatformConstruction,
   PlatformUnderAttack
 } from '../../components'
+import { isStarterTile } from '../../multiplayer/world'
 import {
   destroyPlatformEntity,
   getPlatformVisual
@@ -87,7 +89,7 @@ export function enterDestroying(): void {
   ensureDestroyOverlay()
   hideDestroyOverlay()
   for (const [entity] of engine.getEntitiesWith(Platform)) {
-    if (MainPlatform.getOrNull(entity) !== null) continue
+    if (isProtected(entity)) continue
     // Skip platforms a shark has already chosen — locked until the bite
     // resolves. Platforms targeted later are caught by the runtime check
     // inside attachDestroyClick's callback.
@@ -103,7 +105,7 @@ export function exitDestroying(): void {
   destroyHoverEntity = null
   destroyBlinkPhase = 0
   for (const [entity] of engine.getEntitiesWith(Platform)) {
-    if (MainPlatform.getOrNull(entity) !== null) continue
+    if (isProtected(entity)) continue
     pointerEventsSystem.removeOnPointerDown(entity)
   }
 }
@@ -127,7 +129,7 @@ export function tickDestroying(dt: number): void {
   // overlay so we never paint red on a stale entity.
   if (
     Platform.getOrNull(destroyHoverEntity) === null ||
-    MainPlatform.getOrNull(destroyHoverEntity) !== null ||
+    isProtected(destroyHoverEntity) ||
     PlatformUnderAttack.getOrNull(destroyHoverEntity) !== null
   ) {
     destroyHoverEntity = null
@@ -143,7 +145,7 @@ export function tickDestroying(dt: number): void {
 
 export function commitDestroyFromHover(): boolean {
   if (destroyHoverEntity === null) return false
-  if (MainPlatform.getOrNull(destroyHoverEntity) !== null) return false
+  if (isProtected(destroyHoverEntity)) return false
   if (PlatformUnderAttack.getOrNull(destroyHoverEntity) !== null) return false
   // Block dismantling a storage chest with items still inside so the
   // player can't accidentally vaporise their hoard. Sharks and gameOver
@@ -164,12 +166,25 @@ export function commitDestroyFromHover(): boolean {
 
 // --- internals ---
 
+// The origin and the rest of the starter raft can't be removed; the hammer
+// only dismantles a construction standing on a starter tile.
+function isProtected(entity: Entity): boolean {
+  if (MainPlatform.getOrNull(entity) !== null) return true
+  const platform = Platform.getOrNull(entity)
+  return (
+    isMultiplayer() &&
+    platform !== null &&
+    isStarterTile({ x: platform.gridX, z: platform.gridZ }) &&
+    PlatformConstruction.getOrNull(entity) === null
+  )
+}
+
 function attachDestroyClick(entity: Entity): void {
   pointerEventsSystem.onPointerDown(
     { entity, opts: { ...DESTROY_OPTS, showFeedback: !isMobile() } },
     () => {
       if (isInventoryActionLocked()) return
-      if (MainPlatform.getOrNull(entity) !== null) return
+      if (isProtected(entity)) return
       // Locked while a shark is committed to this platform.
       if (PlatformUnderAttack.getOrNull(entity) !== null) return
       // Same dismantle guard as `commitDestroyFromHover`: a non-empty
@@ -197,7 +212,7 @@ const handleDestroyRaycast: RaycastHandler = (result) => {
     const candidate = firstId as Entity
     if (
       Platform.getOrNull(candidate) !== null &&
-      MainPlatform.getOrNull(candidate) === null &&
+      !isProtected(candidate) &&
       // Don't paint the destroy tint on a shark-locked platform — it's
       // already pulsing red from the bite, and it can't be destroyed.
       PlatformUnderAttack.getOrNull(candidate) === null

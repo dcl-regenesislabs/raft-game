@@ -12,7 +12,7 @@ import { advanceProduction, applyArmor, isInArc, TOWERS } from '../expansion/rul
 import { PowerNode, powerSources, supplyPower } from '../expansion/power'
 import { Enemy, Vec, WorldState } from './types'
 import { count, give, take } from './inventory'
-import { chapter, distance, milestone, ORIGIN, random, tilePosition } from './world'
+import { chapter, distance, isStarterTile, milestone, ORIGIN, random, tilePosition } from './world'
 
 function spawnDebris(world: WorldState, kind: string, position: Vec, velocity: Vec): void {
   if (Object.keys(world.debris).length >= 80) return
@@ -25,7 +25,14 @@ function damageTile(world: WorldState, id: string, amount: number): void {
   if (tile.device) {
     tile.device.health -= amount
     if (tile.device.health > 0) return
+    // Starter tiles outlive what is built on them.
+    if (isStarterTile(tile)) {
+      tile.device = null
+      tile.instance = world.nextId++
+      return
+    }
   } else {
+    if (isStarterTile(tile)) return
     tile.health -= amount
     if (tile.health > 0) return
   }
@@ -275,7 +282,9 @@ export function simulateWorld(world: WorldState, dt: number, online: ReadonlySet
   e.shark -= dt
   if (e.shark <= 0 && !e.raidActive && !e.raidDelay) {
     e.shark = 300
-    const tile = tiles.filter((t) => t.id !== '0,0')[Math.floor(random(world) * Math.max(1, tiles.length - 1))]
+    // Sharks only hunt expansions; the starter raft can't be bitten away.
+    const prey = tiles.filter((t) => !isStarterTile(t))
+    const tile = prey[Math.floor(random(world) * prey.length)]
     if (tile) {
       const id = 'enemy:' + world.nextId++
       world.enemies[id] = {
@@ -304,7 +313,7 @@ export function simulateWorld(world: WorldState, dt: number, online: ReadonlySet
     enemy.cooldown = Math.max(0, enemy.cooldown - dt)
     enemy.slow = Math.max(0, enemy.slow - dt)
     const closest = tiles
-      .filter((t) => t.id !== '0,0')
+      .filter((t) => (enemy.kind === 'shark' ? !isStarterTile(t) : t.id !== '0,0'))
       .sort((a, b) => distance(enemy.position, tilePosition(a)) - distance(enemy.position, tilePosition(b)))[0]
     let goal = world.tiles[enemy.target] ?? closest
     if (!goal) continue

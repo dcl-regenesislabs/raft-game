@@ -18,6 +18,12 @@ export const ORIGIN: Vec = {
 }
 export const TILE_SIZE = 3
 export const cellId = (x: number, z: number): string => `${x},${z}`
+const STARTER_MIN = -Math.floor(MULTIPLAYER_INITIAL_RAFT_SIZE / 2)
+const STARTER_MAX = STARTER_MIN + MULTIPLAYER_INITIAL_RAFT_SIZE
+// The raft every world starts with. Like the origin, these tiles can never be
+// removed; only a construction built on them can be dismantled or broken.
+export const isStarterTile = (tile: { x: number; z: number }): boolean =>
+  tile.x >= STARTER_MIN && tile.x < STARTER_MAX && tile.z >= STARTER_MIN && tile.z < STARTER_MAX
 export const tileObjectId = (tile: Tile): string => `${tile.id}@${tile.instance ?? 0}`
 export const tilePosition = (tile: { x: number; z: number }): Vec => ({
   x: ORIGIN.x + tile.x * TILE_SIZE,
@@ -27,10 +33,8 @@ export const tilePosition = (tile: { x: number; z: number }): Vec => ({
 export const distance = (a: Vec, b: Vec): number => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
 export function freshWorld(generation = 1): WorldState {
   const tiles: Record<string, Tile> = {}
-  const start = -Math.floor(MULTIPLAYER_INITIAL_RAFT_SIZE / 2)
-  const end = start + MULTIPLAYER_INITIAL_RAFT_SIZE
-  for (let x = start; x < end; x++)
-    for (let z = start; z < end; z++) {
+  for (let x = STARTER_MIN; x < STARTER_MAX; x++)
+    for (let z = STARTER_MIN; z < STARTER_MAX; z++) {
       const id = cellId(x, z)
       tiles[id] = { id, x, z, health: 100, device: null }
     }
@@ -278,8 +282,14 @@ export function applyAction(world: WorldState, player: PlayerState, action: Acti
       tool(player, action.slot, ['hammer'])
       const tile = target(world, player, action.target, 64)
       requireRule(tile.id !== '0,0', 'Cannot remove the recovery platform')
+      requireRule(!isStarterTile(tile) || tile.device, 'Starting raft platforms cannot be removed')
       requireRule(!tile.device?.contents.some((s) => s.count > 0), 'Empty storage before dismantling')
       requireRule(!Object.values(world.enemies).some((e) => e.target === tile.id), 'Platform is under attack')
+      if (isStarterTile(tile)) {
+        tile.device = null
+        tile.instance = world.nextId++
+        return
+      }
       delete world.tiles[tile.id]
       return
     }
