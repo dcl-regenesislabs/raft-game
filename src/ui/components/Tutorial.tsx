@@ -86,7 +86,7 @@ export function Tutorial(): ReactEcs.JSX.Element {
       <UiEntity
         uiTransform={{
           positionType: 'absolute',
-          position: isMobile() ? { top: 0, right: 408 } : { top: 8, left: 12 },
+          position: isMobile() ? { top: 0, right: 408 } : { top: 0, left: 0 },
           width: 135,
           height: 36
         }}
@@ -102,7 +102,7 @@ export function Tutorial(): ReactEcs.JSX.Element {
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: isMobile() ? { top: 0, right: 408 } : { top: 8, left: 12 },
+        position: isMobile() ? { top: 0, right: 408 } : { top: 0, left: 0 },
         width: isMobile() ? 296 : 350
       }}
     >

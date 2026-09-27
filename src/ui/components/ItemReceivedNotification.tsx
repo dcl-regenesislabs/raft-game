@@ -1,4 +1,4 @@
-import { objectiveBottom } from '../progressionHud'
+import { objectiveBottom, topOverlayBand } from '../progressionHud'
 import { isSandbox } from '../../progression/state'
 import { getNotification } from '../notification'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
@@ -31,6 +31,7 @@ export function ItemReceivedOverlay(): ReactEcs.JSX.Element | null {
   const panelWidth = innerWidth + ITEM_NOTIF_PADDING_X * 2
   const inset = isSandbox() ? ITEM_NOTIF_TOP_INSET : objectiveBottom()
   if (!isSandbox() && getNotification()) return null
+  const band = topOverlayBand()
   const offscreenTop = -(ITEM_NOTIF_HEIGHT + ITEM_NOTIF_TOP_INSET)
   const top =
     offscreenTop + (inset - offscreenTop) * view.slide
@@ -38,8 +39,8 @@ export function ItemReceivedOverlay(): ReactEcs.JSX.Element | null {
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: 0, left: 0 },
-        width: '100%',
+        position: { top: 0, left: band.left },
+        width: band.width,
         height: '100%',
         flexDirection: 'column',
         alignItems: 'center',

@@ -6,36 +6,31 @@ import { RaidStatus } from './components/RaidStatus'
 import { PanelBackdrop } from './components/PanelBackdrop'
 import { BuilderHint } from './components/BuilderHint'
 import { ProximityActions } from './components/ProximityActions'
-import { Color4 } from '@dcl/sdk/math'
 import { MobileHud } from './components/MobileHud'
 import { getMobileLayout } from './mobileLayout'
 import { Tutorial } from './components/Tutorial'
-import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { isMobile } from '@dcl/sdk/platform'
-import ReactEcs, { ReactEcsRenderer, UiEntity, Label } from '@dcl/sdk/react-ecs'
+import ReactEcs, { ReactEcsRenderer, UiEntity, Label, InteractableArea } from '@dcl/sdk/react-ecs'
 
 import { ActionButton } from './components/ActionButton'
 import { DebugPanel } from './components/DebugPanel'
+import { DesktopHud } from './components/DesktopHud'
 import { BottomBar } from './components/BottomBar'
+import { BuilderControls } from './components/BuilderControls'
+import { ConnectingScreen } from './components/ConnectingScreen'
 import { ChargeReticle } from './components/ChargeReticle'
 import { CookMenu } from './components/CookMenu'
-import { CraftButton } from './components/CraftButton'
 import { CraftDoubleMenu } from './components/CraftMenu'
 import { CraftProgressBar } from './components/CraftProgressBar'
 import { DeathScreen } from './components/DeathScreen'
 import { WinScreen } from './components/WinScreen'
 import { DestroyBanner } from './components/DestroyBanner'
 import { LobbyMusicButton } from './components/LobbyMusicButton'
-import { InventoryButton } from './components/InventoryButton'
 import { InventoryPanel } from './components/InventoryPanel'
 import { ItemReceivedOverlay } from './components/ItemReceivedNotification'
-import { ModeToggleButton } from './components/ModeToggleButton'
 import { NotificationOverlay } from './components/Notification'
-import { RotateButtons } from './components/RotateButtons'
 import { StartupScreen } from './components/StartupScreen'
-import { StatsBars } from './components/StatsBars'
 import { StorageMenu } from './components/StorageMenu'
-import { SystemButton } from './components/SystemButton'
 import { SystemMenu } from './components/SystemMenu'
 import { isCookOpen } from './cookToggle'
 import { isCrafting } from './craftSession'
@@ -47,32 +42,24 @@ import { isStartupGateActive } from './startupGate'
 import { isStorageOpen } from './storageToggle'
 import { isSystemMenuOpen } from './systemSession'
 
-// Both platforms use the same 1600×720 virtual canvas so a single set
-// of pixel constants in `theme.ts` lays out the HUD on every aspect
-// ratio — proportional scaling fills the viewport in both directions.
-// See `.agents/skills/local/mobile-ui-scaling/SKILL.md`.
-// Insets are applied explicitly below; SDK 7.28 otherwise adds a second device wrapper.
+// Desktop lays out on 1920×1080; the SDK swaps any 16:9 size for 1600×720 on
+// mobile, which is what the mobile HUD constants are tuned for (see
+// `getVirtualSize`). Insets are applied explicitly below via `screenInset: 'none'`,
+// otherwise the renderer would add a second device wrapper.
 export function setupUi(): void {
-  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1600, virtualHeight: 720, screenInset: 'none' })
+  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1920, virtualHeight: 1080, screenInset: 'none' })
 }
 
-// Mobile is the only platform with hardware insets (notch / home indicator)
-// that overlap the canvas, so it's the only platform where the safe-area
-// inset is applied. On desktop the chat/minimap chrome is outside the UI
-// canvas, and shrinking the HUD would just waste pixels.
+// The renderer uses `screenInset: 'none'`, so the HUD applies its insets here.
+// Desktop explorers draw the minimap and chat over the canvas (roughly the left
+// quarter) and report them in `UiCanvasInformation.interactableArea`, so the
+// desktop HUD sits inside the SDK's InteractableArea. Mobile keeps its own
+// layout, which switches to hardware-only insets while the inventory is open.
 //
-// `UiCanvasInformation.interactableArea` is the renderer-reported BorderRect
-// (in virtual pixels) of the region not covered by platform/hardware UI.
-// We render an absolute UiEntity with matching top/left/right/bottom so a
-// child sized 100%×100% fills exactly the safe area.
+// Insets arrive in canvas pixels; getMobileLayout / InteractableArea convert
+// them to virtual pixels so a child sized 100%×100% fills the safe area.
 function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs.JSX.Element {
-  if (!isMobile()) {
-    return (
-      <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute' }}>
-        {children}
-      </UiEntity>
-    )
-  }
+  if (!isMobile()) return <InteractableArea>{children}</InteractableArea>
   const { top, left, right, bottom } = getMobileLayout(isInventoryOpen() && !isStorageOpen())
   return (
     <UiEntity
@@ -89,9 +76,7 @@ function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs
 function ui(): ReactEcs.JSX.Element {
   if (isMultiplayer() && getUpdateNotice()) return <UpdateScreen />
   if (isMultiplayer() && !multiplayerReady()) return (
-    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute', alignItems: 'center', justifyContent: 'center' }} uiBackground={{ color: Color4.create(0.02, 0.08, 0.12, 0.95) }}>
-      <Label value={multiplayerStatus()} fontSize={22} uiTransform={{ width: '90%', height: 90 }} />
-    </UiEntity>
+    <ConnectingScreen />
   )
   // Boot-time title/gate sits ABOVE everything else, ignoring the safe
   // area so the black backdrop covers the full canvas. Suppresses all
@@ -166,12 +151,9 @@ function ui(): ReactEcs.JSX.Element {
               each panel renders its own relevant sub-elements. */}
           {!anyPanel && !isMobile() && <Tutorial />}
           {!anyPanel && !isMobile() && <BottomBar />}
-          {!anyPanel && !isMobile() && <StatsBars />}
           {!anyPanel && !isMobile() && <ActionButton />}
-          {!anyPanel && !isMobile() && <ModeToggleButton />}
-          {!anyPanel && !isMobile() && <InventoryButton />}
-          {!anyPanel && !isMobile() && <CraftButton />}
-          {!anyPanel && !isMobile() && <SystemButton />}
+          {!anyPanel && !isMobile() && <BuilderControls />}
+          {!anyPanel && !isMobile() && <DesktopHud />}
           {isMultiplayer() && multiplayerStatus() === 'Confirming…' && <Label
             value="Confirming…" fontSize={16}
             uiTransform={{ positionType: 'absolute', position: { bottom: 16, left: '50%' }, margin: { left: -120 }, width: 240, height: 36 }}
@@ -180,7 +162,6 @@ function ui(): ReactEcs.JSX.Element {
           <CraftDoubleMenu />
           <CookMenu />
           <StorageMenu />
-          {!anyPanel && !isMobile() && <RotateButtons />}
 
         </UiEntity>
       </SafeArea>

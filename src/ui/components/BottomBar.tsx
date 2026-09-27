@@ -27,10 +27,7 @@ import {
   getInventorySlot
 } from '../items'
 import {
-  BAR_BOTTOM,
   BAR_HEIGHT,
-  BAR_SCALE,
-  BAR_TEXTURE,
   BAR_WIDTH,
   COOK_NON_INGREDIENT_TINT,
   GLOW_ALPHA_PEAK_BONUS,
@@ -42,18 +39,17 @@ import {
   ITEM_INSET_PCT_SWAP_SELECTED,
   SLOT_CENTERS_PCT,
   slotSizePx,
-  slotTopPx
+  slotTopPx,
+  TOOLBAR_BOTTOM
 } from '../theme'
 import { shakeOffset } from '../utils/shake'
 import { DurabilityBar } from './DurabilityBar'
 import { ItemCountBadge } from './ItemCountBadge'
+import { ToolBar, getToolBarWidth } from './ToolBar'
 
-// Bottom-center toolbar holding BOTTOM_BAR_SLOT_COUNT slots. The painted
-// background art positions the cells; each slot is positioned absolutely
-// at its measured cell centre so the items line up with the painting at
-// any bar size.
+// Desktop HUD: the tool bar anchored bottom-centre of the interactable area.
 export function BottomBar(): ReactEcs.JSX.Element {
-  const width = Math.round(BAR_WIDTH * BAR_SCALE)
+  const width = getToolBarWidth()
   // While the hammer is in placing mode the cost label takes over the
   // slot the transient name label normally occupies — never both at once,
   // since they'd stack on the same anchor and overlap visually.
@@ -63,13 +59,13 @@ export function BottomBar(): ReactEcs.JSX.Element {
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { bottom: BAR_BOTTOM, left: '50%' },
+        position: { bottom: TOOLBAR_BOTTOM, left: '50%' },
         margin: { left: -Math.round(width / 2) }
       }}
     >
       {showCost && <BottomBarPlatformCostLabel width={width} />}
       {label !== null && <BottomBarSelectedLabel value={label} width={width} />}
-      <BottomBarSurface width={width} />
+      <ToolBar />
     </UiEntity>
   )
 }

@@ -23,6 +23,18 @@ export const BAR_BOTTOM = 0
 // `BottomBar` and the bar inside `InventoryWithBar`) so both surfaces
 // shrink together. Height tracks width via the painted aspect ratio.
 export const BAR_SCALE = 0.96
+
+// --- Desktop tool bar --------------------------------------------------------
+// The desktop HUD bar lists equippable tools (the same list as the mobile
+// "change tool" picker) as glass cells. Five stay visible with hotkeys 1-4;
+// anything beyond folds into a MORE TOOLS expansion above the row.
+export const TOOLBAR_CELL = 64
+export const TOOLBAR_GAP = 8
+export const TOOLBAR_PADDING = 8
+export const TOOLBAR_VISIBLE = 5
+export const TOOLBAR_TOGGLE_WIDTH = 96
+export const TOOLBAR_BOTTOM = 0
+export const TOOLBAR_HEIGHT = TOOLBAR_CELL + TOOLBAR_PADDING * 2
 // Painted cell positions, measured from the source PNG (2508×627) by sampling
 // the cream pixels. The cells are NOT evenly distributed across the bar:
 // the wood frame leaves ~9% margin on each end and the cells sit ~17% apart
@@ -90,7 +102,9 @@ export const ACTION_BUTTON_ICON_INSET_PCT = 22
 // consistent.
 export const ROTATE_BUTTON_TEXTURE = 'images/hud/button.png'
 export const ROTATE_BUTTON_SIZE = 110
-export const ROTATE_BUTTON_TOP = 24
+// Desktop: centred just above the tool bar and its 32 px cost label, clear of
+// the objective pill at the top.
+export const ROTATE_BUTTON_BOTTOM_DESKTOP = TOOLBAR_BOTTOM + TOOLBAR_HEIGHT + 32 + 16
 // Gap between the two buttons (px). Pulled in tight so the pair reads as
 // one rotation control.
 export const ROTATE_BUTTON_GAP = 16
@@ -153,25 +167,12 @@ export const INVENTORY_BUTTON_ICON_INSET_PCT = 24
 export const CRAFT_BUTTON_ICON = 'images/hud/saw.png'
 export const SYSTEM_BUTTON_ICON = 'images/hud/icons/settings.png'
 
-// Top-right row, ordered left→right as: SAW, BACKPACK, SETTINGS. The
-// settings (system) button sits closest to the right edge; backpack is
-// one step left; saw is two steps left. The -30 nudge per step tightens
-// the gap so the trio reads as a single row.
+// Startup-screen music toggle (`LobbyMusicButton`), in the top-right corner of
+// the safe area. The HUD menu toggles themselves live in the mobile/desktop
+// clusters (`MobileHud`, `DesktopHud`).
 export const SYSTEM_BUTTON_RIGHT = 100
-export const INVENTORY_BUTTON_RIGHT =
-  SYSTEM_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
-export const CRAFT_BUTTON_RIGHT =
-  INVENTORY_BUTTON_RIGHT + INVENTORY_BUTTON_SIZE - 30
-// Desktop snaps the trio into the actual top-right corner. The frame is
-// 1.25× the button (~17.5px padding per side), so a small negative
-// `top` and `right` nest the frame into the corner while keeping the
-// visible button safely inside the canvas.
-export const INVENTORY_BUTTON_TOP_DESKTOP = -15
-export const SYSTEM_BUTTON_RIGHT_DESKTOP = 4
-export const INVENTORY_BUTTON_RIGHT_DESKTOP =
-  SYSTEM_BUTTON_RIGHT_DESKTOP + INVENTORY_BUTTON_SIZE - 30
-export const CRAFT_BUTTON_RIGHT_DESKTOP =
-  INVENTORY_BUTTON_RIGHT_DESKTOP + INVENTORY_BUTTON_SIZE - 30
+export const INVENTORY_BUTTON_TOP_DESKTOP = 0
+export const SYSTEM_BUTTON_RIGHT_DESKTOP = 0
 
 // --- Craft double-menu -----------------------------------------------------
 // Mini inventory + list + details render as one centered row on every
@@ -346,59 +347,12 @@ export const ITEM_NOTIF_ICON_GAP = 14
 export const ITEM_NOTIF_TOP_INSET = NOTIFICATION_TOP_INSET + NOTIFICATION_HEIGHT + 12
 export const ITEM_NOTIF_BADGE_FONT_SIZE = 16
 
-// --- Stats orbs (top-center anchor, circular) -----------------------------
-// Each vital is a wood-framed circular orb. The `bar_container.png` art
-// is the shared empty state — a brown wooden ring with a dark inner
-// track and cream center. On top of that, a colored RING (per-stat art:
-// life_ring / hungry_ring / thirsty_ring) reveals clockwise from the 12
-// o'clock position as the stat fills, occupying the dark track. At 100%
-// the ring is fully drawn over the track; at 0% it's invisible.
-export const STATS_ORB_CONTAINER_TEXTURE = 'images/hud/icons/bar_container.png'
-export const STATS_ORB_SIZE = 72
-export const STATS_ORB_GAP = 8
-// Top-left anchor in fixed pixels so the cluster sits at the same
-// on-screen spot on both mobile and desktop. Percentage offsets drift
-// with viewport width and broke parity between platforms.
-export const STATS_ORB_TOP = 24
-export const STATS_ORB_LEFT = 360
-// Desktop has no front-camera notch and the chat/minimap chrome sits
-// outside the UI canvas, so the orbs can hug the top-left corner
-// instead of the centered mobile anchor.
-export const STATS_ORB_TOP_DESKTOP = 4
-export const STATS_ORB_LEFT_DESKTOP = 240
-// Per-stat ring-reveal SPRITESHEETS. Each is a 4×4 grid of 16 frames at
-// 64×64 per cell, total 256×256 — the mobile texture-optimizer caps all
-// HUD textures at 256×256, so we ship at that exact size to avoid lossy
-// resampling on device. Frame i shows the ring revealed clockwise from
-// 12 o'clock through (i+1)/16 of the full circle. The mask is computed
-// in real polar coordinates (Python pre-process step), so the cut edge
-// in every frame is a true radius — not an axis-aligned approximation.
-// At runtime we pick the frame matching the current stat percentage and
-// sample it with UVs; no quadrant/octant decomposition needed.
-export const STAT_SWEEP_TEXTURES: Record<StatKind, string> = {
-  life: 'images/hud/icons/life_sweep.png',
-  hunger: 'images/hud/icons/hungry_sweep.png',
-  thirst: 'images/hud/icons/thirsty_sweep.png'
-}
-export const STATS_ORB_SWEEP_FRAMES = 16
-export const STATS_ORB_SWEEP_COLS = 4
-export const STATS_ORB_SWEEP_ROWS = 4
-// Inner stat-symbol icons rendered inside the cream center of each orb.
-// Sit on top of bar_container and below the sweeping ring overlay, but
-// since the ring sits on the outer wood/track band the icon stays
-// readable regardless of fill state.
+// --- Vitals ------------------------------------------------------------------
+// Icons for the HUD vitals row (`VitalsRow`), shared by mobile and desktop.
 export const STAT_ICON_TEXTURES: Record<StatKind, string> = {
   life: 'images/hud/icons/life.png',
   hunger: 'images/hud/icons/hungry.png',
   thirst: 'images/hud/icons/thirst.png'
 }
-// Inset (each side, %) of the icon inside the orb. At 14% the icon
-// fills 72% of the orb (~2× larger than the 36% it occupied at the
-// earlier 32% inset). It now overflows the cream center and sits on
-// top of the dark track, but the icon textures have transparent
-// backgrounds so only the symbol pixels overlay the track.
-export const STATS_ORB_ICON_INSET_PCT = 14
-// Order drives the visual row left → right.
-export const STATS_ORDER: readonly StatKind[] = ['life', 'hunger', 'thirst']
 
 export const HANDS_ICON = 'images/hud/hands.png'

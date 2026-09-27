@@ -1,9 +1,13 @@
 import { objective, isSandbox, chapter } from '../../progression/state'
 import { protectPanelDismissal } from '../inventoryToggle'
-import { isObjectiveExpanded, toggleObjective } from '../progressionHud'
+import { isObjectiveExpanded, objectiveTop, toggleObjective } from '../progressionHud'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { getExpansionStatus } from '../../expansion/runtime'
 import { UI_GLASS, UI_INK } from '../visualTheme'
+import { getMobileLayout } from '../mobileLayout'
+import { isMobile } from '@dcl/sdk/platform'
+
+const DESKTOP_WIDTH = 520
 
 // Event-only objective feedback, above the crosshair and away from action buttons.
 export function RaidStatus(): ReactEcs.JSX.Element | null {
@@ -12,12 +16,17 @@ export function RaidStatus(): ReactEcs.JSX.Element | null {
   if (!status && isSandbox()) return null
   const guide = objective()
   const text = status ?? `${chapter()}/6 · ${guide.title} ${expanded ? '−' : '+'}`
+  // Rendered outside SafeArea: desktop centres a fixed-width pill on the
+  // interactable area so it never drifts into the tutorial or menu buttons.
+  const area = getMobileLayout()
   return (
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: '5%', left: '35%' },
-        width: '30%',
+        position: isMobile()
+          ? { top: '5%', left: '35%' }
+          : { top: objectiveTop(), left: area.left + Math.round((area.width - DESKTOP_WIDTH) / 2) },
+        width: isMobile() ? '30%' : DESKTOP_WIDTH,
         height: expanded ? 130 : 48,
         flexDirection: 'column',
         borderRadius: 8,

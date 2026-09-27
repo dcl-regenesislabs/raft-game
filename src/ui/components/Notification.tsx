@@ -1,4 +1,4 @@
-import { objectiveBottom } from '../progressionHud'
+import { objectiveBottom, topOverlayBand } from '../progressionHud'
 import { isSandbox } from '../../progression/state'
 import { UI_INK } from '../visualTheme'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
@@ -23,6 +23,7 @@ export function NotificationOverlay(): ReactEcs.JSX.Element | null {
   // resting NOTIFICATION_TOP_INSET at slide=1. Linear interpolation keeps
   // the easing concentrated in the slide curve itself.
   const inset = isSandbox() ? NOTIFICATION_TOP_INSET : objectiveBottom()
+  const band = topOverlayBand()
   const offscreenTop = -(NOTIFICATION_HEIGHT + NOTIFICATION_TOP_INSET)
   const top =
     offscreenTop + (inset - offscreenTop) * view.slide
@@ -30,8 +31,8 @@ export function NotificationOverlay(): ReactEcs.JSX.Element | null {
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { top: 0, left: 0 },
-        width: '100%',
+        position: { top: 0, left: band.left },
+        width: band.width,
         height: '100%',
         flexDirection: 'column',
         alignItems: 'center',

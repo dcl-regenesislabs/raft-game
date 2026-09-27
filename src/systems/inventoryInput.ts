@@ -1,24 +1,23 @@
 import { isMobile } from '@dcl/sdk/platform'
 import { InputAction, PointerEventType, inputSystem } from '@dcl/sdk/ecs'
 
-import { selectSlot, tickInventoryAnim } from '../ui/inventoryState'
+import { getEquippableSlots, selectSlot, tickInventoryAnim } from '../ui/inventoryState'
 
-const SLOT_KEYS: (InputAction | null)[] = [
+// Keys 1-4 equip the first four cells of the desktop tool bar, which lists the
+// equippable tools in inventory order (see `ToolBar`).
+const TOOL_KEYS: InputAction[] = [
   InputAction.IA_ACTION_3,
   InputAction.IA_ACTION_4,
   InputAction.IA_ACTION_5,
-  InputAction.IA_ACTION_6,
-  null
+  InputAction.IA_ACTION_6
 ]
 
 export function inventoryInputSystem(dt: number): void {
   tickInventoryAnim(dt)
   if (isMobile()) return
-  for (let i = 0; i < SLOT_KEYS.length; i++) {
-    const key = SLOT_KEYS[i]
-    if (key === null) continue
-    if (inputSystem.isTriggered(key, PointerEventType.PET_DOWN)) {
-      selectSlot(i)
-    }
+  for (let i = 0; i < TOOL_KEYS.length; i++) {
+    if (!inputSystem.isTriggered(TOOL_KEYS[i], PointerEventType.PET_DOWN)) continue
+    const slot = getEquippableSlots()[i]
+    if (slot !== undefined) selectSlot(slot)
   }
 }
