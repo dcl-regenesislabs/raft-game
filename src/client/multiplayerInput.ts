@@ -12,6 +12,7 @@ import { worldEntityId } from './worldEntities'
 import { ORIGIN, distance, tileObjectId } from '../multiplayer/world'
 import { isGameOver } from '../ui/gameOver'
 import { multiplayerReady } from './multiplayerState'
+import { playAvatarEmote } from './avatarEmotes'
 
 let shieldElapsed = 0
 export function multiplayerInputSystem(dt: number): void {
@@ -30,7 +31,7 @@ export function multiplayerInputSystem(dt: number): void {
       FloatingIsland.getOrNull(chest.island)?.active &&
       inputSystem.isTriggered(InputAction.IA_PRIMARY, PointerEventType.PET_DOWN, entity)
     ) {
-      sendWorldAction({ kind: 'islandLoot' })
+      if (sendWorldAction({ kind: 'islandLoot' })) playAvatarEmote('openChest')
       consumeWorldClick()
       return
     }
@@ -55,7 +56,7 @@ export function multiplayerInputSystem(dt: number): void {
   }
   if (!isPointerLocked() || !toolFireJustPressed()) return
   if (item.id === 'anchor') {
-    sendWorldAction({ kind: 'anchor' })
+    if (sendWorldAction({ kind: 'anchor' })) playAvatarEmote('throw')
     consumeWorldClick()
     return
   }
@@ -80,7 +81,8 @@ export function multiplayerInputSystem(dt: number): void {
   if (item.id === 'salvageAxe') {
     const debris = getLookAtGarbageEntity()
     if (debris !== null) {
-      sendWorldAction({ kind: 'collect', target: worldEntityId(debris), slot, hook: false })
+      if (sendWorldAction({ kind: 'collect', target: worldEntityId(debris), slot, hook: false }))
+        playAvatarEmote('swingWeaponOneHand')
       consumeWorldClick()
       return
     }
@@ -96,7 +98,8 @@ export function multiplayerInputSystem(dt: number): void {
     })
     .sort((a, b) => distance(a.position, player.position) - distance(b.position, player.position))[0]
   if (target) {
-    sendWorldAction({ kind: 'attack', slot, target: target.id })
+    if (sendWorldAction({ kind: 'attack', slot, target: target.id }))
+      playAvatarEmote(item.id === 'bow' ? 'throw' : 'swingWeaponOneHand')
     consumeWorldClick()
   }
 }

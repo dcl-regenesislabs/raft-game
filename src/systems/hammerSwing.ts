@@ -2,6 +2,7 @@ import { Transform } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { getHeldItemEntity, getHeldItemKind } from '../factories/heldItem'
+import { playAvatarEmote } from '../client/avatarEmotes'
 
 // Hammer swing: a quick downward arc + slight forward push, eased back to
 // rest. Triggered externally by raftBuilder when a platform is placed or
@@ -22,6 +23,7 @@ let swingElapsed = 0
 export function triggerHammerSwing(): void {
   if (getHeldItemKind() !== 'hammer') return
   swingElapsed = 1e-6
+  playAvatarEmote('swingWeaponOneHand')
 }
 
 export function hammerSwingSystem(dt: number): void {

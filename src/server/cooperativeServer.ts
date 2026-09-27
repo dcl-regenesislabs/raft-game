@@ -31,6 +31,7 @@ import {
 import { freshPlayer, freshWorld } from '../multiplayer/world'
 import { simulateWorld } from '../multiplayer/simulation'
 import { Chunk, makeDelta, splitMessage } from '../multiplayer/transport'
+import { createAvatarRelay } from './avatarRelay'
 
 type Peer = {
   session: string
@@ -60,6 +61,7 @@ export function runCooperativeServer(): void {
     })
   const versions = new Map<string, { session: string; release: string; at: number }>()
   const peers = new Map<string, Peer>()
+  const superseded = new Map<string, string[]>()
   const requests: { address: string; request: Request }[] = []
   let coordinator: LiveAuthority | null = null
   let startupPersisted = false
@@ -80,11 +82,15 @@ export function runCooperativeServer(): void {
   let transferSequence = 0
   let publishedWorld: PublicWorld | null = null
   const sharedDeltas = new Map<number, Delta>()
-  const positions = (): Map<string, Vec> => {
-    const found = new Map<string, Vec>()
+  const relayAvatars = createAvatarRelay((address) => !!peers.get(address)?.joined)
+  // Players present in the scene. The headless server only has a Transform once an avatar has
+  // moved since the scene (re)started, so presence must not wait for one: clients lock movement
+  // until they join, and requiring a position deadlocked every idle player after a server reload.
+  const presentPlayers = (): Map<string, Vec | null> => {
+    const found = new Map<string, Vec | null>()
     for (const [entity, identity] of engine.getEntitiesWith(PlayerIdentityData)) {
       const t = Transform.getOrNull(entity)
-      if (t) found.set(identity.address.toLowerCase(), { ...t.position })
+      found.set(identity.address.toLowerCase(), t ? { ...t.position } : null)
     }
     return found
   }
@@ -166,10 +172,23 @@ export function runCooperativeServer(): void {
       reject('This raft is full. Retrying…')
       return
     }
-    // One active session per wallet. A second device cannot take over while the first is live.
-    if (previous && previous.session !== data.session && Date.now() - previous.at < MULTIPLAYER_TIMEOUT_S * 1000) {
-      reject('This wallet is playing on another device. Close it there to join.')
+    // One active session per wallet; the newest one takes over. Order is by server arrival, not client
+    // clocks, and displaced sessions stay rejected so two live devices cannot keep stealing it back.
+    if (superseded.get(address)?.includes(data.session)) {
+      reject('This wallet joined from another device. Reload to play here.')
       return
+    }
+    if (previous && previous.session !== data.session) {
+      const displaced = superseded.get(address) ?? []
+      displaced.push(previous.session)
+      superseded.set(address, displaced.slice(-8))
+      void worldRoom
+        .send(
+          'worldJoinRejected',
+          { session: previous.session, error: 'This wallet joined from another device. Reload to play here.' },
+          { to: [address] }
+        )
+        .catch(() => {})
     }
     const peer =
       previous?.session === data.session
@@ -244,17 +263,19 @@ export function runCooperativeServer(): void {
         await coordinator.reset(resetCandidate)
         resetCandidate = null
       } else {
-        const verified = positions()
+        const present = presentPlayers()
         const next = clone(coordinator.state)
         const online = new Set<string>()
         for (const [address, peer] of peers) {
           if (Date.now() - peer.at > MULTIPLAYER_TIMEOUT_S * 1000) {
             peers.delete(address)
+            // Once the active device leaves, an earlier displaced one may resume.
+            superseded.delete(address)
             backupRequested = true
             continue
           }
-          const position = verified.get(address)
-          if (!position) continue
+          if (!present.has(address)) continue
+          const position = present.get(address)
           const player = next.players[address] ?? (next.players[address] = freshPlayer(address))
           if (
             !player.sessions[peer.session] &&
@@ -278,7 +299,7 @@ export function runCooperativeServer(): void {
             }
             player.sessions[peer.session] = { sequence: 0, ok: true, error: '' }
           }
-          if (peer.playing && player.rescueCooldown <= 0) player.position = position
+          if (peer.playing && player.rescueCooldown <= 0 && position) player.position = position
         }
         const dt = Math.min(1, elapsed)
         elapsed = 0
@@ -336,6 +357,7 @@ export function runCooperativeServer(): void {
     sendTokens = 20
   engine.addSystem((dt) => {
     if (!worldRoom.isReady()) return
+    relayAvatars(dt)
     if (IS_PRODUCTION && !versionBusy && Date.now() >= versionPollAt) {
       versionBusy = true
       versionPollAt = Date.now() + 5000

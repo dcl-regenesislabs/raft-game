@@ -97,6 +97,7 @@ async function main() {
       PlayerIdentityData: {},
       Transform: { getOrNull: () => ({ position: { ...m.ORIGIN, y: m.ORIGIN.y + 1 } }) }
     },
+    './avatarRelay': { createAvatarRelay: () => () => {} },
     '../shared/messages': {
       worldRoom: {
         isReady: () => true,

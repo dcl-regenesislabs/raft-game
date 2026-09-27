@@ -1,6 +1,7 @@
 import { multiplayerInputSystem } from './client/multiplayerInput'
 import { MULTIPLAYER_ENABLED } from './config/gameConfig'
 import { initCooperativeClient } from './client/cooperativeClient'
+import { initAvatarPresence } from './client/avatarPresence'
 import { createSeabed } from './factories/seabed'
 import { createWaterFloorV2 } from './factories/water2'
 import { progressionSystem } from './progression/director'
@@ -246,6 +247,7 @@ export async function main(): Promise<void> {
     createWaterFloorV2(parcelGrid)
     setMusicTrack('game')
     initCooperativeClient()
+    initAvatarPresence()
   } else if (SKIP_LOBBY) {
     startGameDirectly(parcelGrid)
   } else {

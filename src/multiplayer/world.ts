@@ -10,6 +10,7 @@ import { TOWERS } from '../expansion/rules'
 import { CAMPAIGN } from '../progression/config'
 import { Action, Device, PlayerState, Slot, Tile, Vec, WorldState, WORLD_VERSION, clone, emptySlot } from './types'
 import { count, give, take, wear } from './inventory'
+import { applyDebugAction } from './debugTools'
 
 export const ORIGIN: Vec = {
   x: (PARCEL_GRID * PARCEL_SIZE_M) / 2,
@@ -110,7 +111,7 @@ export function random(world: WorldState): number {
 export function milestone(world: WorldState, event: string): void {
   if (!world.progress.events.includes(event)) world.progress.events.push(event)
 }
-export function chapter(world: WorldState): number {
+export function chapter(world: Pick<WorldState, 'progress'>): number {
   const p = world.progress
   if (p.wins >= 3) return 6
   if (p.wins === 2) return 5
@@ -152,7 +153,7 @@ function consumeCup(player: PlayerState, slot: number): void {
   tool(player, slot, ['freshWater'])
   player.slots[slot] = { id: 'cup', count: 1, durability: 0 }
 }
-function createDevice(kind: string, yawDeg: number, support?: Device['support']): Device {
+export function createDevice(kind: string, yawDeg: number, support?: Device['support']): Device {
   const health = (getExpansionItem(kind)?.health ?? 100) + (support === 'towerPlatform' ? 150 : support ? 400 : 0)
   return {
     kind,
@@ -202,6 +203,7 @@ export function applyAction(world: WorldState, player: PlayerState, action: Acti
     player.fishing = null
     return
   }
+  if (action.kind === 'debug') return applyDebugAction(world, player, action)
   requireRule(!player.dead, 'Respawn first')
   switch (action.kind) {
     case 'craft': {

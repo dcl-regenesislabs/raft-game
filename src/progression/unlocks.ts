@@ -50,14 +50,11 @@ const advanced = [
   'rescueRadio',
   'circuitBoard'
 ]
+// Items each chapter unlocks, in chapter order (index 0 = chapter 1).
+export const CHAPTER_ITEMS: readonly (readonly string[])[] = [starter, home, defense, engineering, advanced, ['transmitterCore']]
 export function requiredChapter(id: string): number {
-  if (starter.includes(id)) return 1
-  if (home.includes(id)) return 2
-  if (defense.includes(id)) return 3
-  if (engineering.includes(id)) return 4
-  if (advanced.includes(id)) return 5
-  if (id === 'transmitterCore') return 6
-  return Infinity
+  const index = CHAPTER_ITEMS.findIndex((items) => items.includes(id))
+  return index < 0 ? Infinity : index + 1
 }
 
 export function recipeAvailable(stage: number, events: readonly string[], id: string): boolean {

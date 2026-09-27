@@ -55,5 +55,8 @@ export const worldRoom = registerMessages({
   worldResult: Schemas.Map({ payload: Schemas.String }),
   // Append only: preserve the original message layouts/ordering for old loaded scenes.
   worldRelease: Schemas.Map({ payload: Schemas.String }),
-  worldClientVersion: Schemas.Map({ payload: Schemas.String })
+  worldClientVersion: Schemas.Map({ payload: Schemas.String }),
+  // Cosmetic presence: client → authority (own state), authority → everyone (JSON [address, presence][]).
+  worldAvatar: Schemas.Map({ payload: Schemas.String }),
+  worldAvatars: Schemas.Map({ payload: Schemas.String })
 })

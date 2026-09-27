@@ -28,6 +28,7 @@ const mocks = {
     }
   },
   '../client/worldEntities': { worldEntityId: e => String(e) },
+  '../client/avatarEmotes': { playAvatarEmote: () => {} },
   '@dcl/sdk/ecs': { engine: { RootEntity: 0, removeEntity: remove,
     *getEntitiesWith() { for (const [e] of [...garbage]) yield [e] } },
     Transform: component(transforms), PointerEvents: { deleteFrom() {} } },

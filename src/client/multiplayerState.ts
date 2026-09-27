@@ -1,4 +1,4 @@
-import { Action, PlayerState, RESET_ADMIN, Snapshot } from '../multiplayer/types'
+import { Action, PlayerState, Snapshot, mayResetWorld } from '../multiplayer/types'
 let enabled = false
 let snapshot: Snapshot | null = null
 let sender: ((action: Action) => boolean) | null = null
@@ -43,7 +43,7 @@ export function getMultiplayerPlayer(): PlayerState | null {
   return snapshot?.player ?? null
 }
 export function canResetWorld(): boolean {
-  return snapshot?.player.address === RESET_ADMIN
+  return !!snapshot && mayResetWorld(snapshot.player.address)
 }
 export function sendWorldAction(action: Action): boolean {
   return enabled && ready && sender !== null && sender(action)

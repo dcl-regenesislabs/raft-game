@@ -1,7 +1,16 @@
 // Plain data only: shared by the headless authority, renderer and regression harness.
+import { IS_PRODUCTION } from '../config/env'
 export const PROTOCOL_VERSION = 1
 export const WORLD_VERSION = 1
 export const RESET_ADMIN = '0x481bed8645804714efd1de3f25467f78e7ba07d6'
+// Previews let every tester reset; the deployed world (raft.dcl.eth) is admin-only.
+export function mayResetWorld(address: string, production: boolean = IS_PRODUCTION): boolean {
+  return !production || address === RESET_ADMIN
+}
+// Debug phase kits and layouts exist only in previews, never on the deployed world.
+export function debugToolsAllowed(production: boolean = IS_PRODUCTION): boolean {
+  return !production
+}
 export type Vec = { x: number; y: number; z: number }
 export type Slot = { id: string; count: number; durability: number }
 export type Device = {
@@ -122,6 +131,8 @@ export type Action =
     }
   | { kind: 'swap'; a: number; b: number; expected: Slot }
   | { kind: 'respawn' | 'reset' | 'islandLoot' | 'chefGift' | 'anchor' }
+  | { kind: 'debug'; op: DebugOp; phase: number }
+export type DebugOp = 'items' | 'build' | 'vitals'
 export type Request = { protocol: number; generation: number; session: string; sequence: number; action: Action }
 export type ActionResult = {
   session: string

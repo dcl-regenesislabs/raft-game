@@ -1,4 +1,4 @@
-import { Request, ActionResult, WorldState, RESET_ADMIN, PROTOCOL_VERSION, clone } from './types'
+import { Request, ActionResult, WorldState, PROTOCOL_VERSION, clone, mayResetWorld } from './types'
 import { freshPlayer, freshWorld, reduceAction } from './world'
 import { WorldRepository } from './persistence'
 
@@ -26,7 +26,7 @@ export function executeRequest(
   let next = world
   try {
     if (request.action.kind === 'reset') {
-      if (address !== RESET_ADMIN) throw new Error('Only the world administrator may reset')
+      if (!mayResetWorld(address)) throw new Error('Only the world administrator may reset')
       next = freshWorld(world.generation + 1)
       next.revision = world.revision
       next.players[address] = freshPlayer(address)

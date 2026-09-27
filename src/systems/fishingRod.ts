@@ -1,5 +1,6 @@
 import { isMultiplayer, sendWorldAction, getMultiplayerPlayer } from '../client/multiplayerState'
 import { getMultiplayerSnapshot } from '../client/multiplayerState'
+import { playAvatarEmote } from '../client/avatarEmotes'
 import { Entity, Transform, engine } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
@@ -100,6 +101,22 @@ let charging = false
 // Sine clock used for the screaming-bite pulse. Driven from the line's
 // reactElapsed so the pulse only animates while a fish is biting.
 let biteIntensity = 0
+// Launch parameters of the live cast, published to crewmates as avatar presence.
+let castId = 0
+let castOrigin = Vector3.Zero()
+let castVelocity = Vector3.Zero()
+const CAST_PHASES = ['flying', 'idle', 'biting', 'reeling'] as const
+
+export function getLocalRodCast(): {
+  id: number
+  origin: Vector3
+  velocity: Vector3
+  phase: (typeof CAST_PHASES)[number]
+} | null {
+  if (lineEntity === null) return null
+  const phase = CAST_PHASES[FishingLine.getOrNull(lineEntity)?.phase ?? FishingPhase.Reeling] ?? 'reeling'
+  return { id: castId, origin: castOrigin, velocity: castVelocity, phase }
+}
 
 export function getFishingChargeT(): number {
   return chargeT
@@ -237,6 +254,10 @@ function spawnAndThrow(handPos: Vector3, strength: number): void {
   const speed =
     HOOK_MIN_THROW_SPEED + (HOOK_MAX_THROW_SPEED - HOOK_MIN_THROW_SPEED) * strength
   setRodIdleLineSuppressed(true)
+  castId = Date.now()
+  castOrigin = Vector3.create(handPos.x, handPos.y, handPos.z)
+  castVelocity = Vector3.create(aim.x * speed, aim.y * speed, aim.z * speed)
+  playAvatarEmote('throw')
   lineEntity = createHookEntity()
   if (ropeEntity === null) ropeEntity = createRopeEntity(LINE_COLOR)
   if (warningEntity === null) warningEntity = createFishingWarningSprite()

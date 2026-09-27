@@ -113,9 +113,11 @@ async function main() {
         }
       },
       PlayerIdentityData: {},
-      Transform: { getOrNull: () => ({ position: { ...m.ORIGIN, y: m.ORIGIN.y + 1 } }) }
+      // The admin has no Transform, like an avatar that has not moved since a server reload: it must still join.
+      Transform: { getOrNull: (e) => (e === 3 ? null : { position: { ...m.ORIGIN, y: m.ORIGIN.y + 1 } }) }
     },
     '../shared/messages': { worldRoom: room },
+    './avatarRelay': { createAvatarRelay: () => () => {} },
     '../config/gameConfig': {
       MULTIPLAYER_MAX_PENDING: 64,
       MULTIPLAYER_MAX_PLAYERS: 32,
@@ -273,10 +275,14 @@ async function main() {
   await until(() => a.state.multiplayerReady() && b.state.multiplayerReady(), 'Reconnect failed')
   assert.equal(a.state.getMultiplayerSnapshot().player.slots[12].id, 'potato')
   const duplicate = client(A)
+  await until(() => duplicate.state.multiplayerReady(), 'Newest session did not take over the wallet')
   await step(80)
-  assert.equal(duplicate.state.multiplayerReady(), false)
-  assert(a.state.multiplayerReady())
-  console.log('PASS empty-world pause, reconnect persistence and duplicate wallet exclusion')
+  assert(duplicate.state.multiplayerReady(), 'Displaced session must not steal the wallet back')
+  assert.equal(a.state.multiplayerReady(), false)
+  assert.equal(duplicate.state.getMultiplayerSnapshot().player.slots[12].id, 'potato')
+  clients.splice(clients.indexOf(duplicate), 1)
+  await until(() => a.state.multiplayerReady(), 'Displaced session did not resume after the new device left')
+  console.log('PASS empty-world pause, reconnect persistence and newest-session wallet takeover')
   // Inspect persisted state after coordinator commits, independent from the clients.
   const saved = await new m.WorldRepository(storage, 'cold-start').load()
   assert(saved.tiles['2,0'])

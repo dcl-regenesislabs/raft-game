@@ -1,5 +1,6 @@
 import { getMultiplayerSnapshot, isMultiplayer, sendWorldAction } from '../client/multiplayerState'
 import { worldEntityId } from '../client/worldEntities'
+import { playAvatarEmote } from '../client/avatarEmotes'
 import { Entity, PointerEvents, Transform, engine } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
@@ -86,6 +87,16 @@ let grabbedItems: GrabbedItem[] = []
 // render the charge meter at the crosshair.
 let chargeT = 0
 let charging = false
+// Launch parameters of the live cast, published to crewmates as avatar presence.
+let castId = 0
+let castOrigin = Vector3.Zero()
+let castVelocity = Vector3.Zero()
+
+export function getLocalHookCast(): { id: number; origin: Vector3; velocity: Vector3; reeling: boolean } | null {
+  if (hookEntity === null) return null
+  const reeling = Hook.getOrNull(hookEntity)?.phase !== HookPhase.Flying
+  return { id: castId, origin: castOrigin, velocity: castVelocity, reeling }
+}
 
 export function getThrowChargeT(): number {
   return chargeT
@@ -216,10 +227,14 @@ function spawnAndThrow(handPos: Vector3, strength: number): void {
     HOOK_MIN_THROW_SPEED + (HOOK_MAX_THROW_SPEED - HOOK_MIN_THROW_SPEED) * strength
   hookEntity = createHookEntity()
   if (ropeEntity === null) ropeEntity = createRopeEntity()
+  castId = Date.now()
+  castOrigin = Vector3.create(handPos.x, handPos.y, handPos.z)
+  castVelocity = Vector3.create(aim.x * speed, aim.y * speed, aim.z * speed)
+  playAvatarEmote('throw')
   Hook.create(hookEntity, {
     phase: HookPhase.Flying,
     elapsed: 0,
-    velocity: Vector3.create(aim.x * speed, aim.y * speed, aim.z * speed)
+    velocity: castVelocity
   })
   const transform = Transform.getMutable(hookEntity)
   transform.position = Vector3.create(handPos.x, handPos.y, handPos.z)

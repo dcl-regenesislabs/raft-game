@@ -8,7 +8,7 @@ export function predictSnapshot(base: Snapshot, pending: Request[], position?: V
   let world: WorldState = { ...base.world, players: { [base.player.address]: clone(base.player) } }
   if (position) world.players[base.player.address].position = { ...position }
   for (const request of pending) {
-    if (request.generation !== world.generation || ['reset', 'respawn'].includes(request.action.kind)) continue
+    if (request.generation !== world.generation || ['reset', 'respawn', 'debug'].includes(request.action.kind)) continue
     try {
       world = reduceAction(world, base.player.address, request.action)
     } catch {

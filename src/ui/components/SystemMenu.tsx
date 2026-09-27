@@ -1,4 +1,8 @@
-import { canResetWorld, isMultiplayer, multiplayerStatus, sendWorldAction } from '../../client/multiplayerState'
+import { canResetWorld, getMultiplayerSnapshot, isMultiplayer, multiplayerStatus, sendWorldAction } from '../../client/multiplayerState'
+import { debugToolsAllowed, DebugOp } from '../../multiplayer/types'
+import { DEBUG_PHASE_COUNT } from '../../multiplayer/debugTools'
+import { chapter as worldChapter } from '../../multiplayer/world'
+import { CAMPAIGN } from '../../progression/config'
 import { startChapterFixture, startTutorialCraftFixture } from '../../progression/fixtures'
 import { triggerGameOver, playAgain } from '../gameOver'
 import { startTestMode } from '../gameOver'
@@ -41,6 +45,7 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
     page = 'settings'
     return null
   }
+  if (isMultiplayer() && page === 'debug') return <MultiplayerDebugMenu />
   if (isMultiplayer()) return (
     <ModalFrame deviceInset>
       <Panel uiTransform={{ width: Math.min(420, getMobileLayout(true).width - 32), padding: 20, flexDirection: 'column' }}>
@@ -52,6 +57,7 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
           <SystemActionButton label="CANCEL" onPress={() => { resetConfirm = false }} />
           <SystemActionButton label="CONFIRM RESET FOR EVERYONE" onPress={() => { if (sendWorldAction({ kind: 'reset' })) { resetConfirm = false; setSystemMenuOpen(false) } }} />
         </UiEntity> : <SystemActionButton label="RESET WORLD FOR EVERYONE" onPress={() => { resetConfirm = true }} />)}
+        {debugToolsAllowed() && <SystemActionButton label="DEBUG TOOLS" onPress={() => { resetConfirm = false; page = 'debug' }} />}
         <SystemActionButton label="RESUME GAME" onPress={() => { resetConfirm = false; setSystemMenuOpen(false) }} />
       </Panel>
     </ModalFrame>
@@ -168,6 +174,52 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
           )}
         </UiEntity>
         <StatusLine status={getSystemStatus()} />
+      </Panel>
+    </ModalFrame>
+  )
+}
+
+// Preview-only phase shortcuts. Each press is a normal authority action, so all crewmates see it.
+function MultiplayerDebugMenu(): ReactEcs.JSX.Element {
+  const area = getMobileLayout(true)
+  const width = Math.min(520, area.width - 32)
+  const snapshot = getMultiplayerSnapshot()
+  const current = snapshot ? worldChapter(snapshot.world) : 0
+  const run = (op: DebugOp, phase: number) => {
+    if (sendWorldAction({ kind: 'debug', op, phase })) setSystemMenuOpen(false)
+  }
+  return (
+    <ModalFrame deviceInset>
+      <Panel uiTransform={{ width, height: Math.min(640, area.height - 32), padding: 20, flexDirection: 'column' }}>
+        <Label value="DEBUG TOOLS" fontSize={28} color={UI_INK} textAlign="middle-left" uiTransform={{ width: width - 100, height: 48, flexShrink: 0 }} />
+        <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 12, right: 12 } }}>
+          <XButton onPress={() => setSystemMenuOpen(false)} />
+        </UiEntity>
+        <Label
+          value={`Current phase: ${current}. ITEMS replaces your backpack. BUILD replaces the whole raft for everyone.`}
+          fontSize={14}
+          color={UI_MUTED}
+          uiTransform={{ width: '100%', height: 44, flexShrink: 0 }}
+        />
+        <UiEntity uiTransform={{ width: '100%', flexGrow: 1, flexDirection: 'column', overflow: 'scroll' }}>
+          {Array.from({ length: DEBUG_PHASE_COUNT }, (_, i) => i + 1).map((phase) => (
+            <UiEntity key={phase} uiTransform={{ width: '100%', flexDirection: 'column', flexShrink: 0, margin: { top: 6 } }}>
+              <Label
+                value={`${phase} · ${CAMPAIGN.chapterNames[phase - 1]}`}
+                fontSize={16}
+                color={phase === current ? UI_ACCENT : UI_INK}
+                textAlign="middle-left"
+                uiTransform={{ width: '100%', height: 26 }}
+              />
+              <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between' }}>
+                <SystemActionButton label="ITEMS" inline onPress={() => run('items', phase)} />
+                <SystemActionButton label="BUILD RAFT" inline onPress={() => run('build', phase)} />
+              </UiEntity>
+            </UiEntity>
+          ))}
+          <SystemActionButton label="HEAL, FEED & REVIVE" onPress={() => run('vitals', 1)} />
+          <SystemActionButton label="BACK" onPress={() => { page = 'settings' }} />
+        </UiEntity>
       </Panel>
     </ModalFrame>
   )

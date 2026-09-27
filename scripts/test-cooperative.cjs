@@ -3,7 +3,7 @@ const esbuild = require('esbuild')
 const path = require('node:path')
 const bundle = esbuild.buildSync({
   stdin: {
-    contents: `export * from './src/multiplayer/world'; export * from './src/multiplayer/types'; export * from './src/multiplayer/authority'; export * from './src/multiplayer/persistence'; export * from './src/multiplayer/inventory'; export * from './src/multiplayer/transport'; export * from './src/multiplayer/simulation';`,
+    contents: `export * from './src/multiplayer/world'; export * from './src/multiplayer/types'; export * from './src/multiplayer/authority'; export * from './src/multiplayer/persistence'; export * from './src/multiplayer/inventory'; export * from './src/multiplayer/transport'; export * from './src/multiplayer/simulation'; export * from './src/multiplayer/debugTools'; export * from './src/progression/unlocks';`,
     resolveDir: path.resolve(__dirname, '..'),
     loader: 'ts'
   },
@@ -152,9 +152,43 @@ class MemoryStorage {
     assert.deepEqual(result.world.players[B], w.players[B])
     assert.equal(result.world.players[A].life, 1)
   })
-  await test('Only authenticated admin resets, clearing offline bags and rejecting old generations', () => {
+  await test('Production resets are admin-only; previews let any tester reset', () => {
+    assert(!m.mayResetWorld(A, true))
+    assert(m.mayResetWorld(m.RESET_ADMIN, true))
+    assert(m.mayResetWorld(A, false))
+    assert(command(setup(), A, { kind: 'reset' }).result.ok)
+  })
+  await test('Preview debug tools set phases, replace kits and overwrite the raft with valid layouts', () => {
+    assert(!m.debugToolsAllowed(true))
+    let w = setup()
+    const kit = command(w, A, { kind: 'debug', op: 'items', phase: 3 })
+    assert(kit.result.ok, kit.result.error)
+    assert.equal(m.chapter(kit.world), 3)
+    for (const id of ['bow', 'armoryBench', 'hammer', 'wood']) assert(slot(kit.world.players[A], id) >= 0, id)
+    assert(!kit.world.players[A].slots.some((s) => s.id === 'potato'), 'Kit replaces the previous backpack')
+    assert.deepEqual(kit.world.players[B], w.players[B])
+    const built = command(kit.world, A, { kind: 'debug', op: 'build', phase: 5 })
+    assert(built.result.ok, built.result.error)
+    w = built.world
+    assert.equal(m.chapter(w), 5)
+    const devices = Object.values(w.tiles).filter((t) => t.device)
+    assert.equal(devices.length, [...new Set(m.CHAPTER_ITEMS.slice(0, 5).flat().filter(m.isPlaceable))].length)
+    assert.equal(w.tiles['0,0'].device, null)
+    assert(devices.find((t) => t.device.kind === 'storage').device.contents.some((s) => s.id === 'metalPlate'))
+    m.validateWorld(m.clone(w))
+    const shrunk = command(w, A, { kind: 'debug', op: 'build', phase: 1 })
+    assert(shrunk.result.ok, shrunk.result.error)
+    assert.equal(m.chapter(shrunk.world), 1)
+    assert(Object.values(shrunk.world.tiles).every((t) => Math.abs(t.x) <= 2 && Math.abs(t.z) <= 2))
+    assert.deepEqual(Object.values(shrunk.world.tiles).filter((t) => t.device).map((t) => t.device.kind).sort(), ['grill', 'purifier'])
+    m.validateWorld(m.clone(shrunk.world))
+    assert(!command(w, A, { kind: 'debug', op: 'build', phase: 9 }).result.ok)
+    const dead = m.clone(w)
+    dead.players[A].dead = true
+    assert(!command(dead, A, { kind: 'debug', op: 'vitals', phase: 1 }).world.players[A].dead)
+  })
+  await test('Admin reset clears offline bags and rejects old generations', () => {
     const w = setup()
-    assert(!command(w, A, { kind: 'reset' }).result.ok)
     const reset = command(w, m.RESET_ADMIN, { kind: 'reset' })
     assert(reset.result.ok)
     assert.equal(reset.world.generation, 2)
