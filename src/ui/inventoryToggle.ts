@@ -49,10 +49,10 @@ let postCloseLockoutSec = 0
 // Tracks the last open-state we wrote to the player's InputModifier so we
 // only mutate the component on transitions instead of every frame.
 let lastModifierApplied: boolean | null = null
-// Tracks the last "any HUD panel is up" state we wrote to PointerLock so
-// we release the cursor exactly once on open and leave the player free
-// to re-lock by clicking anywhere when they're done.
-let lastPanelOpenApplied: boolean | null = null
+// Start from the normal closed-panel state without writing a pointer-lock
+// request on the scene's first frame. Web browsers only allow that request
+// after a user gesture; the player can acquire it by clicking the canvas.
+let lastPanelOpenApplied = false
 
 export function protectPanelDismissal(): void {
   beginUiTouch()
