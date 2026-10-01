@@ -10,7 +10,7 @@ import { MobileHud } from './components/MobileHud'
 import { getMobileLayout } from './mobileLayout'
 import { Tutorial } from './components/Tutorial'
 import { isMobile } from '@dcl/sdk/platform'
-import ReactEcs, { ReactEcsRenderer, UiEntity, Label, InteractableArea } from '@dcl/sdk/react-ecs'
+import ReactEcs, { ReactEcsRenderer, UiEntity, Label } from '@dcl/sdk/react-ecs'
 
 import { ActionButton } from './components/ActionButton'
 import { DebugPanel } from './components/DebugPanel'
@@ -42,25 +42,21 @@ import { isStartupGateActive } from './startupGate'
 import { isStorageOpen } from './storageToggle'
 import { isSystemMenuOpen } from './systemSession'
 
-// Desktop lays out on 1920×1080; the SDK swaps any 16:9 size for 1600×720 on
+// Desktop lays out on 1600×900 (20% larger than the former 1920×1080 reference); the SDK swaps any 16:9 size for 1600×720 on
 // mobile, which is what the mobile HUD constants are tuned for (see
 // `getVirtualSize`). Insets are applied explicitly below via `screenInset: 'none'`,
 // otherwise the renderer would add a second device wrapper.
 export function setupUi(): void {
-  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1920, virtualHeight: 1080, screenInset: 'none' })
+  ReactEcsRenderer.setUiRenderer(ui, { virtualWidth: 1600, virtualHeight: 900, screenInset: 'none' })
 }
 
 // The renderer uses `screenInset: 'none'`, so the HUD applies its insets here.
-// Desktop explorers draw the minimap and chat over the canvas (roughly the left
-// quarter) and report them in `UiCanvasInformation.interactableArea`, so the
-// desktop HUD sits inside the SDK's InteractableArea. Mobile keeps its own
-// layout, which switches to hardware-only insets while the inventory is open.
-//
-// Insets arrive in canvas pixels; getMobileLayout / InteractableArea convert
-// them to virtual pixels so a child sized 100%×100% fills the safe area.
+// getMobileLayout preserves desktop left-side chrome clearance and uses small
+// hardware-safe margins on the other edges. Mobile keeps the full reported
+// interactable area, switching to hardware-only insets for the backpack.
+// Insets are converted to virtual pixels before React-ECS scales them.
 function SafeArea({ children }: { children?: ReactEcs.JSX.ReactNode }): ReactEcs.JSX.Element {
-  if (!isMobile()) return <InteractableArea>{children}</InteractableArea>
-  const { top, left, right, bottom } = getMobileLayout(isInventoryOpen() && !isStorageOpen())
+  const { top, left, right, bottom } = getMobileLayout(isMobile() && isInventoryOpen() && !isStorageOpen())
   return (
     <UiEntity
       uiTransform={{
@@ -150,9 +146,7 @@ function ui(): ReactEcs.JSX.Element {
           {/* All standalone HUD elements hide while ANY panel is up —
               each panel renders its own relevant sub-elements. */}
           {!anyPanel && !isMobile() && <Tutorial />}
-          {!anyPanel && !isMobile() && <BottomBar />}
           {!anyPanel && !isMobile() && <ActionButton />}
-          {!anyPanel && !isMobile() && <BuilderControls />}
           {!anyPanel && !isMobile() && <DesktopHud />}
           {isMultiplayer() && multiplayerStatus() === 'Confirming…' && <Label
             value="Confirming…" fontSize={16}
@@ -165,6 +159,15 @@ function ui(): ReactEcs.JSX.Element {
 
         </UiEntity>
       </SafeArea>
+      {!anyPanel && !isMobile() && (
+        <UiEntity uiTransform={{
+          positionType: 'absolute',
+          position: { top: 0, left: 0, right: 0, bottom: getMobileLayout().bottom }
+        }}>
+          <BottomBar />
+          <BuilderControls />
+        </UiEntity>
+      )}
       <NotificationOverlay />
       <ItemReceivedOverlay />
       {(!anyPanel || isEquipmentPickerOpen()) && isMobile() && <MobileHud />}

@@ -81,9 +81,10 @@ async function main() {
     }
   }
   const initial = m.freshWorld()
+  initial.progress.events.push('plate')
   for (const a of [A, B]) {
     initial.players[a] = m.freshPlayer(a)
-    for (const [id, n] of Object.entries({ hammer: 1, wood: 4, plastic: 4, rope: 2 }))
+    for (const [id, n] of Object.entries({ hammer: 1, wood: 4, plastic: 4, rope: 2, storage: 2, workbench: 1, metal: 1 }))
       m.give(initial.players[a].slots, id, n)
   }
   await new m.WorldRepository(storage, 'fixture').commit(initial)
@@ -236,6 +237,44 @@ async function main() {
   assert.deepEqual(bags, [2, 4])
   assert(!(await new m.WorldRepository(storage, 'not-per-action').load()).tiles['2,0'], 'Normal actions must not write the database')
   console.log('PASS competing predictions converge with exactly one debit and lost-ack recovery, without per-action writes')
+  // A placement queued immediately after building must follow the predicted tile,
+  // even though placing the storage changes that tile's identity a second time.
+  const builder = [a, b].find((c) => m.count(c.state.getMultiplayerSnapshot().player.slots, 'wood') === 4)
+  const other = [a, b].find((c) => c !== builder)
+  assert(other.state.sendWorldAction({ kind: 'place', target: m.tileObjectId(other.state.getMultiplayerSnapshot().world.tiles['1,1']),
+    slot: other.state.getMultiplayerSnapshot().player.slots.findIndex((s) => s.id === 'storage'), yawDeg: 0 }))
+  const bag = builder.state.getMultiplayerSnapshot().player.slots
+  assert(builder.state.sendWorldAction({ kind: 'build', x: 2, z: 1, slot: bag.findIndex((s) => s.id === 'hammer') }))
+  const predictedTile = builder.state.getMultiplayerSnapshot().world.tiles['2,1']
+  assert(builder.state.sendWorldAction({ kind: 'place', target: m.tileObjectId(predictedTile),
+    slot: bag.findIndex((s) => s.id === 'storage'), yawDeg: 0 }))
+  assert.equal(builder.state.getMultiplayerSnapshot().world.tiles['2,1'].device?.kind, 'storage')
+  await step(30)
+  for (const c of [a, b]) assert.equal(c.state.getMultiplayerSnapshot().world.tiles['2,1'].device?.kind, 'storage',
+    'Queued placement must survive authoritative build confirmation')
+  assert.equal(m.count(builder.state.getMultiplayerSnapshot().player.slots, 'storage'), 1)
+  console.log('PASS build then place before confirmation keeps the correct target identity')
+  const benchBag = builder.state.getMultiplayerSnapshot().player.slots
+  assert(builder.state.sendWorldAction({ kind: 'place',
+    target: m.tileObjectId(builder.state.getMultiplayerSnapshot().world.tiles['1,0']),
+    slot: benchBag.findIndex((s) => s.id === 'workbench'), yawDeg: 0 }))
+  const station = m.tileObjectId(builder.state.getMultiplayerSnapshot().world.tiles['1,0'])
+  assert(builder.state.sendWorldAction({ kind: 'craft', item: 'nails', station }))
+  await step(30)
+  assert(m.count(builder.state.getMultiplayerSnapshot().player.slots, 'nails') > 0,
+    'Craft queued against a predicted workbench must follow its confirmed identity')
+  console.log('PASS place then craft before confirmation keeps the correct station identity')
+  const replaceBag = builder.state.getMultiplayerSnapshot().player.slots
+  assert(builder.state.sendWorldAction({ kind: 'destroy',
+    target: m.tileObjectId(builder.state.getMultiplayerSnapshot().world.tiles['1,0']),
+    slot: replaceBag.findIndex((s) => s.id === 'hammer') }))
+  assert(builder.state.sendWorldAction({ kind: 'place',
+    target: m.tileObjectId(builder.state.getMultiplayerSnapshot().world.tiles['1,0']),
+    slot: replaceBag.findIndex((s) => s.id === 'storage'), yawDeg: 0 }))
+  await step(30)
+  assert.equal(builder.state.getMultiplayerSnapshot().world.tiles['1,0'].device?.kind, 'storage',
+    'Replacing a dismantled structure on a retained starter tile must follow confirmation')
+  console.log('PASS dismantle then replace before confirmation keeps the correct tile identity')
   unavailable = true
   dropChunk = true
   assert(

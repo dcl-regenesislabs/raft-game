@@ -1,0 +1,1044 @@
+[
+  {
+    "id": "alarmBell",
+    "native_min": [
+      -0.20605500042438507,
+      -0.40039101243019104,
+      -0.5
+    ],
+    "native_max": [
+      0.2070309966802597,
+      0.40039101243019104,
+      0.5
+    ],
+    "native_dimensions": [
+      0.4130859971046448,
+      0.8007820248603821,
+      1.0
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "ammoCrate",
+    "native_min": [
+      -0.5,
+      -0.23535199463367462,
+      -0.38085898756980896
+    ],
+    "native_max": [
+      0.5,
+      0.23535199463367462,
+      0.3789060115814209
+    ],
+    "native_dimensions": [
+      1.0,
+      0.47070398926734924,
+      0.7597649991512299
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.2,
+    "world_dimensions": [
+      1.2,
+      0.5648447871208191,
+      0.9117179989814758
+    ],
+    "bounds_error_m": 4.301910494497463e-10,
+    "bottom_y": 16.35000000043959,
+    "cardinal_tile_clearance_m": 0.9
+  },
+  {
+    "id": "antennaMast",
+    "native_min": [
+      -0.3710939884185791,
+      -0.5,
+      -0.18261699378490448
+    ],
+    "native_max": [
+      0.375,
+      0.5,
+      0.18066400289535522
+    ],
+    "native_dimensions": [
+      0.7460939884185791,
+      1.0,
+      0.3632809966802597
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "armoredFoundation",
+    "native_min": [
+      -1.45,
+      0.0,
+      -1.45
+    ],
+    "native_max": [
+      1.45,
+      0.16,
+      1.45
+    ],
+    "native_dimensions": [
+      2.9,
+      0.16,
+      2.9
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.9,
+      0.16,
+      2.9
+    ],
+    "bounds_error_m": 0.0,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.050000000000000044
+  },
+  {
+    "id": "armoryBench",
+    "native_min": [
+      -0.5,
+      -0.3710939884185791,
+      -0.33007800579071045
+    ],
+    "native_max": [
+      0.5,
+      0.3671880066394806,
+      0.3320310115814209
+    ],
+    "native_dimensions": [
+      1.0,
+      0.7382819950580597,
+      0.6621090173721313
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.8,
+    "world_dimensions": [
+      1.8,
+      1.3289075911045074,
+      1.1917962312698365
+    ],
+    "bounds_error_m": 4.185791158128893e-10,
+    "bottom_y": 16.349999999246556,
+    "cardinal_tile_clearance_m": 0.6
+  },
+  {
+    "id": "ballista",
+    "native_min": [
+      -0.5,
+      -0.28320300579071045,
+      -0.4375
+    ],
+    "native_max": [
+      0.5,
+      0.28125,
+      0.43554699420928955
+    ],
+    "native_dimensions": [
+      1.0,
+      0.5644530057907104,
+      0.8730469942092896
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "bandage",
+    "native_min": [
+      -0.45898398756980896,
+      -0.328125,
+      -0.5
+    ],
+    "native_max": [
+      0.4609380066394806,
+      0.328125,
+      0.5
+    ],
+    "native_dimensions": [
+      0.9199219942092896,
+      0.65625,
+      1.0
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "batteryBank",
+    "native_min": [
+      -0.5,
+      -0.3867189884185791,
+      -0.2695310115814209
+    ],
+    "native_max": [
+      0.5,
+      0.38476601243019104,
+      0.27148398756980896
+    ],
+    "native_dimensions": [
+      1.0,
+      0.7714850008487701,
+      0.5410149991512299
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "boardingShield",
+    "native_min": [
+      -0.3710939884185791,
+      -0.5,
+      -0.23632800579071045
+    ],
+    "native_max": [
+      0.3710939884185791,
+      0.5,
+      0.23339800536632538
+    ],
+    "native_dimensions": [
+      0.7421879768371582,
+      1.0,
+      0.4697260111570358
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "bow",
+    "native_min": [
+      -0.5,
+      -0.49804699420928955,
+      -0.06396500021219254
+    ],
+    "native_max": [
+      0.5,
+      0.5,
+      0.0664059966802597
+    ],
+    "native_dimensions": [
+      1.0,
+      0.9980469942092896,
+      0.13037099689245224
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "cropBed",
+    "native_min": [
+      -0.33789101243019104,
+      -0.21972699463367462,
+      -0.5
+    ],
+    "native_max": [
+      0.3398439884185791,
+      0.21972699463367462,
+      0.5
+    ],
+    "native_dimensions": [
+      0.6777350008487701,
+      0.43945398926734924,
+      1.0
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.6,
+    "world_dimensions": [
+      1.0843760013580324,
+      0.7031263828277589,
+      1.6
+    ],
+    "bounds_error_m": 4.301910494497463e-10,
+    "bottom_y": 16.350000000586117,
+    "cardinal_tile_clearance_m": 0.7
+  },
+  {
+    "id": "deckCannon",
+    "native_min": [
+      -0.5,
+      -0.40039101243019104,
+      -0.3789060115814209
+    ],
+    "native_max": [
+      0.5,
+      0.40039101243019104,
+      0.3828119933605194
+    ],
+    "native_dimensions": [
+      1.0,
+      0.8007820248603821,
+      0.7617180049419403
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "engine",
+    "native_min": [
+      -0.5,
+      -0.4570310115814209,
+      -0.45898398756980896
+    ],
+    "native_max": [
+      0.5,
+      0.4570310115814209,
+      0.4609380066394806
+    ],
+    "native_dimensions": [
+      1.0,
+      0.9140620231628418,
+      0.9199219942092896
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "engineeringBench",
+    "native_min": [
+      -0.48242199420928955,
+      -0.5,
+      -0.35351601243019104
+    ],
+    "native_max": [
+      0.484375,
+      0.5,
+      0.3554689884185791
+    ],
+    "native_dimensions": [
+      0.9667969942092896,
+      1.0,
+      0.7089850008487701
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.8,
+    "world_dimensions": [
+      1.7402345895767213,
+      1.8,
+      1.2761730015277863
+    ],
+    "bounds_error_m": 4.301910494497463e-10,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.6298827052116394
+  },
+  {
+    "id": "gate",
+    "native_min": [
+      -1.35,
+      0.0,
+      -0.15
+    ],
+    "native_max": [
+      1.35,
+      1.9999999999999998,
+      0.15
+    ],
+    "native_dimensions": [
+      2.7,
+      1.9999999999999998,
+      0.3
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.7,
+      1.9999999999999998,
+      0.3
+    ],
+    "bounds_error_m": 2.220446049250313e-16,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.1499999999999999
+  },
+  {
+    "id": "generator",
+    "native_min": [
+      -0.33789101243019104,
+      -0.3203119933605194,
+      -0.5
+    ],
+    "native_max": [
+      0.34179699420928955,
+      0.31835898756980896,
+      0.5
+    ],
+    "native_dimensions": [
+      0.6796880066394806,
+      0.6386709809303284,
+      1.0
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "harpoonTower",
+    "native_min": [
+      -0.3476560115814209,
+      -0.5,
+      -0.4960939884185791
+    ],
+    "native_max": [
+      0.3554689884185791,
+      0.5,
+      0.5
+    ],
+    "native_dimensions": [
+      0.703125,
+      1.0,
+      0.9960939884185791
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "improvedGrill",
+    "native_min": [
+      -0.5,
+      -0.2539060115814209,
+      -0.34375
+    ],
+    "native_max": [
+      0.5,
+      0.25195300579071045,
+      0.34570300579071045
+    ],
+    "native_dimensions": [
+      1.0,
+      0.5058590173721313,
+      0.6894530057907104
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.4,
+    "world_dimensions": [
+      1.4,
+      0.7082026243209838,
+      0.9652342081069946
+    ],
+    "bounds_error_m": 4.185791158128893e-10,
+    "bottom_y": 16.35000000058601,
+    "cardinal_tile_clearance_m": 0.8
+  },
+  {
+    "id": "lookoutPost",
+    "native_min": [
+      -1.35,
+      0.0,
+      -1.35
+    ],
+    "native_max": [
+      1.35,
+      3.65,
+      1.35
+    ],
+    "native_dimensions": [
+      2.7,
+      3.65,
+      2.7
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.7,
+      3.65,
+      2.7
+    ],
+    "bounds_error_m": 0.0,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.1499999999999999
+  },
+  {
+    "id": "netLauncher",
+    "native_min": [
+      -0.49023398756980896,
+      -0.5,
+      -0.3359380066394806
+    ],
+    "native_max": [
+      0.49023398756980896,
+      0.5,
+      0.33789101243019104
+    ],
+    "native_dimensions": [
+      0.9804679751396179,
+      1.0,
+      0.6738290190696716
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "powerRelay",
+    "native_min": [
+      -0.265625,
+      -0.5,
+      -0.26367199420928955
+    ],
+    "native_max": [
+      0.26757800579071045,
+      0.5,
+      0.265625
+    ],
+    "native_dimensions": [
+      0.5332030057907104,
+      1.0,
+      0.5292969942092896
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "railing",
+    "native_min": [
+      -1.35,
+      0.0,
+      -0.15
+    ],
+    "native_max": [
+      1.35,
+      1.0,
+      0.15
+    ],
+    "native_dimensions": [
+      2.7,
+      1.0,
+      0.3
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.7,
+      1.0,
+      0.3
+    ],
+    "bounds_error_m": 0.0,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.1499999999999999
+  },
+  {
+    "id": "rainCollector",
+    "native_min": [
+      -0.5,
+      -0.4375,
+      -0.5
+    ],
+    "native_max": [
+      0.5,
+      0.43945300579071045,
+      0.5
+    ],
+    "native_dimensions": [
+      1.0,
+      0.8769530057907104,
+      1.0
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.8,
+    "world_dimensions": [
+      1.8,
+      1.5785154104232788,
+      1.8
+    ],
+    "bounds_error_m": 2.0928953015086904e-10,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.6
+  },
+  {
+    "id": "repairKit",
+    "native_min": [
+      -0.5,
+      -0.3398439884185791,
+      -0.3515619933605194
+    ],
+    "native_max": [
+      0.5,
+      0.3398439884185791,
+      0.35742199420928955
+    ],
+    "native_dimensions": [
+      1.0,
+      0.6796879768371582,
+      0.708983987569809
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "rescueRadio",
+    "native_min": [
+      -0.5,
+      -0.20605500042438507,
+      -0.32226601243019104
+    ],
+    "native_max": [
+      0.5,
+      0.20507800579071045,
+      0.32226601243019104
+    ],
+    "native_dimensions": [
+      1.0,
+      0.4111330062150955,
+      0.6445320248603821
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "researchTable",
+    "native_min": [
+      -0.5,
+      -0.28710898756980896,
+      -0.3164060115814209
+    ],
+    "native_max": [
+      0.5,
+      0.28320300579071045,
+      0.3203119933605194
+    ],
+    "native_dimensions": [
+      1.0,
+      0.5703119933605194,
+      0.6367180049419403
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.8,
+    "world_dimensions": [
+      1.8,
+      1.026561588048935,
+      1.1460924088954927
+    ],
+    "bounds_error_m": 4.301910494497463e-10,
+    "bottom_y": 16.35000000077434,
+    "cardinal_tile_clearance_m": 0.6
+  },
+  {
+    "id": "ropeBarricade",
+    "native_min": [
+      -1.35,
+      0.0,
+      -0.125
+    ],
+    "native_max": [
+      1.35,
+      1.0,
+      0.125
+    ],
+    "native_dimensions": [
+      2.7,
+      1.0,
+      0.25
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.7,
+      1.0,
+      0.25
+    ],
+    "bounds_error_m": 0.0,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.1499999999999999
+  },
+  {
+    "id": "sail",
+    "native_min": [
+      -0.5,
+      -0.5,
+      -0.25585898756980896
+    ],
+    "native_max": [
+      0.5,
+      0.5,
+      0.25585898756980896
+    ],
+    "native_dimensions": [
+      1.0,
+      1.0,
+      0.5117179751396179
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "salvageAxe",
+    "native_min": [
+      -0.453125,
+      -0.5,
+      -0.09960900247097015
+    ],
+    "native_max": [
+      0.453125,
+      0.5,
+      0.10107400268316269
+    ],
+    "native_dimensions": [
+      0.90625,
+      1.0,
+      0.20068300515413284
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "scrapArmor",
+    "native_min": [
+      -0.5,
+      -0.4023439884185791,
+      -0.30273398756980896
+    ],
+    "native_max": [
+      0.5,
+      0.39648398756980896,
+      0.31054699420928955
+    ],
+    "native_dimensions": [
+      1.0,
+      0.7988279759883881,
+      0.6132809817790985
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "smelter",
+    "native_min": [
+      -0.39648398756980896,
+      -0.5,
+      -0.390625
+    ],
+    "native_max": [
+      0.39648398756980896,
+      0.5,
+      0.3945310115814209
+    ],
+    "native_dimensions": [
+      0.7929679751396179,
+      1.0,
+      0.7851560115814209
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.5,
+    "world_dimensions": [
+      1.1894519627094269,
+      1.5,
+      1.1777340173721313
+    ],
+    "bounds_error_m": 4.301910494497463e-10,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.9052740186452866
+  },
+  {
+    "id": "spikeStrip",
+    "native_min": [
+      -1.35,
+      0.0,
+      -0.3499999999999999
+    ],
+    "native_max": [
+      1.35,
+      0.5,
+      0.3499999999999999
+    ],
+    "native_dimensions": [
+      2.7,
+      0.5,
+      0.6999999999999998
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.7,
+      0.5,
+      0.6999999999999998
+    ],
+    "bounds_error_m": 5.551115123125783e-17,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.1499999999999999
+  },
+  {
+    "id": "stairs",
+    "native_min": [
+      -1.1999999999999997,
+      0.0,
+      -1.35
+    ],
+    "native_max": [
+      1.2,
+      2.6500000000000004,
+      1.35
+    ],
+    "native_dimensions": [
+      2.3999999999999995,
+      2.6500000000000004,
+      2.7
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.3999999999999995,
+      2.6500000000000004,
+      2.7
+    ],
+    "bounds_error_m": 4.440892098500626e-16,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.1499999999999999
+  },
+  {
+    "id": "steeringWheel",
+    "native_min": [
+      -0.421875,
+      -0.5,
+      -0.13769499957561493
+    ],
+    "native_max": [
+      0.4257810115814209,
+      0.5,
+      0.1367190033197403
+    ],
+    "native_dimensions": [
+      0.8476560115814209,
+      1.0,
+      0.2744140028953552
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  },
+  {
+    "id": "towerPlatform",
+    "native_min": [
+      -1.35,
+      0.0,
+      -1.35
+    ],
+    "native_max": [
+      1.35,
+      2.3,
+      1.35
+    ],
+    "native_dimensions": [
+      2.7,
+      2.3,
+      2.7
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.7,
+      2.3,
+      2.7
+    ],
+    "bounds_error_m": 0.0,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.1499999999999999
+  },
+  {
+    "id": "upperFloor",
+    "native_min": [
+      -1.35,
+      0.0,
+      -1.35
+    ],
+    "native_max": [
+      1.35,
+      2.3,
+      1.35
+    ],
+    "native_dimensions": [
+      2.7,
+      2.3,
+      2.7
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.7,
+      2.3,
+      2.7
+    ],
+    "bounds_error_m": 0.0,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.1499999999999999
+  },
+  {
+    "id": "wall",
+    "native_min": [
+      -1.35,
+      0.0,
+      -0.125
+    ],
+    "native_max": [
+      1.35,
+      2.0,
+      0.125
+    ],
+    "native_dimensions": [
+      2.7,
+      2.0,
+      0.25
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.0,
+    "world_dimensions": [
+      2.7,
+      2.0,
+      0.25
+    ],
+    "bounds_error_m": 0.0,
+    "bottom_y": 16.349999999999998,
+    "cardinal_tile_clearance_m": 0.1499999999999999
+  },
+  {
+    "id": "waterTank",
+    "native_min": [
+      -0.39257800579071045,
+      -0.4335939884185791,
+      -0.5
+    ],
+    "native_max": [
+      0.39648398756980896,
+      0.43164101243019104,
+      0.5
+    ],
+    "native_dimensions": [
+      0.7890619933605194,
+      0.8652350008487701,
+      1.0
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.6,
+    "world_dimensions": [
+      1.2624991893768311,
+      1.3843760013580324,
+      1.6
+    ],
+    "bounds_error_m": 4.301910494497463e-10,
+    "bottom_y": 16.349999999330272,
+    "cardinal_tile_clearance_m": 0.7
+  },
+  {
+    "id": "workbench",
+    "native_min": [
+      -0.5,
+      -0.2929689884185791,
+      -0.3867189884185791
+    ],
+    "native_max": [
+      0.5,
+      0.2890619933605194,
+      0.38085898756980896
+    ],
+    "native_dimensions": [
+      1.0,
+      0.5820309817790985,
+      0.7675779759883881
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": true,
+    "scale": 1.8,
+    "world_dimensions": [
+      1.8,
+      1.0476557672023774,
+      1.3816403567790985
+    ],
+    "bounds_error_m": 4.301910494497463e-10,
+    "bottom_y": 16.349999999246556,
+    "cardinal_tile_clearance_m": 0.6
+  },
+  {
+    "id": "zombie-animated",
+    "native_min": [
+      -0.008499999452382334,
+      -2.894435182340473e-12,
+      -0.0026147445451897844
+    ],
+    "native_max": [
+      0.008500000048428769,
+      0.01693359813987616,
+      0.002614744247166567
+    ],
+    "animations": 6,
+    "skins": 1,
+    "integrated": false,
+    "measurement_note": "Unskinned node bounds; not valid for choosing character scale. Evaluate skeletal poses.",
+    "unskinned_mesh_dimensions": [
+      0.016999999500811103,
+      0.016933598142770595,
+      0.0052294887923563516
+    ]
+  },
+  {
+    "id": "zombie",
+    "native_min": [
+      -0.27929699420928955,
+      -0.5,
+      -0.17382800579071045
+    ],
+    "native_max": [
+      0.28125,
+      0.5,
+      0.1796880066394806
+    ],
+    "native_dimensions": [
+      0.5605469942092896,
+      1.0,
+      0.35351601243019104
+    ],
+    "animations": 0,
+    "skins": 0,
+    "integrated": false
+  }
+]

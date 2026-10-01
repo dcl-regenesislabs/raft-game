@@ -1,4 +1,5 @@
 import { getRaftBuilderMode } from '../../systems/raftBuilder'
+import { isHookCharging } from '../../systems/hookThrower'
 import { getConstructionPlacementMode } from '../../systems/constructionPlacement'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { isMobile } from '@dcl/sdk/platform'
@@ -11,6 +12,7 @@ import { UI_GLASS, UI_BORDER, UI_INK } from '../visualTheme'
 
 // Multiple independent actions for the renderer-selected nearby structure.
 export function ProximityActions(): ReactEcs.JSX.Element | null {
+  if (isMobile() && isHookCharging()) return null
   const nearby = getProximityConstruction()
   if (!nearby || getRaftBuilderMode() !== 'idle' || getConstructionPlacementMode() !== 'idle') return null
   const state = resolveMobileControls()

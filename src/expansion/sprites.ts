@@ -1,3 +1,4 @@
+import { RAFT_DECK_SURFACE_OFFSET_M } from '../factories/sceneLevels'
 import { getExpansionModel } from './models'
 import {
   ColliderLayer, Entity, GltfContainer, Material,
@@ -32,6 +33,7 @@ export function paintSprite(entity: Entity, kind: string, tint?: Color4): void {
 // The root has uniform world scale. Sprite and physical shapes are siblings:
 // both inherit the placed rotation, without following the camera.
 export function attachPrototypeSprite(root: Entity, kind: string, physical = true): void {
+  const deckBaseY = RAFT_DECK_SURFACE_OFFSET_M - 0.9
   const children: Entity[] = []
   const sprite = engine.addEntity()
   children.push(sprite)
@@ -46,13 +48,13 @@ export function attachPrototypeSprite(root: Entity, kind: string, physical = tru
     GltfContainer.create(sprite, { src: model.src, visibleMeshesCollisionMask: 0, invisibleMeshesCollisionMask: 0 })
   } else {
     const size = spriteSize(kind)
-    Transform.create(sprite, { parent: root, position: Vector3.create(0, size / 2 - 0.7, 0), scale: Vector3.create(size, size, 1) })
+    Transform.create(sprite, { parent: root, position: Vector3.create(0, size / 2 + deckBaseY, 0), scale: Vector3.create(size, size, 1) })
     paintSprite(sprite, kind)
   }
   const box = (x: number, y: number, z: number, w: number, h: number, d: number) => {
     const e = engine.addEntity()
     children.push(e)
-    Transform.create(e, { parent: root, position: Vector3.create(x, y - 0.7, z), scale: Vector3.create(w, h, d) })
+    Transform.create(e, { parent: root, position: Vector3.create(x, y + deckBaseY, z), scale: Vector3.create(w, h, d) })
     MeshCollider.setBox(e, ColliderLayer.CL_PHYSICS)
   }
   // Pointer ray targets stay on the logical root so placement can resolve tiles.
@@ -71,7 +73,7 @@ export function attachPrototypeSprite(root: Entity, kind: string, physical = tru
       const angle = Math.atan2(rise, run)
       Transform.create(ramp, {
         parent: root,
-        position: Vector3.create(0, rise / 2 - 0.7 - 0.05 / Math.cos(angle), 0),
+        position: Vector3.create(0, rise / 2 + deckBaseY - 0.05 / Math.cos(angle), 0),
         rotation: Quaternion.fromEulerDegrees(-angle * 180 / Math.PI, 0, 0),
         scale: Vector3.create(2, 0.1, Math.hypot(rise, run))
       })

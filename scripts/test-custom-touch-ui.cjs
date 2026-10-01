@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const vm = require('node:vm')
 const ts = require('typescript')
-let nearby = null, builder = 'idle', placement = 'idle', pressed = false, bite = false
+let nearby = null, builder = 'idle', placement = 'idle', pressed = false, bite = false, hookCharging = false
 const state = { pointer: { visible: true, icon: 'hook.png', label: 'Cast' }, e: { visible: true, icon: 'e.png' }, f: { visible: true, icon: 'f.png' }, shortcuts: [{ visible: false, icon: 'erase.png' }] }
 const actions = { IA_POINTER: 0, IA_PRIMARY: 1, IA_SECONDARY: 2, IA_ACTION_3: 3, IA_ACTION_6: 6, IA_JUMP: 7 }
 const createElement = (type, props, ...children) => typeof type === 'function' ? type(props) : ({ type, props: props || {}, children: children.flat().filter(Boolean) })
@@ -15,6 +15,7 @@ const mocks = {
   '../../systems/raftBuilder': { getRaftBuilderMode: () => builder },
   '../../systems/constructionPlacement': { getConstructionPlacementMode: () => placement },
   '../../systems/fishingRod': { isFishingBiting: () => bite, getFishingBiteIntensity: () => 1 },
+  '../../systems/hookThrower': { isHookCharging: () => hookCharging },
   '../mobileLayout': { getMobileLayout: () => ({ right: 20, bottom: 12 }) },
   '../mobileToolInput': { MOBILE_TOOL_ACTION: 6 },
   '../theme': { ACTION_BUTTON_TEXTURE: 'rest.png', ACTION_BUTTON_TEXTURE_PRESSED: 'pressed.png' }
@@ -55,6 +56,15 @@ bindings(render())[0].props.onMouseDown()
 feedback.clearTouchFeedback()
 assert.equal(bindings(render())[0].props.uiBackground.texture.src, 'images/hud/controls/rest.png')
 pressed = false; bite = true; assert.equal(bindings(render())[0].props.uiBackground.texture.src, 'images/hud/controls/pressed.png')
+const beforeCharge = bindings(render()).map(n => JSON.stringify(n.props.uiTransform))
+const beforeActions = bound(render())
+hookCharging = true
+tree = render()
+assert.deepEqual(bound(tree), beforeActions, 'charging preserves input bindings until finger release')
+assert.deepEqual(bindings(tree).map(n => JSON.stringify(n.props.uiTransform)), beforeCharge)
+assert(bindings(tree).every(n => n.props.uiBackground.color.a === 0 && n.children.length === 0), 'all action artwork hides while charging')
+hookCharging = false
+assert(bindings(render()).every(n => n.props.uiBackground.texture && n.children.length === 1), 'release or cancellation restores icons')
 state.pointer.visible = false; assert.equal(render(), null)
 console.log('PASS custom input bindings, native jump binding, safe insets, fixed jump position, proximity deduplication, hammer controls, equipment icon, pressed/bite feedback and hidden-state removal')
 
@@ -86,4 +96,3 @@ assert.equal(panel().children[0].props.height, 564)
 safeHeight = 520
 assert.equal(panel().props.uiTransform.height, 380)
 console.log('PASS tool picker fits contents, expands beyond old cap and respects shorter safe areas')
-

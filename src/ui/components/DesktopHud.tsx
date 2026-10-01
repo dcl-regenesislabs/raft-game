@@ -7,8 +7,8 @@ import { CRAFT_BUTTON_ICON, INVENTORY_BUTTON_ICON, SYSTEM_BUTTON_ICON } from '..
 import { HUD_CLUSTER_WIDTH, HUD_ROW_GAP, HudIcon, VitalsRow } from './HudPieces'
 
 // Desktop twin of the mobile cluster: vitals over the menu toggles, pinned to
-// the interactable area's top-right corner (SafeArea already excludes the
-// explorer's minimap and chat). Tools live in the bottom tool bar instead of
+// the padded canvas's top-right corner (SafeArea preserves left-side clearance
+// for the explorer's minimap and chat). Tools live in the bottom tool bar instead of
 // the mobile "change tool" dropdown.
 export function DesktopHud(): ReactEcs.JSX.Element {
   return (

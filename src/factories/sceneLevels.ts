@@ -12,6 +12,11 @@ export const SEABED_Y = SCENE_BASE_Y
 // lands at PLATFORM_SIZE_Y/2 above WATER_LEVEL.
 export const WATER_LEVEL = SCENE_BASE_Y + 16
 
+// Construction bases relative to the platform Transform centre, in metres.
+// raft_v4 at its current fit/offset has uneven planks topping out at +0.119m;
+// +0.10m seats feet slightly into the wood instead of leaving an air gap.
+export const RAFT_DECK_SURFACE_OFFSET_M = 0.1
+
 // Y stack for the lobby world. Sand sits flush with the parcel floor,
 // water rises just above it (so the surface reads as wet sand under
 // shallow water), and rafts float a few cm higher so the deck stays

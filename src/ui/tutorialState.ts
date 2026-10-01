@@ -21,6 +21,10 @@ let expanded = false
 export function isTutorialExpanded(): boolean {
   return expanded
 }
+export function collapseTutorial(): void {
+  beginUiTouch()
+  expanded = false
+}
 export function recordTutorialAction(action: TutorialAction): void {
   completed.add(action)
   recordProgress(action)

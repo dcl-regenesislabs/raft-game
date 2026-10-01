@@ -228,7 +228,7 @@ function CraftItemRow(props: { item: CraftableItem; key?: number | string }): Re
       />
       {guided && <GuideMarker />}
       <Label
-        value={canStartCraft(props.item.id) ? '✓' : '—'}
+        value={canStartCraft(props.item.id) ? 'OK' : '-'}
         fontSize={16}
         color={canStartCraft(props.item.id) ? CRAFT_HAVE_OK_COLOR : CRAFT_TEXT_DIM_COLOR}
         uiTransform={{ width: 24, height: 44, flexShrink: 0 }}

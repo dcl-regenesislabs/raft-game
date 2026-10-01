@@ -1,9 +1,11 @@
+import { chapter, isSandbox, objective } from '../../progression/state'
 import { Color4 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
 import { beginUiTouch } from '../mobileControlsState'
 import { Panel } from '../panel'
 import {
+collapseTutorial,
 dismissTutorial,
 finishTutorial,
 hasTutorialAction,
@@ -28,7 +30,7 @@ export function Tutorial(): ReactEcs.JSX.Element {
       action: 'inventory',
       title: 'Check your backpack',
       text: isMobile()
-        ? 'Open the backpack at the top right. All 30 slots hold any item. Tap two slots to move items. Close the backpack and tap CHANGE TOOL to equip any tool, food or container.'
+        ? 'Open the backpack at the top right. All 25 slots hold any item. Tap two slots to move items. Close the backpack and tap CHANGE TOOL to equip any tool, food or container.'
         : 'Open the backpack at the top right. Collected materials go into your inventory. Pick an item in the backpack and choose EQUIP. The bottom bar retains keyboard shortcuts.'
     },
     {
@@ -79,22 +81,25 @@ export function Tutorial(): ReactEcs.JSX.Element {
   ]
   const index = steps.findIndex((step) => !hasTutorialAction(step.action))
   const step = steps[index]
-  if (isMobile() && (!isTutorialEnabled() || !isTutorialExpanded()))
-    return <UiEntity uiTransform={{ display: 'none' }} />
-  if (!isTutorialEnabled()) {
+  // One guidance surface: onboarding first, then the campaign objective.
+  const campaign = !isSandbox() && (!isTutorialEnabled() || !step || chapter() > 1)
+  const goal = campaign ? objective() : null
+  const title = goal?.title ?? step?.title ?? 'You know the basics!'
+  if ((isMobile() && !isTutorialExpanded()) || (!campaign && !isTutorialEnabled())) {
     return (
       <UiEntity
         uiTransform={{
           positionType: 'absolute',
           position: isMobile() ? { top: 0, right: 408 } : { top: 0, left: 0 },
-          width: 135,
-          height: 36
+          width: isMobile() ? 296 : 350,
+          height: 64,
+          borderRadius: 8
         }}
         onMouseDown={beginUiTouch}
         onMouseUp={showTutorial}
         uiBackground={{ color: Color4.create(0.1, 0.15, 0.15, 0.9) }}
       >
-        <Label value="TUTORIAL" fontSize={17} uiTransform={{ width: '100%', height: '100%' }} />
+        <Label value={`GUIDE +\n${title}`} fontSize={17} uiTransform={{ width: '100%', height: '100%' }} />
       </UiEntity>
     )
   }
@@ -108,20 +113,20 @@ export function Tutorial(): ReactEcs.JSX.Element {
     >
       <Panel uiTransform={{ width: '100%', padding: 14, flexDirection: 'column' }}>
         <Label
-          value={step ? `SURVIVAL GUIDE   ${index + 1} / ${steps.length}` : 'SURVIVAL GUIDE COMPLETE'}
+          value={campaign ? `OBJECTIVE   ${chapter()} / 6` : step ? `SURVIVAL GUIDE   ${index + 1} / ${steps.length}` : 'SURVIVAL GUIDE COMPLETE'}
           fontSize={16}
           color={UI_MUTED}
           uiTransform={{ width: '100%', height: 24 }}
         />
         <Label
-          value={step?.title ?? 'You know the basics!'}
+          value={title}
           fontSize={isMobile() ? 19 : 23}
           color={UI_INK}
           uiTransform={{ width: '100%', height: isMobile() ? 44 : 35 }}
         />
         <Label
           value={
-            step?.text ??
+            goal?.detail ?? step?.text ??
             'Keep collecting supplies, watch your hunger and thirst, and defend your raft. Craft a spear before the sharks attack. Explore new recipes and encounters at your own pace.'
           }
           fontSize={isMobile() ? 15 : 17}
@@ -131,12 +136,12 @@ export function Tutorial(): ReactEcs.JSX.Element {
         />
         <UiEntity
           onMouseDown={beginUiTouch}
-          onMouseUp={step ? dismissTutorial : finishTutorial}
-          uiTransform={{ width: '100%', height: 48, borderRadius: 8 }}
+          onMouseUp={isMobile() ? collapseTutorial : campaign ? undefined : step ? dismissTutorial : finishTutorial}
+          uiTransform={{ display: campaign && !isMobile() ? 'none' : 'flex', width: '100%', height: 48, borderRadius: 8 }}
           uiBackground={{ color: UI_ACCENT }}
         >
           <Label
-            value={step ? 'SKIP · UNLOCK ALL RECIPES' : 'CONTINUE INVESTIGATION'}
+            value={isMobile() ? 'CLOSE GUIDE' : step ? 'SKIP · UNLOCK ALL RECIPES' : 'CONTINUE INVESTIGATION'}
             fontSize={16}
             uiTransform={{ width: '100%', height: '100%' }}
           />

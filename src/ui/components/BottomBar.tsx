@@ -45,16 +45,16 @@ import {
 import { shakeOffset } from '../utils/shake'
 import { DurabilityBar } from './DurabilityBar'
 import { ItemCountBadge } from './ItemCountBadge'
-import { ToolBar, getToolBarWidth } from './ToolBar'
+import { ToolBar, getToolBarWidth, isToolBarExpanded } from './ToolBar'
 
-// Desktop HUD: the tool bar anchored bottom-centre of the interactable area.
+// Desktop HUD: centered on the full canvas, independent of side chrome insets.
 export function BottomBar(): ReactEcs.JSX.Element {
   const width = getToolBarWidth()
   // While the hammer is in placing mode the cost label takes over the
   // slot the transient name label normally occupies — never both at once,
   // since they'd stack on the same anchor and overlap visually.
-  const showCost = getRaftBuilderMode() === 'placing'
-  const label = showCost ? null : getBottomBarSelectedLabel()
+  const showCost = !isToolBarExpanded() && getRaftBuilderMode() === 'placing'
+  const label = showCost || isToolBarExpanded() ? null : getBottomBarSelectedLabel()
   return (
     <UiEntity
       uiTransform={{

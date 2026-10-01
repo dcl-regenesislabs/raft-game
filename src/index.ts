@@ -135,10 +135,10 @@ export async function main(): Promise<void> {
   // fresh target this frame.
   engine.addSystem(lookAtTargetSystem)
   // Keeps the native touch buttons (E / F / pointer) in sync with what
-  // the player can currently do. Mobile-only: the component is a no-op
-  // on desktop, so skip the per-frame recompute there. Registered right
-  // after lookAtTargetSystem to read the freshest classification.
-  if (isMobile()) engine.addSystem(touchControlsSystem)
+  // the player can currently do. Keep visibility current on desktop too,
+  // so the initial hidden controls do not remain stale after startup.
+  // Registered after lookAtTargetSystem to read the freshest classification.
+  engine.addSystem(touchControlsSystem)
   // Construction + cup-fill must run BEFORE foodEat so they can mark
   // this frame's click as consumed (via worldClickGate) — otherwise a
   // tap on the purifier with salt water held would also drain the cup.

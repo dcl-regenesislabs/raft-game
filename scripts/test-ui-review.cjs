@@ -62,7 +62,8 @@ mock('ui/tutorialState.ts', {
   hasTutorialAction: (action) => completed.has(action),
   dismissTutorial: () => {},
   finishTutorial: () => {},
-  showTutorial: () => {}
+  showTutorial: () => {},
+  collapseTutorial: () => {}
 })
 mock('systems/nativeEquipment.ts', {
   equipInventorySlot: (slot) => {
@@ -131,7 +132,7 @@ test('Outcome fits a narrow safe area and keeps primary/secondary touch targets'
     })
   )
   assert.ok(tree.some((n) => n.props.uiTransform?.width === 368 && n.props.uiTransform.maxHeight === 388))
-  assert.equal(tree.filter((n) => n.props.onMouseUp && n.props.uiTransform.height >= 48).length, 2)
+  assert.equal(tree.filter((n) => n.props.onMouseUp && n.props.uiTransform.height === 52).length, 2)
 })
 test('Outcome centers in device insets independently of asymmetric Explorer controls', () => {
   deviceArea = { top: 10, left: 24, right: 24, bottom: 18, width: 1500, height: 680 }
@@ -385,6 +386,31 @@ test('Investigation goals and recipe rewards paginate inside the existing craft 
  craftContext=null;craftRevision++;let tree=CraftDoubleMenu();
  const button=all(tree).filter(n=>n.props.onMouseUp&&all(n).some(c=>c.props.uiBackground?.texture?.src==='images/hud/categories/investigation.png')).at(-1);
  button.props.onMouseUp();tree=CraftDoubleMenu();assert(all(tree).some(n=>n.props.value==='Investigation'));assert(all(tree).some(n=>n.props.value==='ALL RECIPES UNLOCKED'));
- assert(all(tree).some(n=>n.props.value==='Basic crafting'));assert(!all(tree).some(n=>n.props.value==='CRAFT'));
+ assert(all(tree).some(n=>n.props.value==='Unlocked · Basic crafting'));assert(!all(tree).some(n=>n.props.value==='CRAFT'));
+})
+test('More tools stays open during placement and releases its space after selecting a tool', () => {
+ let selected = 0
+ mock('ui/theme.ts', { TOOLBAR_CELL: 64, TOOLBAR_GAP: 8, TOOLBAR_HEIGHT: 80, TOOLBAR_PADDING: 8, TOOLBAR_TOGGLE_WIDTH: 96, TOOLBAR_VISIBLE: 5, ROTATE_BUTTON_BOTTOM_DESKTOP: 128 })
+ mock('ui/inventoryState.ts', { getEquippableSlots: () => [0, 1, 2, 3, 4, 5, 6, 7], getSelectedSlot: () => selected, getPressProgress: () => 0, selectSlot: slot => { selected = slot } })
+ mock('ui/items.ts', { getInventorySlot: () => ({ texture: 'tool.png' }) })
+ mock('ui/components/DurabilityBar.tsx', { DurabilityBar: () => null })
+ mock('ui/components/ItemCountBadge.tsx', { ItemCountBadge: () => null })
+ mock('systems/raftBuilder.ts', { getRaftBuilderMode: () => 'placing', toggleRaftBuilderMode: () => {} })
+ mock('systems/constructionPlacement.ts', { getConstructionPlacementMode: () => 'placing' })
+ mock('ui/placementRotation.ts', { rotatePlacementLeft: () => {}, rotatePlacementRight: () => {} })
+ const { ToolBar, isToolBarExpanded } = load('ui/components/ToolBar.tsx')
+ const { BuilderControls } = load('ui/components/BuilderControls.tsx')
+ assert(BuilderControls())
+ const toggle = all(ToolBar()).find(n => n.props.onMouseDown && all(n).some(c => c.props.value === '+3'))
+ toggle.props.onMouseDown()
+ let tree = ToolBar()
+ assert(isToolBarExpanded())
+ assert(all(tree).some(n => n.props.value === 'COLLAPSE'))
+ assert.equal(BuilderControls(), null)
+ const extraTool = all(tree).find(n => n.props.onMouseDown && n.props.uiTransform.width === 64)
+ extraTool.props.onMouseDown()
+ assert.equal(selected, 5)
+ assert(!isToolBarExpanded())
+ assert(BuilderControls())
 })
 console.log(count + ' UI review tests passed')

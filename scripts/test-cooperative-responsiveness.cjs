@@ -32,6 +32,11 @@ async function main() {
   assert(!base.world.tiles['2,0'])
   assert.equal(m.count(base.player.slots, 'wood'), 4)
   assert.equal(m.count(predicted.player.slots, 'wood'), 2)
+  const newer = m.clone(base)
+  newer.world.nextId += 20 // Debris/other players advance the server's allocation counter.
+  const rebased = m.predictSnapshot(newer, [request])
+  assert.equal(m.tileObjectId(rebased.world.tiles['2,0']), m.tileObjectId(predicted.world.tiles['2,0']),
+    'Pending construction identity must remain stable when unrelated snapshots arrive')
   const winner = m.executeRequest(w, address, request).world
   const lost = { ...base, world: m.publicWorld(winner) }
   const reconciled = m.predictSnapshot(lost, [])

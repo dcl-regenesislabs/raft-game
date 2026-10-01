@@ -15,19 +15,24 @@ export function OutcomeScreen(props: {
   secondary?: { label: string; action: () => void }
 }): ReactEcs.JSX.Element {
   const area = getMobileLayout(true)
+  // Give the scroll container a content-sized frame; auto height fills Bevy's
+  // entire available screen even when there are only a few lines.
+  const contentHeight = 64 + (props.detail ? 44 : 0) + 76 + (props.secondary ? 128 : 64)
+  const height = Math.min(contentHeight + 50, area.height - 32)
   return (
     <ModalFrame alpha={props.backdrop} deviceInset>
       {props.fade > 0 ? (
         <Panel
           uiTransform={{
             width: Math.min(520, area.width - 32),
+            height,
             maxHeight: area.height - 32,
             padding: 24,
             opacity: props.fade,
             flexDirection: 'column'
           }}
         >
-          <UiEntity uiTransform={{ width: '100%', flexDirection: 'column', overflow: 'scroll' }}>
+          <UiEntity uiTransform={{ width: '100%', flexGrow: 1, flexDirection: 'column', overflow: 'scroll' }}>
             <Label
               value={props.title}
               fontSize={38}

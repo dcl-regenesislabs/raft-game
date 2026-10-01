@@ -130,10 +130,8 @@ function tool(player: PlayerState, slot: number, ids?: string[]): Slot {
 }
 function target(world: WorldState, player: PlayerState, id: string, reach = 6): Tile {
   const tile = world.tiles[id.split('@')[0]]
-  requireRule(
-    tile && tileObjectId(tile) === id && distance(player.position, tilePosition(tile)) <= reach,
-    'Target is out of reach'
-  )
+  requireRule(tile && tileObjectId(tile) === id, 'This structure has changed. Select it again')
+  requireRule(distance(player.position, tilePosition(tile)) <= reach, 'Target is out of reach')
   return tile
 }
 function grant(player: PlayerState, id: string, amount: number): void {

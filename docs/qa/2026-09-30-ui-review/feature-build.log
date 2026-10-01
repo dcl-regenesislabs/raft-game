@@ -1,0 +1,46 @@
+
+> raft-game@1.0.0 build
+> sdk-commands build
+
+@dcl/sdk-commands build v7.29.1-35154657340.commit-e2bbcc9
+Installing dependencies...
+npm warn reify Removing non-directory /private/tmp/raft-game-ui-review/node_modules
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
+npm warn deprecated interface-ipld-format@1.0.1: This module has been superseded by the multiformats module
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated cids@1.1.9: This module has been superseded by the multiformats module
+npm warn deprecated multibase@4.0.6: This module has been superseded by the multiformats module
+npm warn deprecated multicodec@3.2.1: This module has been superseded by the multiformats module
+npm warn deprecated prom-client@15.1.3: prom-client has been replaced by @prometheus-io/client
+npm warn deprecated ipld-dag-pb@0.22.3: This module has been superseded by @ipld/dag-pb and multiformats
+npm warn deprecated glob@11.1.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+
+added 319 packages, and audited 320 packages in 19s
+
+40 packages are looking for funding
+  run `npm fund` for details
+
+15 vulnerabilities (2 low, 5 moderate, 7 high, 1 critical)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm warn install-scripts 5 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   @dcl/sdk-commands@7.29.1-35154657340.commit-e2bbcc9 (postinstall: node scripts/postinstall.js)
+npm warn install-scripts   esbuild@0.18.20 (postinstall: node install.js)
+npm warn install-scripts   protobufjs@7.2.4 (postinstall: node scripts/postinstall)
+npm warn install-scripts   protobufjs@6.11.6 (postinstall: node scripts/postinstall)
+npm warn install-scripts   protobufjs@6.11.6 (postinstall: node scripts/postinstall)
+npm warn install-scripts
+npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+✅ Installing dependencies...
+[1/2] Bundling file /private/tmp/raft-game-ui-review/src/index.ts
+debug: [composite]   .composite: assets/scene/main.composite
+debug: [composite]   .composite: assets/scene/main.composite
+debug: [composite]   .composite: assets/scene/main.composite
+Bundle saved bin/index.js
+[2/2] Running type checker
+Type checking completed without errors

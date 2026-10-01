@@ -1,0 +1,51 @@
+PASS UI touch blocks fire until release, including a long held touch
+PASS A fresh native press recovers from stale pressed state after UI dismissal
+PASS Jump and generic UI pointer presses never fire mobile tools or fill cups
+PASS Releasing jump cannot release a held tool or satisfy its equipment guard
+PASS Equipped item updates custom icon without rewriting hidden native controls
+PASS Collectible pickup replaces equipped tool artwork with the hand icon
+PASS Empty cup uses the main action without a duplicate fill button
+PASS Purifier retains simultaneous interaction and fuel controls
+PASS Ready meal icon changes without changing the grill interaction visibility
+PASS Fishing exposes catch/retract on the single native pointer action
+PASS Cook and salt-water actions use catalog artwork
+PASS Menus hide all native world actions
+PASS Virtual safe area preserves physical insets at different resolutions
+PASS Equipment selection cancels every pending world action
+PASS Tool picker closes inventory before selecting and rejects empty slots
+PASS Release guard does not hide native action buttons and equip shortcuts stay hidden
+PASS Mobile UI gate leaves desktop fire bindings unaffected
+PASS Custom proximity actions hide duplicate native E/F buttons
+PASS Custom proximity button rejects stale targets and menus, routes separate actions
+PASS Hammer custom controls resolve rotation and mode icon changes
+PASS Building rejects stale proximity actions and structure placement retains rotation
+PASS All tools keep POINTER main and jump secondary; Hands is inert
+PASS Ending screens hide native movement and crosshair, then restore them
+PASS Station progress text never rebuilds unchanged native action buttons
+PASS Equipment changes require release and a cooldown on both desktop and mobile
+PASS Native hover uses the hand glyph for salvage and restores the default afterward
+26 mobile control tests passed
+PASS Ending ignores taps during fade, then gates input before continuing
+PASS Outcome fits a narrow safe area and keeps primary/secondary touch targets
+PASS Outcome centers in device insets independently of asymmetric Explorer controls
+PASS All twenty-five equipment slots plus Hands are reachable through touch pages
+PASS Pages clamp after inventory shrinks and reserve footer space
+PASS Every guide step fits concise copy and water steps name the correct action
+PASS Desktop guide uses keyboard water instructions
+PASS Desktop lists retain all entries and wheel scrolling
+PASS Outside release closes every menu and protects the next world action
+PASS Panel interior consumes input without dismissing menus
+PASS Craft categories cover every implemented recipe and include expansion groups
+PASS Filtered selection remains valid after materials are spent
+PASS Mobile shows category icons beside recipes and details with one-tap switching
+PASS Craft keeps unavailable recipes visible and has no availability filter
+PASS Craft action lives in a fixed footer outside the scrolling details
+PASS Compact category pagination reserves room for full-size stacked controls
+PASS Every category has an existing transparent texture asset
+PASS Basic crafting hides every specialized recipe and entire advanced categories
+PASS Every worktable lists only its recipes and resets stale category selection
+PASS Guided crafting selects the marked recipe on open and follows tutorial unlocks
+PASS Investigation goals and recipe rewards paginate inside the existing craft panel
+21 UI review tests passed
+PASS custom input bindings, native jump binding, safe insets, fixed jump position, proximity deduplication, hammer controls, equipment icon, pressed/bite feedback and hidden-state removal
+PASS tool picker fits contents, expands beyond old cap and respects shorter safe areas

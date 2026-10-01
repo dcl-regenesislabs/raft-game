@@ -1,3 +1,4 @@
+import { isToolBarExpanded } from './ToolBar'
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { getConstructionPlacementMode } from '../../systems/constructionPlacement'
@@ -14,7 +15,7 @@ export function BuilderControls(): ReactEcs.JSX.Element | null {
   const mode = getRaftBuilderMode()
   const hammer = mode !== 'idle'
   const rotating = mode === 'placing' || getConstructionPlacementMode() !== 'idle'
-  if (!hammer && !rotating) return null
+  if (isToolBarExpanded() || (!hammer && !rotating)) return null
   return (
     <UiEntity
       uiTransform={{

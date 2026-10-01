@@ -1,6 +1,4 @@
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
-import { getConstructionPlacementMode } from '../../systems/constructionPlacement'
-import { getRaftBuilderMode } from '../../systems/raftBuilder'
 import { getEquippableSlots, getPressProgress, getSelectedSlot, selectSlot } from '../inventoryState'
 import { getInventorySlot } from '../items'
 import {
@@ -21,6 +19,10 @@ import { ItemCountBadge } from './ItemCountBadge'
 // toggle unfolds the rest above the row.
 let expanded = false
 
+export function isToolBarExpanded(): boolean {
+  return expanded && getEquippableSlots().length > TOOLBAR_VISIBLE
+}
+
 export function getToolBarWidth(): number {
   const row = TOOLBAR_PADDING * 2 + TOOLBAR_VISIBLE * TOOLBAR_CELL + (TOOLBAR_VISIBLE - 1) * TOOLBAR_GAP
   return getEquippableSlots().length > TOOLBAR_VISIBLE ? row + TOOLBAR_GAP + TOOLBAR_TOGGLE_WIDTH : row
@@ -30,8 +32,7 @@ export function ToolBar(): ReactEcs.JSX.Element {
   const tools = getEquippableSlots()
   const main = tools.slice(0, TOOLBAR_VISIBLE)
   const extra = tools.slice(TOOLBAR_VISIBLE)
-  const placing = getConstructionPlacementMode() !== 'idle' || getRaftBuilderMode() === 'placing'
-  if (extra.length === 0 || placing) expanded = false
+  if (extra.length === 0) expanded = false
   const width = getToolBarWidth()
   const selected = getSelectedSlot()
   return (

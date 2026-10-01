@@ -102,6 +102,10 @@ export function getThrowChargeT(): number {
   return chargeT
 }
 
+export function isHookCharging(): boolean {
+  return charging
+}
+
 export function isHookInFlight(): boolean {
   return hookEntity !== null
 }

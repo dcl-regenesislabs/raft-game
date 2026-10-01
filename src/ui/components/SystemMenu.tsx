@@ -17,7 +17,7 @@ import { triggerSharkAttack } from '../../systems/sharkDirector'
 import { beginUiTouch } from '../mobileControlsState'
 import { getMobileLayout } from '../mobileLayout'
 import { showTutorial } from '../tutorialState'
-import { UI_ACCENT,UI_CELL,UI_INK,UI_MUTED } from '../visualTheme'
+import { UI_ACCENT, UI_GOLD, UI_CELL, UI_INK, UI_MUTED } from '../visualTheme'
 import { ModalFrame } from './ModalFrame'
 
 import { requestLoad,requestSave } from '../../client/saveClient'
@@ -207,7 +207,7 @@ function MultiplayerDebugMenu(): ReactEcs.JSX.Element {
               <Label
                 value={`${phase} · ${CAMPAIGN.chapterNames[phase - 1]}`}
                 fontSize={16}
-                color={phase === current ? UI_ACCENT : UI_INK}
+                color={phase === current ? UI_GOLD : UI_INK}
                 textAlign="middle-left"
                 uiTransform={{ width: '100%', height: 26 }}
               />

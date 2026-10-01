@@ -1,0 +1,23 @@
+PASS Ending ignores taps during fade, then gates input before continuing
+PASS Outcome fits a narrow safe area and keeps primary/secondary touch targets
+PASS Outcome centers in device insets independently of asymmetric Explorer controls
+PASS All twenty-five equipment slots plus Hands are reachable through touch pages
+PASS Pages clamp after inventory shrinks and reserve footer space
+PASS Every guide step fits concise copy and water steps name the correct action
+PASS Desktop guide uses keyboard water instructions
+PASS Desktop lists retain all entries and wheel scrolling
+PASS Outside release closes every menu and protects the next world action
+PASS Panel interior consumes input without dismissing menus
+PASS Craft categories cover every implemented recipe and include expansion groups
+PASS Filtered selection remains valid after materials are spent
+PASS Mobile shows category icons beside recipes and details with one-tap switching
+PASS Craft keeps unavailable recipes visible and has no availability filter
+PASS Craft action lives in a fixed footer outside the scrolling details
+PASS Compact category pagination reserves room for full-size stacked controls
+PASS Every category has an existing transparent texture asset
+PASS Basic crafting hides every specialized recipe and entire advanced categories
+PASS Every worktable lists only its recipes and resets stale category selection
+PASS Guided crafting selects the marked recipe on open and follows tutorial unlocks
+PASS Investigation goals and recipe rewards paginate inside the existing craft panel
+PASS More tools stays open during placement and releases its space after selecting a tool
+22 UI review tests passed

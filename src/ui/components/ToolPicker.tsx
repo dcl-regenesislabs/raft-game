@@ -72,7 +72,7 @@ export function ToolPicker(): ReactEcs.JSX.Element {
                   textAlign="middle-left"
                   uiTransform={{ flexGrow: 1, flexShrink: 1, height: 36, margin: { left: 8 } }}
                 />
-                {selected && <Label value="✓" fontSize={16} uiTransform={{ width: 20, height: 32, flexShrink: 0 }} />}
+                {selected && <Label value="ON" fontSize={16} uiTransform={{ width: 26, height: 32, flexShrink: 0 }} />}
               </UiEntity>
             )
           })}

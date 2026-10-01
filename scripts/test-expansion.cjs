@@ -59,12 +59,14 @@ let next = 100,
   removed = []
 const pocket = new Map(),
   Transform = component(),
-  GltfContainer = component()
+  GltfContainer = component(),
+  MeshCollider = component()
+MeshCollider.setBox = (entity, layer) => MeshCollider.createOrReplace(entity, { layer })
 const ecs = {
   Transform,
   GltfContainer,
   MeshRenderer: { setBox: () => {}, setPlane: () => {} },
-  MeshCollider: { setBox: () => {} },
+  MeshCollider,
   Billboard: component(),
   BillboardMode: { BM_Y: 2 },
   MaterialTransparencyMode: { MTM_ALPHA_TEST: 1 },
@@ -624,12 +626,28 @@ test('Expansion models sit on deck, fit cardinal tile rotations, retain identity
     const [visual, t] = children.find(([e]) => GltfContainer.getOrNull(e))
     assert.equal(GltfContainer.get(visual).src, model.src)
     assert.equal(GltfContainer.get(visual).visibleMeshesCollisionMask, ['upperFloor', 'towerPlatform', 'lookoutPost'].includes(kind) ? ecs.ColliderLayer.CL_PHYSICS : 0)
-    assert(Math.abs(0.9 + t.position.y + model.min[1] * t.scale.y - 0.2) < 1e-6, kind + ' floats or sinks')
-    const radius = Math.hypot(Math.max(Math.abs(model.min[0]), Math.abs(model.max[0])), Math.max(Math.abs(model.min[2]), Math.abs(model.max[2]))) * model.scale
+    assert(Math.abs(0.9 + t.position.y + model.min[1] * t.scale.y - 0.1) < 1e-6, kind + ' floats or sinks')
+    // Model and box collider must meet the same deck, including after resizing.
+    for (const [e, collider] of children) {
+      if (MeshCollider.getOrNull(e) && kind !== 'stairs') {
+        assert(Math.abs(0.9 + collider.position.y - collider.scale.y / 2 - 0.1) < 1e-6,
+          kind + ' collider bottom diverges from the visible model')
+      }
+    }
     assert(Math.max(model.max[0] - model.min[0], model.max[2] - model.min[2]) * model.scale <= 2.9, kind + ' leaves tile at a cardinal yaw')
     sprites.removePrototypeEntity(entity)
     assert.equal(sprites.getSpriteKind(entity), undefined)
     children.forEach(([e]) => assert.equal(Transform.getOrNull(e), null))
+  }
+})
+test('Benches stay at furniture scale including their mounted tools', () => {
+  const { EXPANSION_MODELS } = load('expansion/models.ts')
+  for (const kind of ['workbench', 'researchTable', 'armoryBench', 'engineeringBench']) {
+    const model = EXPANSION_MODELS[kind]
+    const width = (model.max[0] - model.min[0]) * model.scale
+    const height = (model.max[1] - model.min[1]) * model.scale
+    assert(width >= 1.2 && width <= 1.55, kind + ' is oversized for a work table')
+    assert(height >= 0.8 && height <= 1.35, kind + ' is oversized including tabletop equipment')
   }
 })
 test('Model placement ghosts match committed transforms and never collide', () => {

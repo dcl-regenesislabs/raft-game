@@ -11,6 +11,14 @@ export function predictSnapshot(base: Snapshot, pending: Request[], position?: V
     if (request.generation !== world.generation || ['reset', 'respawn', 'debug'].includes(request.action.kind)) continue
     try {
       world = reduceAction(world, base.player.address, request.action)
+      // Server nextId also advances for debris and other players. Keep local
+      // construction identities stable across snapshots until acknowledgement.
+      if (request.action.kind === 'build' || request.action.kind === 'place' || request.action.kind === 'destroy') {
+        const cell = request.action.kind === 'build'
+          ? `${request.action.x},${request.action.z}`
+          : request.action.target.split('@')[0]
+        if (world.tiles[cell]) world.tiles[cell].instance = -request.sequence
+      }
     } catch {
       /* authority decides rejection */
     }

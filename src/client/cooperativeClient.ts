@@ -110,14 +110,19 @@ export function initCooperativeClient(): void {
     if (!result.ok) showNotification(result.error)
     else if (head.action.kind === 'craft') equipCraftedItem(head.action.item)
     // Requests queued against a predicted construction must use its confirmed identity.
-    if (result.ok && confirmed && (head.action.kind === 'build' || head.action.kind === 'place')) {
+    if (
+      result.ok && confirmed &&
+      (head.action.kind === 'build' || head.action.kind === 'place' || head.action.kind === 'destroy')
+    ) {
       const cell = head.action.kind === 'build' ? `${head.action.x},${head.action.z}` : head.action.target.split('@')[0]
-      const old = getMultiplayerSnapshot()?.world.tiles[cell]
+      const predictedId = `${cell}@${-head.sequence}`
       const actual = confirmed.world.tiles[cell]
-      if (old && actual)
+      if (actual)
         for (const request of pending.slice(1)) {
-          if ('target' in request.action && request.action.target === tileObjectId(old))
+          if ('target' in request.action && request.action.target === predictedId)
             request.action.target = tileObjectId(actual)
+          if (request.action.kind === 'craft' && request.action.station === predictedId)
+            request.action.station = tileObjectId(actual)
         }
     }
     pending.shift()

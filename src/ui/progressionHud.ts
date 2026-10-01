@@ -1,12 +1,9 @@
 import { isMobile } from '@dcl/sdk/platform'
 import { getMobileLayout } from './mobileLayout'
-let expanded = false
-export const isObjectiveExpanded = () => expanded
-export function toggleObjective(): void { expanded = !expanded }
 
-// Desktop pins the objective pill to the interactable top edge; mobile keeps it at 5%.
+// Desktop aligns with the HUD's small top margin; mobile keeps it at 5%.
 export const objectiveTop = () => (isMobile() ? getMobileLayout().height * 0.05 : getMobileLayout().top)
-export const objectiveBottom = () => objectiveTop() + (expanded ? 130 : 48) + 12
+export const objectiveBottom = () => objectiveTop() + 48 + 12
 
 // Horizontal band the top-centre overlays (objective, notifications) centre in:
 // the interactable area on desktop so they line up clear of the explorer chrome,

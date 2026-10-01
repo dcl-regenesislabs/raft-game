@@ -148,14 +148,8 @@ export function inventoryToggleResetSystem(dt: number): void {
       })
     })
   }
-  // Release the OS mouse cursor when a HUD panel opens so the player can
-  // click panel buttons with a visible cursor, and re-lock it when the
-  // last panel closes so the player goes straight back into FPS aim
-  // without an extra click. Activity locks (in-progress craft / fishing)
-  // are intentionally excluded — the player still aims tools in the
-  // world during those. Writes only on transitions of the panel-open
-  // edge. PointerLock is a desktop concept with no effect on mobile, so
-  // skip the writes there entirely.
+  // Opening a panel releases the cursor. Closing it never requests capture:
+  // returning to camera-look is the player's choice through a world click.
   if (!isMobile()) {
     const panelOpen =
       open ||
@@ -164,12 +158,10 @@ export function inventoryToggleResetSystem(dt: number): void {
       isStorageOpen() ||
       isSystemMenuOpen() ||
       isGameOver() || isWinActive()
-    if (panelOpen !== lastPanelOpenApplied) {
-      PointerLock.createOrReplace(engine.CameraEntity, {
-        isPointerLocked: !panelOpen
-      })
-      lastPanelOpenApplied = panelOpen
+    if (panelOpen && !lastPanelOpenApplied) {
+      PointerLock.createOrReplace(engine.CameraEntity, { isPointerLocked: false })
     }
+    lastPanelOpenApplied = panelOpen
   }
 }
 

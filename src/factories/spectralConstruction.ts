@@ -1,3 +1,4 @@
+import { RAFT_DECK_SURFACE_OFFSET_M } from './sceneLevels'
 import { getExpansionModel } from '../expansion/models'
 import { getExpansionItem } from '../expansion/catalog'
 import { paintSprite, spriteSize } from '../expansion/sprites'
@@ -83,7 +84,7 @@ export function createSpectralConstruction(
     dim,
     bright,
     visualSize: spriteKind ? spriteSize(kind) : visualSize,
-    deckOffsetM: spriteKind ? 0.2 + spriteSize(kind) / 2 : getConstructionDeckOffset(kind)
+    deckOffsetM: spriteKind ? RAFT_DECK_SURFACE_OFFSET_M + spriteSize(kind) / 2 : getConstructionDeckOffset(kind)
   })
   return ghost
 }

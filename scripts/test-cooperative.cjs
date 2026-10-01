@@ -396,14 +396,21 @@ class MemoryStorage {
   })
   await test('Delayed object actions cannot mutate a replacement in the same cell', () => {
     let w = setup()
-    supply(w.players[A], { hammer: 1, wood: 4, plastic: 4, rope: 2 })
-    const old = m.tileObjectId(w.tiles['1,0']),
-      hammer = slot(w.players[A], 'hammer')
+    supply(w.players[A], { hammer: 1, wood: 6, plastic: 6, rope: 3 })
+    const hammer = slot(w.players[A], 'hammer')
+    const built = command(w, A, { kind: 'build', x: 2, z: 0, slot: hammer })
+    assert(built.result.ok)
+    w = built.world
+    const old = m.tileObjectId(w.tiles['2,0'])
     w = command(w, A, { kind: 'destroy', target: old, slot: hammer }).world
-    w = command(w, A, { kind: 'build', x: 1, z: 0, slot: hammer }).world
-    assert.notEqual(m.tileObjectId(w.tiles['1,0']), old)
-    assert(!command(w, A, { kind: 'destroy', target: old, slot: hammer }).result.ok)
-    assert(w.tiles['1,0'])
+    w = command(w, A, { kind: 'build', x: 2, z: 0, slot: hammer }).world
+    assert.notEqual(m.tileObjectId(w.tiles['2,0']), old)
+    assert.equal(command(w, A, { kind: 'destroy', target: old, slot: hammer }).result.error,
+      'This structure has changed. Select it again')
+    w.players[A].position.x += 100
+    assert.equal(command(w, A, { kind: 'destroy', target: m.tileObjectId(w.tiles['2,0']), slot: hammer }).result.error,
+      'Target is out of reach')
+    assert(w.tiles['2,0'])
   })
   console.log(`${passed} cooperative tests passed`)
 })().catch((error) => {
