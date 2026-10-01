@@ -1,6 +1,6 @@
 import { RELEASE } from '../config/release'
 import { IS_PRODUCTION } from '../config/env'
-import { isNewerRelease, parseRelease, readPublishedRelease } from '../multiplayer/releases'
+import { isNewerRelease, parseRelease, readPublishedRelease, type Release } from '../multiplayer/releases'
 import { isCraftOpen } from '../ui/craftToggle'
 import { isCookOpen } from '../ui/cookToggle'
 import { isStorageOpen } from '../ui/storageToggle'
@@ -66,7 +66,7 @@ export function initCooperativeClient(): void {
     present()
     return true
   })
-  function requireUpdate(release: typeof RELEASE, phase: 'updating' | 'reload'): void {
+  function requireUpdate(release: Release, phase: 'updating' | 'reload'): void {
     pending.length = 0
     if (confirmed) present()
     setUpdateNotice({ phase, incompatible: release.compatibility !== RELEASE.compatibility, build: release.id })

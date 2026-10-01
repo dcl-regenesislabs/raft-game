@@ -37,3 +37,7 @@ No meshes, textures, inventory, save schema or grid occupancy changed. Existing 
 - Bevy Web on decentraland.org loaded the same rebuilt scene; respawn succeeded and the workbench, water tank, crop bed and surrounding structures rendered correctly. Saved bevy-after.png. This is a visual smoke test, not a fresh full campaign or exhaustive stair traversal.
 - npm run check:textures still reports 49 existing textures above its 512 px limit. The GLB files were not edited in this change; texture downscaling is outside this scale/grounding fix.
 - Twenty generated static GLBs remain unintegrated and use their existing prototype sprites. This change does not claim to integrate them.
+
+## Production build check
+
+The first deployment attempt stopped before upload because the generated release includes `previousDescriptor`, causing `typeof RELEASE` to infer a required property in the update handler. The handler now uses the existing `Release` type, where predecessor metadata is optional. Reproduced the production preparation locally (release stamp, scene metadata, production flag, build); it passed type checking. Restored development metadata and IS_PRODUCTION=false afterwards. Release lifecycle/handoff regressions also passed.
