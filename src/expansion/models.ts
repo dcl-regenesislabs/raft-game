@@ -32,7 +32,21 @@ export const EXPANSION_MODELS: Readonly<Record<string, ExpansionModel>> = {
   towerPlatform: model('towerPlatform', 1, [-1.35, 0, -1.35], [1.35, 2.3, 1.35]),
   ropeBarricade: model('ropeBarricade', 1, [-1.35, 0, -0.125], [1.35, 1, 0.125]),
   spikeStrip: model('spikeStrip', 1, [-1.35, 0, -0.35], [1.35, 0.5, 0.35]),
-  lookoutPost: model('lookoutPost', 1, [-1.35, 0, -1.35], [1.35, 3.65, 1.35])
+  lookoutPost: model('lookoutPost', 1, [-1.35, 0, -1.35], [1.35, 3.65, 1.35]),
+  netLauncher: model('netLauncher', 1.5, [-0.490233988, -0.5, -0.335938007], [0.490233988, 0.5, 0.337891012]),
+  ballista: model('ballista', 1.8, [-0.5, -0.283203006, -0.4375], [0.5, 0.28125, 0.435546994]),
+  harpoonTower: model('harpoonTower', 1.6, [-0.347656012, -0.5, -0.496093988], [0.355468988, 0.5, 0.5]),
+  deckCannon: model('deckCannon', 1.6, [-0.5, -0.400391012, -0.378906012], [0.5, 0.400391012, 0.382811993]),
+  alarmBell: model('alarmBell', 1.5, [-0.206055, -0.400391012, -0.5], [0.207030997, 0.400391012, 0.5]),
+  sail: model('sail', 2.7, [-0.5, -0.5, -0.255858988], [0.5, 0.5, 0.255858988]),
+  steeringWheel: model('steeringWheel', 1.3, [-0.421875, -0.5, -0.137695], [0.425781012, 0.5, 0.136719003]),
+  engine: model('engine', 1.5, [-0.5, -0.457031012, -0.458983988], [0.5, 0.457031012, 0.460938007]),
+  generator: model('generator', 1.4, [-0.337891012, -0.320311993, -0.5], [0.341796994, 0.318358988, 0.5]),
+  batteryBank: model('batteryBank', 1.2, [-0.5, -0.386718988, -0.269531012], [0.5, 0.384766012, 0.271483988]),
+  powerRelay: model('powerRelay', 1.1, [-0.265625, -0.5, -0.263671994], [0.267578006, 0.5, 0.265625]),
+  antennaMast: model('antennaMast', 3, [-0.371093988, -0.5, -0.182616994], [0.375, 0.5, 0.180664003]),
+  rescueRadio: model('rescueRadio', 0.9, [-0.5, -0.206055, -0.322266012], [0.5, 0.205078006, 0.322266012]),
+  zombie: model('zombie', 1.8, [-0.279296994, -0.5, -0.173828006], [0.28125, 0.5, 0.179688007])
 }
 export function getExpansionModel(kind: string): ExpansionModel | undefined {
   return EXPANSION_MODELS[kind]

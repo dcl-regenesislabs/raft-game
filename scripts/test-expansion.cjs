@@ -615,7 +615,10 @@ test('Finite finale clears every reinforcement before an already-finished broadc
 test('Expansion models sit on deck, fit cardinal tile rotations, retain identity and clean up', () => {
   const { EXPANSION_MODELS } = load('expansion/models.ts')
   const sprites = load('expansion/sprites.ts')
-  assert.equal(Object.keys(EXPANSION_MODELS).length, 20)
+  for (const item of catalog.EXPANSION_ITEMS.filter((item) => item.kind === 'structure')) {
+    assert(EXPANSION_MODELS[item.id], item.id + ' still uses a world image placeholder')
+  }
+  assert(EXPANSION_MODELS.zombie, 'boarding enemies must use their generated mesh')
   for (const [kind, model] of Object.entries(EXPANSION_MODELS)) {
     assert(fs.existsSync(path.resolve(root, '..', model.src)))
     const entity = ecs.engine.addEntity()
