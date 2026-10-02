@@ -1,4 +1,9 @@
-import { MULTIPLAYER_MAX_TILES, MULTIPLAYER_MAX_DEVICES, MULTIPLAYER_INITIAL_RAFT_SIZE } from '../config/gameConfig'
+import {
+  MULTIPLAYER_MAX_TILES,
+  MULTIPLAYER_MAX_DEVICES,
+  MULTIPLAYER_INITIAL_RAFT_SIZE,
+  STRUCTURE_INTERACT_DISTANCE_M
+} from '../config/gameConfig'
 import { recipeAvailable } from '../progression/unlocks'
 import { PARCEL_GRID, PARCEL_SIZE_M, WATER_LEVEL } from '../factories/sceneLevels'
 import { getCatalogItem } from '../ui/items'
@@ -128,7 +133,7 @@ function tool(player: PlayerState, slot: number, ids?: string[]): Slot {
   requireRule(entry && entry.count > 0 && (!ids || ids.includes(entry.id)), 'Equip the required item')
   return entry
 }
-function target(world: WorldState, player: PlayerState, id: string, reach = 6): Tile {
+function target(world: WorldState, player: PlayerState, id: string, reach = STRUCTURE_INTERACT_DISTANCE_M): Tile {
   const tile = world.tiles[id.split('@')[0]]
   requireRule(tile && tileObjectId(tile) === id, 'This structure has changed. Select it again')
   requireRule(distance(player.position, tilePosition(tile)) <= reach, 'Target is out of reach')

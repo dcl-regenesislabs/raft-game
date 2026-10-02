@@ -1,3 +1,4 @@
+import { isRainingAt } from '../expansion/weather'
 import { nextDeckStep } from '../expansion/path'
 import {
   HUNGER_DRAIN_PCT_PER_S,
@@ -167,7 +168,7 @@ export function simulateWorld(world: WorldState, dt: number, online: ReadonlySet
       d = tile.device!,
       k = d.kind
     const previous = d.stock
-    advanceProduction(k, d, dt, p.seconds % 180 >= 120)
+    advanceProduction(k, d, dt, isRainingAt(p.seconds))
     if (k === 'smelter' && d.stock > previous) milestone(world, 'plate')
     if (k === 'purifier' && d.fuel > 0) {
       const n = Math.min(d.saltAmount, 1 - d.freshAmount, Math.min(dt, d.fuel) / 15)

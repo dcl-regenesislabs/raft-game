@@ -1,3 +1,4 @@
+import { rainSystem } from './systems/rain'
 import { multiplayerInputSystem } from './client/multiplayerInput'
 import { MULTIPLAYER_ENABLED } from './config/gameConfig'
 import { initCooperativeClient } from './client/cooperativeClient'
@@ -199,6 +200,7 @@ export async function main(): Promise<void> {
   engine.addSystem(hookThrowerSystem)
   engine.addSystem(fishingRodSystem)
   if (!MULTIPLAYER_ENABLED) engine.addSystem(expansionSystem)
+  engine.addSystem(rainSystem)
   if (!MULTIPLAYER_ENABLED) engine.addSystem(progressionSystem)
   engine.addSystem(craftSessionTickSystem)
   if (!MULTIPLAYER_ENABLED) engine.addSystem(purifierProcessSystem)

@@ -1,3 +1,4 @@
+import { isRainingAt } from './weather'
 import { isMultiplayer, sendWorldAction, getMultiplayerSnapshot } from '../client/multiplayerState'
 import { worldEntityId } from '../client/worldEntities'
 import { captureCheckpoint } from '../progression/checkpoint'
@@ -168,7 +169,11 @@ export function expansionActions(
           ? 'Water crop'
           : 'Plant potato'
   if (k === 'rainCollector')
-    primary = s.stock ? 'Drink (' + s.stock + ')' : elapsed % 180 >= 120 ? 'Collecting rain' : 'Waiting for rain'
+    primary = s.stock
+      ? 'Drink (' + s.stock + ')'
+      : isRainingAt(isMultiplayer() ? getMultiplayerSnapshot()?.world.progress.seconds ?? 0 : elapsed)
+        ? 'Collecting rain'
+        : 'Waiting for rain'
   if (k === 'waterTank') {
     primary = 'Drink / refill (' + s.stock + '/8)'
     secondary = 'Store fresh water'
@@ -712,7 +717,7 @@ export function expansionSystem(dt: number): void {
 }
 function simulate(dt: number): void {
   elapsed += dt
-  const raining = elapsed % 180 >= 120
+  const raining = isRainingAt(elapsed)
   if (raidActive) metric('combatSeconds', dt)
   tickRaid(dt)
   const power = powerSnapshot()
@@ -831,4 +836,8 @@ export function hydrateExpansionSession(saved: ReturnType<typeof serializeExpans
   voyage = Math.max(0, Math.min(15, saved.voyage || 0))
   elapsed = Math.max(0, saved.elapsed || 0)
   lastLife = getStat('life')
+}
+
+export function getWeatherElapsedSeconds(): number {
+  return elapsed
 }

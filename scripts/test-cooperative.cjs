@@ -394,6 +394,21 @@ class MemoryStorage {
     assert.equal(packet.text.length, 10000)
     assert.throws(() => new m.Assembler().accept({ ...chunks[0], body: 'x'.repeat(1501) }, 0))
   })
+  await test('Structure clicks within eight metres succeed and distant clicks retain their contents', () => {
+    for (const reach of [6.5, 8, 8.01, 20]) {
+      const w = setup()
+      const tile = w.tiles['0,1']
+      tile.device = m.createDevice('purifier', 0)
+      tile.device.freshAmount = 1
+      w.players[A].thirst = 0.5
+      w.players[A].position = { ...m.tilePosition(tile), x: m.ORIGIN.x + reach }
+      const result = command(w, A, { kind: 'interact', target: tile.id, slot: -1, secondary: false })
+      assert.equal(result.result.ok, reach <= 8, `Reach ${reach}`)
+      assert.equal(result.world.tiles[tile.id].device.freshAmount, reach <= 8 ? 0 : 1)
+      assert.equal(result.world.players[A].thirst, reach <= 8 ? 0.8 : 0.5)
+      if (reach > 8) assert.equal(result.result.error, 'Target is out of reach')
+    }
+  })
   await test('Delayed object actions cannot mutate a replacement in the same cell', () => {
     let w = setup()
     supply(w.players[A], { hammer: 1, wood: 6, plastic: 6, rope: 3 })

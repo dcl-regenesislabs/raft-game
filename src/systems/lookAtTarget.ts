@@ -1,6 +1,7 @@
 import { Entity, Transform, engine, InputAction, PointerEventType, PointerEvents, inputSystem } from '@dcl/sdk/ecs'
 
 import { FloatingGarbage, PlatformConstruction, WaterScroll } from '../components'
+import { STRUCTURE_INTERACT_DISTANCE_M } from '../config/gameConfig'
 import { GRAB_MAX_DISTANCE } from '../factories/floatingGarbage'
 import { getConstructionPlacementMode } from './constructionPlacement'
 import { getRaftBuilderMode } from './raftBuilder'
@@ -43,7 +44,7 @@ export type LookAtTarget =
 
 // Reach for the structure raycast — the player has to lean over the
 // edge of the raft to interact, not click from across the deck.
-const LOOK_MAX_DISTANCE = 8
+const LOOK_MAX_DISTANCE = STRUCTURE_INTERACT_DISTANCE_M
 
 let waterEntityCached: Entity | null = null
 let raycasterActive = false
@@ -222,6 +223,14 @@ function classifyHit(water: Entity, hitId: number | undefined): Classification {
   }
   for (const [platform, pc] of engine.getEntitiesWith(PlatformConstruction)) {
     if (pc.child === hit) {
+      const player = Transform.getOrNull(engine.PlayerEntity)?.position
+      const target = Transform.getOrNull(platform)?.position
+      // Ray hits measure the collider surface; authority measures the platform centre.
+      if (
+        !player || !target ||
+        Math.hypot(player.x - target.x, player.y - target.y, player.z - target.z) > STRUCTURE_INTERACT_DISTANCE_M
+      )
+        return { target: null }
       if (pc.kind === 'purifier') return { target: 'purifier' }
       if (pc.kind === 'grill') return { target: 'grill', platform }
       if (pc.kind === 'storage') return { target: 'storage' }

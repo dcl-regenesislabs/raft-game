@@ -163,3 +163,16 @@ export const MULTIPLAYER_MAX_WORLD_BYTES = 4 * 1024 * 1024
 // Initial cooperative rendering budgets; raise only after device stress testing.
 export const MULTIPLAYER_MAX_TILES = 256
 export const MULTIPLAYER_MAX_DEVICES = 64
+
+// --- Passing rain cloud ----------------------------------------------------
+// Preserve the production cadence: one minute of rain every three minutes.
+export const RAIN_CYCLE_S = 180
+export const RAIN_DURATION_S = 60
+export const RAIN_CLOUD_TRANSITION_S = 20
+export const RAIN_CLOUD_HEIGHT_M = 12
+export const RAIN_PARTICLES_PER_S = 150
+export const RAIN_MAX_PARTICLES = 420
+export const RAIN_COLLECTOR_MAX_EFFECTS = 8
+
+// Shared avatar-to-platform reach for structure actions and click targeting, in metres.
+export const STRUCTURE_INTERACT_DISTANCE_M = 8
