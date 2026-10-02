@@ -26,6 +26,10 @@ for (const [en, es, pt] of messages) {
   assert.ok(en && es && pt, 'Every message needs both translations')
   assert.ok(!keys.has(en), `Duplicate key: ${en}`)
   keys.add(en)
+  if (en.length >= 65) {
+    assert.ok(es.length <= en.length, `Spanish paragraph exceeds English length: ${en}`)
+    assert.ok(pt.length <= en.length, `Portuguese paragraph exceeds English length: ${en}`)
+  }
   assert.equal(placeholders(es), placeholders(en), `Spanish placeholders: ${en}`)
   assert.equal(placeholders(pt), placeholders(en), `Portuguese placeholders: ${en}`)
   for (const [lang, translation] of [['es', es], ['pt', pt]]) {
@@ -43,26 +47,26 @@ setDetectedLocale('es-MX')
 setLanguagePreference('default')
 assert.equal(t('SETTINGS'), 'AJUSTES')
 setDetectedLocale('pt-BR')
-assert.equal(t('SETTINGS'), 'CONFIGURAÇÕES')
+assert.equal(t('SETTINGS'), 'AJUSTES')
 setLanguagePreference('es')
 setDetectedLocale('en-US')
 assert.equal(getLanguage(), 'es', 'Explicit preference wins over Explorer changes')
 setLanguagePreference('default')
 assert.equal(getLanguage(), 'en', 'DEFAULT restores the most recent detected language')
 setLanguagePreference('pt')
-assert.equal(t('Load arrows (3/20)'), 'Carregar flechas (3/20)')
-assert.equal(t('Need 2 Metal Plate'), 'Precisa de 2 Chapa de metal')
-assert.equal(t('Need 2 metalPlate'), 'Precisa de 2 Chapa de metal')
-assert.equal(t('shark_meat'), 'carne de tubarão')
+assert.equal(t('Load arrows (3/20)'), 'Carga flechas (3/20)')
+assert.equal(t('Need 2 Metal Plate'), 'Falta 2 Chapa metal')
+assert.equal(t('Need 2 metalPlate'), 'Falta 2 Chapa metal')
+assert.equal(t('shark_meat'), 'tubarão')
 assert.equal(t('RAID 2 · 3 enemies remaining'), 'INVASÃO 2 · 3 inimigos restantes')
-assert.equal(t('Metal Hook broke!'), 'Gancho de metal quebrou!')
+assert.equal(t('Metal Hook broke!'), 'Gancho metal quebrou!')
 assert.equal(t('Wood ×5 · Backpack'), 'Madeira ×5 · Mochila')
 assert.equal(t('#1  0x123456  00:35'), '#1  0x123456  00:35')
 assert.equal(t('Unrecognized server diagnostic'), 'Unrecognized server diagnostic')
-assert.equal(t('Drink purified water 45%'), 'Beber água purificada 45%')
+assert.equal(t('Drink purified water 45%'), 'Beber água pura 45%')
 setLanguagePreference('es')
 assert.equal(t('Your hook starts equipped. Aim at debris, hold left-click, then release to cast. Use the bottom bar to change tools. Press E to grab nearby supplies.'),
-  'Empiezas con el gancho equipado. Apunta a los restos, mantén pulsado el clic izquierdo y suelta para lanzar. Usa la barra inferior para cambiar herramientas. Pulsa E para recoger suministros cercanos.')
+  'Empiezas con el gancho equipado. Apunta a los restos, mantén pulsado el clic izquierdo y suelta para lanzar. Cambia útiles en la barra inferior. Pulsa E para tomar recursos.')
 
 // Audit content catalogs and literal UI text so new copy cannot silently skip translation.
 const foldedKeys = new Set([...keys].map(key => key.toLowerCase()))
@@ -94,6 +98,16 @@ for (const filename of fs.readdirSync(path.join(root, 'src/ui/components')).filt
   function walk(node) {
     if (ts.isJsxAttribute(node) && ['label', 'value'].includes(node.name.text) && node.initializer) covered(node.initializer, filename)
     if (ts.isCallExpression(node) && node.expression.getText(source) === 't') covered(node.arguments[0], filename)
+    // Fixed UI controls reuse the English character budget. Very short words still
+    // have at least ten characters of physical button space (e.g. Eat -> Comer).
+    if (ts.isStringLiteral(node) && node.text === node.text.toUpperCase()) {
+      const row = messages.find(message => message[0] === node.text)
+      if (row) {
+        const budget = Math.max(10, row[0].length)
+        assert.ok(row[1].length <= budget, `Spanish control too long in ${filename}: ${row[0]} -> ${row[1]}`)
+        assert.ok(row[2].length <= budget, `Portuguese control too long in ${filename}: ${row[0]} -> ${row[2]}`)
+      }
+    }
     ts.forEachChild(node, walk)
   }
   walk(source)
@@ -143,12 +157,12 @@ selector = LanguageSettings()
 assert.equal(selector.children[0].props.value, 'IDIOMA')
 assert.equal(selector.children[1].children[2].props.uiBackground.color, 'selected')
 choices[3].props.onMouseUp()
-assert.equal(t('SETTINGS'), 'CONFIGURAÇÕES')
+assert.equal(t('SETTINGS'), 'AJUSTES')
 choices[1].props.onMouseUp()
 assert.equal(t('SETTINGS'), 'SETTINGS')
 setDetectedLocale('pt-BR')
 choices[0].props.onMouseUp()
-assert.equal(t('SETTINGS'), 'CONFIGURAÇÕES')
+assert.equal(t('SETTINGS'), 'AJUSTES')
 
 async function testRuntime() {
   const text = new Map([[1, { text: 'SETTINGS' }], [2, { text: '#1  0x123  00:35' }]])
@@ -181,13 +195,13 @@ async function testRuntime() {
   assert.equal(registered, 1)
   assert.equal(polls, 1)
   assert.equal(text.get(1).text, 'AJUSTES')
-  assert.equal(pointers.get(3).pointerEvents[0].eventInfo.hoverText, 'Cargar flechas (3/20)')
+  assert.equal(pointers.get(3).pointerEvents[0].eventInfo.hoverText, 'Carga flechas (3/20)')
   setLanguagePreference('pt')
   runtime.languageSystem(0)
-  assert.equal(text.get(1).text, 'CONFIGURAÇÕES', 'Existing world labels switch without recreation')
+  assert.equal(text.get(1).text, 'AJUSTES', 'Existing world labels switch without recreation')
   text.get(1).text = 'Load arrows (4/20)'
   runtime.languageSystem(0)
-  assert.equal(text.get(1).text, 'Carregar flechas (4/20)', 'Gameplay rewrites are translated')
+  assert.equal(text.get(1).text, 'Carga flechas (4/20)', 'Gameplay rewrites are translated')
   locale = 'en-US'
   runtime.languageSystem(2)
   await Promise.all(tasks.splice(0))
@@ -205,7 +219,7 @@ async function testRuntime() {
   text.set(1, { text: 'GRILL' })
   setLanguagePreference('es')
   runtime.languageSystem(0)
-  assert.equal(text.get(1).text, 'PARRILLA', 'Destroyed entities do not retain old messages')
+  assert.equal(text.get(1).text, 'ASADOR', 'Destroyed entities do not retain old messages')
   assert.equal(text.get(2).text, '#1  0x123  00:35', 'Rankings stay intact')
 }
 testRuntime().then(() => console.log(`PASS language detection, overrides, live world text, coverage and ${messages.length} bilingual messages`)).catch(error => { console.error(error); process.exitCode = 1 })

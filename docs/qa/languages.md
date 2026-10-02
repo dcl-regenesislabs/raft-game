@@ -26,9 +26,21 @@ Language names use their native spelling so players can recognize them even afte
 - UI review and custom touch suites pass with localized display boundaries.
 - `npm run build` passed on Node 22 with type checking. Node 20 cannot run this installed SDK's build command: it uses `fs.globSync`, absent in Node 20. No SDK or package versions were changed.
 
-## Explorer visual QA outstanding
+## Compact copy and phone verification
 
-No running Explorer/local scene preview was available during this pass. Mock layout checks do not establish in-world font rendering, wrapping or pointer behavior. Desktop and mobile screenshots are still needed for:
+Spanish and Portuguese copy uses shorter, natural wording to fit the existing layouts. DEFAULT is displayed as AUTO in these languages. Long paragraphs (65 or more English characters) stay within the English character count. Uppercase UI controls have an English-length budget with a ten-character minimum for short labels. Regression assertions enforce these budgets without truncating text or reducing font sizes. Character counts are a guardrail; actual glyph widths still need visual checks.
+
+Verified on a physical Motorola Edge 60 Pro with Explorer `v1.15.0.2176-7da41bf-prod` using the local scene preview. DEFAULT detected Portuguese, and selecting ESPAÑOL immediately changed the UI. The shortened tool selector stays on one line, and both Settings panels fit the phone screen:
+
+- [Portuguese HUD](languages/phone-hud-pt.png)
+- [Spanish HUD](languages/phone-hud-es.png)
+- [Portuguese Settings](languages/phone-settings-pt.png)
+- [Spanish Settings](languages/phone-settings-es.png)
+
+The phone's preview connection was refusing requests to port 8001. Restoring `adb reverse tcp:8001 tcp:8001` and restarting the preview/headless process restored loading. The preview was launched directly with Node 22 to avoid inherited nested-npx configuration.
+
+The language, UI review and custom touch regression suites passed after the compact-copy changes. These screenshots verify the HUD and Settings, not every possible dialog. Remaining visual checks on desktop and mobile:
+
 
 1. DEFAULT in English, Spanish and Portuguese; change Explorer language while a menu is open and allow two seconds for detection.
 2. Force each language, change Explorer language, and verify the override remains; choose DEFAULT to resume following Explorer.
