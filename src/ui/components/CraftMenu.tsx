@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { Color4 } from '@dcl/sdk/math'
 import { guidedRecipe } from '../../progression/state'
 import { InvestigationPanels } from './Investigation'
@@ -146,7 +147,7 @@ function CategoryList(props: { height: number }): ReactEcs.JSX.Element {
             uiBackground={{ textureMode: 'stretch', texture: { src: getCraftCategoryIcon(entry.id) } }}
           />
           <Label
-            value={entry.name}
+            value={t(entry.name)}
             fontSize={14}
             color={UI_INK}
             textAlign="middle-left"
@@ -167,7 +168,7 @@ function CraftItemList(props: { listHeight: number; recipes: readonly CraftableI
     <Panel uiTransform={{ width: CRAFT_LIST_WIDTH, height: props.listHeight, flexDirection: 'column', padding: 24 }}>
       <UiEntity uiTransform={{ height: 48, flexShrink: 0, flexDirection: 'row', alignItems: 'center' }}>
         <Label
-          value={categoryName}
+          value={t(categoryName)}
           fontSize={20}
           color={UI_INK}
           textAlign="middle-left"
@@ -177,7 +178,7 @@ function CraftItemList(props: { listHeight: number; recipes: readonly CraftableI
       </UiEntity>
       {props.recipes.length === 0 ? (
         <Label
-          value="No recipes in this category."
+          value={t('No recipes in this category.')}
           fontSize={16}
           color={CRAFT_TEXT_DIM_COLOR}
           textAlign="top-left"
@@ -220,7 +221,7 @@ function CraftItemRow(props: { item: CraftableItem; key?: number | string }): Re
         }}
       />
       <Label
-        value={props.item.name}
+        value={t(props.item.name)}
         fontSize={16}
         color={selected ? CRAFT_TEXT_LIGHT_COLOR : CRAFT_TEXT_COLOR}
         textAlign="middle-left"
@@ -228,7 +229,7 @@ function CraftItemRow(props: { item: CraftableItem; key?: number | string }): Re
       />
       {guided && <GuideMarker />}
       <Label
-        value={canStartCraft(props.item.id) ? 'OK' : '-'}
+        value={t(canStartCraft(props.item.id) ? 'OK' : '-')}
         fontSize={16}
         color={canStartCraft(props.item.id) ? CRAFT_HAVE_OK_COLOR : CRAFT_TEXT_DIM_COLOR}
         uiTransform={{ width: 24, height: 44, flexShrink: 0 }}
@@ -244,7 +245,7 @@ function CraftDetails(props: { listHeight: number }): ReactEcs.JSX.Element | nul
     return (
       <Panel uiTransform={{ width: CRAFT_DETAILS_WIDTH, height: props.listHeight, padding: 24 }}>
         <Label
-          value="Choose a recipe to see its materials and craft it."
+          value={t('Choose a recipe to see its materials and craft it.')}
           fontSize={18}
           color={CRAFT_TEXT_DIM_COLOR}
           textAlign="top-left"
@@ -282,14 +283,14 @@ function CraftDetails(props: { listHeight: number }): ReactEcs.JSX.Element | nul
           }}
         />
         <Label
-          value={item.name}
+          value={t(item.name)}
           fontSize={20}
           color={CRAFT_TEXT_COLOR}
           textAlign="middle-left"
           uiTransform={{ flexGrow: 1, height: '100%', margin: { left: 10 } }}
         />
       </UiEntity>
-      {guidedRecipe() === item.id && <Label value="◆  NEXT OBJECTIVE" fontSize={14} color={GUIDE_YELLOW} uiTransform={{ width: '100%', height: 26, flexShrink: 0 }} />}
+      {guidedRecipe() === item.id && <Label value={t('◆  NEXT OBJECTIVE')} fontSize={14} color={GUIDE_YELLOW} uiTransform={{ width: '100%', height: 26, flexShrink: 0 }} />}
       <UiEntity
         uiTransform={{
           height: 1,
@@ -299,7 +300,7 @@ function CraftDetails(props: { listHeight: number }): ReactEcs.JSX.Element | nul
       />
       <UiEntity uiTransform={{ width: '100%', flexGrow: 1, flexDirection: 'column', overflow: 'scroll' }}>
         <Label
-          value={item.description}
+          value={t(item.description)}
           fontSize={15}
           color={CRAFT_TEXT_DIM_COLOR}
           textAlign="top-left"
@@ -320,7 +321,7 @@ function CraftDetails(props: { listHeight: number }): ReactEcs.JSX.Element | nul
         }}
       >
         <Label
-          value={`MAKES ${item.outputCount ?? 1}`}
+          value={t(`MAKES ${item.outputCount ?? 1}`)}
           fontSize={16}
           color={CRAFT_TEXT_COLOR}
           textAlign="middle-left"
@@ -367,7 +368,7 @@ function CraftActionButton(props: { item: CraftableItem }): ReactEcs.JSX.Element
         }}
       >
         <Label
-          value={getCraftBlockReason(props.item.id) ?? 'CRAFT'}
+          value={t(getCraftBlockReason(props.item.id) ?? 'CRAFT')}
           fontSize={15}
           color={enabled ? CRAFT_BUTTON_FG : UI_INK}
           textAlign="middle-center"
@@ -407,7 +408,7 @@ function CraftCostRow(props: { cost: MaterialCost; key?: number | string }): Rea
         />
       )}
       <Label
-        value={label}
+        value={t(label)}
         fontSize={14}
         color={CRAFT_TEXT_COLOR}
         textAlign="middle-left"

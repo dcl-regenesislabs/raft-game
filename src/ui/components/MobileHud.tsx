@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
 import { isFishingLineActive } from '../../systems/fishingRod'
 import { PLATFORM_COST,getPlatformMaterialAvailable } from '../../systems/raft/platformCost'
@@ -93,14 +94,14 @@ export function MobileHud(): ReactEcs.JSX.Element {
           </UiEntity>
           <UiEntity uiTransform={{ width: 118, height: 40, flexDirection: 'column' }}>
             <Label
-              value={item ? getItemDisplayName(item) : 'Hands'}
+              value={t(item ? getItemDisplayName(item) : 'Hands')}
               fontSize={16}
               color={UI_INK}
               textAlign="middle-left"
               uiTransform={{ width: 118, height: 22 }}
             />
             <Label
-              value={picker ? 'CLOSE  ∧' : 'CHANGE TOOL  ∨'}
+              value={t(picker ? 'CLOSE  ∧' : 'CHANGE TOOL  ∨')}
               fontSize={12}
               color={UI_GOLD}
               textAlign="middle-left"
@@ -112,7 +113,7 @@ export function MobileHud(): ReactEcs.JSX.Element {
       {picker ? <ToolPicker /> : <Tutorial />}
       {!picker && status && (
         <Label
-          value={status}
+          value={t(status)}
           fontSize={13}
           color={UI_GOLD}
           textAlign="middle-right"

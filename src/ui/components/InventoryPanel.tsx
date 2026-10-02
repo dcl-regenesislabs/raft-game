@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
 import { equipInventorySlot } from '../../systems/nativeEquipment'
@@ -52,14 +53,14 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
         uiTransform={{ width: size, height: 80, padding: 12, borderRadius: 10 }}
       >
         <Label
-          value="BACKPACK"
+          value={t('BACKPACK')}
           fontSize={24}
           color={UI_INK}
           textAlign="middle-left"
           uiTransform={{ width: size - 80, height: 30 }}
         />
         <Label
-          value={item ? getItemDisplayName(item) : 'Tap an item, then another slot to move it.'}
+          value={t(item ? getItemDisplayName(item) : 'Tap an item, then another slot to move it.')}
           fontSize={14}
           color={UI_MUTED}
           textAlign="middle-left"
@@ -80,7 +81,7 @@ export function InventoryPanel(): ReactEcs.JSX.Element | null {
               equipInventorySlot(selected)
             }}
           >
-            <Label value="EQUIP" fontSize={16} color={UI_INK} uiTransform={{ width: '100%', height: '100%' }} />
+            <Label value={t('EQUIP')} fontSize={16} color={UI_INK} uiTransform={{ width: '100%', height: '100%' }} />
           </UiEntity>
         )}
         <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 12, right: 12 } }}>

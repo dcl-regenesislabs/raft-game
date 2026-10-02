@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { getEquippableSlots, getPressProgress, getSelectedSlot, selectSlot } from '../inventoryState'
 import { getInventorySlot } from '../items'
@@ -94,13 +95,13 @@ export function ToolBar(): ReactEcs.JSX.Element {
             onMouseDown={() => { expanded = !expanded }}
           >
             <Label
-              value={expanded ? 'COLLAPSE' : `+${extra.length}`}
+              value={t(expanded ? 'COLLAPSE' : `+${extra.length}`)}
               fontSize={expanded ? 13 : 20}
               color={UI_INK}
               uiTransform={{ width: '100%', height: 26 }}
             />
             <Label
-              value={expanded ? '∨' : 'MORE TOOLS ∧'}
+              value={t(expanded ? '∨' : 'MORE TOOLS ∧')}
               fontSize={12}
               color={UI_GOLD}
               uiTransform={{ width: '100%', height: 18 }}

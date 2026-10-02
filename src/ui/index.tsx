@@ -1,3 +1,4 @@
+import { t } from '../i18n/index'
 import { getUpdateNotice } from '../client/multiplayerState'
 import { UpdateScreen } from './components/UpdateScreen'
 import { isMultiplayer, multiplayerReady, multiplayerStatus } from '../client/multiplayerState'
@@ -149,7 +150,7 @@ function ui(): ReactEcs.JSX.Element {
           {!anyPanel && !isMobile() && <ActionButton />}
           {!anyPanel && !isMobile() && <DesktopHud />}
           {isMultiplayer() && multiplayerStatus() === 'Confirming…' && <Label
-            value="Confirming…" fontSize={16}
+            value={t('Confirming…')} fontSize={16}
             uiTransform={{ positionType: 'absolute', position: { bottom: 16, left: '50%' }, margin: { left: -120 }, width: 240, height: 36 }}
           />}
           <InventoryPanel />

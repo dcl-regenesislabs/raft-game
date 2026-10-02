@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { objectiveTop } from '../progressionHud'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { getExpansionStatus } from '../../expansion/runtime'
@@ -29,7 +30,7 @@ export function RaidStatus(): ReactEcs.JSX.Element | null {
       }}
       uiBackground={{ color: UI_GLASS }}
     >
-      <Label value={status} fontSize={16} color={UI_INK} uiTransform={{ width: '100%', height: 42 }} />
+      <Label value={t(status)} fontSize={16} color={UI_INK} uiTransform={{ width: '100%', height: 42 }} />
     </UiEntity>
   )
 }

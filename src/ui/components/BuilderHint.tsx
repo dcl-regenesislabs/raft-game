@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { getRaftBuilderMode, getDestroyHoverTarget } from '../../systems/raftBuilder'
 import { getMobileLayout } from '../mobileLayout'
@@ -18,8 +19,8 @@ export function BuilderHint(): ReactEcs.JSX.Element | null {
   }, width: 250, height: 56, padding: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }} uiBackground={{ color: UI_GLASS }}>
     <UiEntity uiTransform={{ width: 32, height: 32, margin: { right: 8 } }} uiBackground={{ textureMode: 'stretch', texture: { src: erase ? ERASE_ICON : BUILD_ICON } }} />
     <UiEntity uiTransform={{ width: 190, height: 40, flexDirection: 'column' }}>
-      <Label value={erase ? 'Erase mode' : 'Build mode'} fontSize={15} color={UI_INK} textAlign="middle-left" uiTransform={{ width: 190, height: 20 }} />
-      <Label value={erase ? (getDestroyHoverTarget() === null ? 'Aim at a removable tile' : 'Tap large eraser to remove') : 'Green preview: tap large hammer'} fontSize={10} color={UI_MUTED} textAlign="middle-left" uiTransform={{ width: 190, height: 20 }} />
+      <Label value={t(erase ? 'Erase mode' : 'Build mode')} fontSize={15} color={UI_INK} textAlign="middle-left" uiTransform={{ width: 190, height: 20 }} />
+      <Label value={t(erase ? (getDestroyHoverTarget() === null ? 'Aim at a removable tile' : 'Tap large eraser to remove') : 'Green preview: tap large hammer')} fontSize={10} color={UI_MUTED} textAlign="middle-left" uiTransform={{ width: 190, height: 20 }} />
     </UiEntity>
   </UiEntity>
 }

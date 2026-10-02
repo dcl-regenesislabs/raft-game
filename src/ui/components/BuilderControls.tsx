@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { isToolBarExpanded } from './ToolBar'
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
@@ -65,7 +66,7 @@ function Segment(props: { label: string; active: boolean; activeColor: Color4; o
       onMouseDown={props.active ? undefined : props.onPress}
     >
       <Label
-        value={props.label}
+        value={t(props.label)}
         fontSize={15}
         color={props.active ? UI_INK : UI_MUTED}
         uiTransform={{ width: '100%', height: '100%' }}
@@ -89,11 +90,11 @@ function RotateKey(props: { arrow: string; hotkey: string; onPress: () => void; 
       uiBackground={{ color: UI_CELL }}
       onMouseDown={props.onPress}
     >
-      <Label value={props.arrow} fontSize={22} color={UI_INK} uiTransform={{ width: 20, height: 32 }} />
+      <Label value={t(props.arrow)} fontSize={22} color={UI_INK} uiTransform={{ width: 20, height: 32 }} />
       <UiEntity
         uiTransform={{ width: 24, height: 24, borderRadius: 4, borderWidth: 1, borderColor: UI_MUTED, margin: { left: 6 } }}
       >
-        <Label value={props.hotkey} fontSize={13} color={UI_MUTED} uiTransform={{ width: '100%', height: '100%' }} />
+        <Label value={t(props.hotkey)} fontSize={13} color={UI_MUTED} uiTransform={{ width: '100%', height: '100%' }} />
       </UiEntity>
     </UiEntity>
   )

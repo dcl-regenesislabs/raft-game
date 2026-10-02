@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { objectiveBottom, topOverlayBand } from '../progressionHud'
 import { isSandbox } from '../../progression/state'
 import { UI_INK } from '../visualTheme'
@@ -47,7 +48,7 @@ export function NotificationOverlay(): ReactEcs.JSX.Element | null {
         }}
       >
         <Label
-          value={view.message}
+          value={t(view.message)}
           fontSize={NOTIFICATION_FONT_SIZE}
           color={UI_INK}
           textAlign="middle-center"

@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { isMobile } from '@dcl/sdk/platform'
 import { beginUiTouch } from '../mobileControlsState'
@@ -68,7 +69,7 @@ export function MenuList(props: {
           <PageButton label="‹" enabled={page > 0} onPress={() => pages.set(props.id, page - 1)} />
           {!props.compact && (
             <Label
-              value={`${page + 1} / ${pageCount}`}
+              value={t(`${page + 1} / ${pageCount}`)}
               fontSize={14}
               color={UI_MUTED}
               uiTransform={{ flexGrow: 1, height: 48 }}
@@ -91,7 +92,7 @@ function PageButton(props: { label: string; enabled: boolean; onPress: () => voi
         if (props.enabled) props.onPress()
       }}
     >
-      <Label value={props.label} fontSize={28} color={UI_INK} uiTransform={{ width: '100%', height: '100%' }} />
+      <Label value={t(props.label)} fontSize={28} color={UI_INK} uiTransform={{ width: '100%', height: '100%' }} />
     </UiEntity>
   )
 }

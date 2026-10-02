@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { isMobile } from '@dcl/sdk/platform'
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
@@ -83,7 +84,7 @@ export function StorageMenu(): ReactEcs.JSX.Element | null {
           />
         )}
         <Label
-          value={title}
+          value={t(title)}
           fontSize={20}
           color={selectedItem ? UI_GOLD : UI_INK}
           textAlign="middle-left"
@@ -91,7 +92,7 @@ export function StorageMenu(): ReactEcs.JSX.Element | null {
             width: size * 2 - (selectedItem ? 104 : 56), height: 32 }}
         />
         <Label
-          value={instruction}
+          value={t(instruction)}
           fontSize={14}
           color={UI_MUTED}
           textAlign="middle-left"
@@ -152,7 +153,7 @@ function PaneLabel(props: {
           margin: { top: 0, bottom: 8 }
         }}
       >
-        <Label value={props.value} fontSize={14} color={CRAFT_TEXT_COLOR} />
+        <Label value={t(props.value)} fontSize={14} color={CRAFT_TEXT_COLOR} />
       </UiEntity>
       {props.children}
     </UiEntity>

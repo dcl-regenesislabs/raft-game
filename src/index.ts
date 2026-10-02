@@ -1,3 +1,4 @@
+import { initLanguage } from './i18n/runtime'
 import { rainSystem } from './systems/rain'
 import { multiplayerInputSystem } from './client/multiplayerInput'
 import { MULTIPLAYER_ENABLED } from './config/gameConfig'
@@ -257,5 +258,6 @@ export async function main(): Promise<void> {
     setMusicTrack('lobby')
   }
 
+  initLanguage()
   setupUi()
 }

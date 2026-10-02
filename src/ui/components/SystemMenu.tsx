@@ -1,3 +1,5 @@
+import { LanguageSettings } from './LanguageSettings'
+import { t } from '../../i18n/index'
 import { canResetWorld, getMultiplayerSnapshot, isMultiplayer, multiplayerStatus, sendWorldAction } from '../../client/multiplayerState'
 import { debugToolsAllowed, DebugOp } from '../../multiplayer/types'
 import { DEBUG_PHASE_COUNT } from '../../multiplayer/debugTools'
@@ -48,12 +50,13 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
   if (isMultiplayer() && page === 'debug') return <MultiplayerDebugMenu />
   if (isMultiplayer()) return (
     <ModalFrame deviceInset>
-      <Panel uiTransform={{ width: Math.min(420, getMobileLayout(true).width - 32), padding: 20, flexDirection: 'column' }}>
-        <Label value="SETTINGS" fontSize={28} uiTransform={{ width: '100%', height: 48 }} />
+      <Panel uiTransform={{ width: Math.min(420, getMobileLayout(true).width - 32), height: Math.min(570, getMobileLayout(true).height - 32), padding: 20, flexDirection: 'column', overflow: 'scroll' }}>
+        <Label value={t('SETTINGS')} fontSize={28} uiTransform={{ width: '100%', height: 48 }} />
         <SystemActionButton label={isMusicMuted() ? 'MUSIC: OFF' : 'MUSIC: ON'} onPress={toggleMusicMuted} />
-        <Label value={multiplayerStatus()} fontSize={16} uiTransform={{ width: '100%', height: 50 }} />
+        <LanguageSettings />
+        <Label value={t(multiplayerStatus())} fontSize={16} uiTransform={{ width: '100%', height: 50 }} />
         {canResetWorld() && (resetConfirm ? <UiEntity uiTransform={{ width: '100%', flexDirection: 'column' }}>
-          <Label value="Reset the raft and ALL players' items and progress, including offline players?" fontSize={16} uiTransform={{ width: '100%', height: 80 }} />
+          <Label value={t('Reset the raft and ALL players\' items and progress, including offline players?')} fontSize={16} uiTransform={{ width: '100%', height: 80 }} />
           <SystemActionButton label="CANCEL" onPress={() => { resetConfirm = false }} />
           <SystemActionButton label="CONFIRM RESET FOR EVERYONE" onPress={() => { if (sendWorldAction({ kind: 'reset' })) { resetConfirm = false; setSystemMenuOpen(false) } }} />
         </UiEntity> : <SystemActionButton label="RESET WORLD FOR EVERYONE" onPress={() => { resetConfirm = true }} />)}
@@ -77,7 +80,7 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
         }}
       >
         <Label
-          value={detail ? 'CONFIRM ACTION' : page === 'debug' ? 'DEBUG TOOLS' : page === 'session' ? 'SESSION' : 'SETTINGS'}
+          value={t(detail ? 'CONFIRM ACTION' : page === 'debug' ? 'DEBUG TOOLS' : page === 'session' ? 'SESSION' : 'SETTINGS')}
           fontSize={28}
           color={UI_INK}
           textAlign="middle-left"
@@ -91,8 +94,8 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
         >
           {detail ? (
             <UiEntity uiTransform={{ width: '100%', flexDirection: 'column' }}>
-              <Label value={detail.headline} fontSize={20} color={UI_INK} uiTransform={{ width: '100%', height: 64 }} />
-              <Label value={detail.sub} fontSize={16} color={UI_MUTED} uiTransform={{ width: '100%', height: 70 }} />
+              <Label value={t(detail.headline)} fontSize={20} color={UI_INK} uiTransform={{ width: '100%', height: 64 }} />
+              <Label value={t(detail.sub)} fontSize={16} color={UI_MUTED} uiTransform={{ width: '100%', height: 70 }} />
               <SystemActionButton label="GO BACK" onPress={() => setSystemConfirm(null)} />
               <SystemActionButton
                 label={detail.confirmLabel}
@@ -110,7 +113,7 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
                   onPress={() => startTestMode('sandbox')}
                 />
               )}
-              <Label value={`${campaignMode()} · Chapter ${chapter()} · ${Math.floor(serializeProgress().seconds / 60)}m`} fontSize={16} color={UI_INK} uiTransform={{ width: '100%', height: 36, flexShrink: 0 }} />
+              <Label value={t(`${campaignMode()} · Chapter ${chapter()} · ${Math.floor(serializeProgress().seconds / 60)}m`)} fontSize={16} color={UI_INK} uiTransform={{ width: '100%', height: 36, flexShrink: 0 }} />
               <SystemActionButton label="NEW CLEAN PROGRESSION TEST" onPress={() => startTestMode('progression-test')} />
               <SystemActionButton label="TUTORIAL CRAFT TEST" onPress={startTutorialCraftFixture} />
               <SystemActionButton label="NEW SANDBOX" onPress={() => startTestMode('sandbox')} />
@@ -157,6 +160,7 @@ export function SystemMenu(): ReactEcs.JSX.Element | null {
           ) : (
             <UiEntity uiTransform={{ width: '100%', flexDirection: 'column' }}>
               <SystemActionButton label={isMusicMuted() ? 'MUSIC: OFF' : 'MUSIC: ON'} onPress={toggleMusicMuted} />
+              <LanguageSettings />
               <SystemActionButton
                 label="SURVIVAL GUIDE"
                 onPress={() => {
@@ -191,12 +195,12 @@ function MultiplayerDebugMenu(): ReactEcs.JSX.Element {
   return (
     <ModalFrame deviceInset>
       <Panel uiTransform={{ width, height: Math.min(640, area.height - 32), padding: 20, flexDirection: 'column' }}>
-        <Label value="DEBUG TOOLS" fontSize={28} color={UI_INK} textAlign="middle-left" uiTransform={{ width: width - 100, height: 48, flexShrink: 0 }} />
+        <Label value={t('DEBUG TOOLS')} fontSize={28} color={UI_INK} textAlign="middle-left" uiTransform={{ width: width - 100, height: 48, flexShrink: 0 }} />
         <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 12, right: 12 } }}>
           <XButton onPress={() => setSystemMenuOpen(false)} />
         </UiEntity>
         <Label
-          value={`Current phase: ${current}. ITEMS replaces your backpack. BUILD replaces the whole raft for everyone.`}
+          value={t(`Current phase: ${current}. ITEMS replaces your backpack. BUILD replaces the whole raft for everyone.`)}
           fontSize={14}
           color={UI_MUTED}
           uiTransform={{ width: '100%', height: 44, flexShrink: 0 }}
@@ -205,7 +209,7 @@ function MultiplayerDebugMenu(): ReactEcs.JSX.Element {
           {Array.from({ length: DEBUG_PHASE_COUNT }, (_, i) => i + 1).map((phase) => (
             <UiEntity key={phase} uiTransform={{ width: '100%', flexDirection: 'column', flexShrink: 0, margin: { top: 6 } }}>
               <Label
-                value={`${phase} · ${CAMPAIGN.chapterNames[phase - 1]}`}
+                value={t(`${phase} · ${CAMPAIGN.chapterNames[phase - 1]}`)}
                 fontSize={16}
                 color={phase === current ? UI_GOLD : UI_INK}
                 textAlign="middle-left"
@@ -284,7 +288,7 @@ function SystemActionButton(props: { key?: number; label: string; onPress: () =>
       onMouseUp={props.onPress}
     >
       <Label
-        value={props.label}
+        value={t(props.label)}
         fontSize={props.inline ? 13 : 17}
         color={props.inline ? UI_INK : Color4.White()}
         uiTransform={{ width: '100%', height: '100%' }}
@@ -298,7 +302,7 @@ function StatusLine(props: { status: SystemStatus }): ReactEcs.JSX.Element {
   if (!label) return <UiEntity uiTransform={{ display: 'none' }} />
   return (
     <Label
-      value={label}
+      value={t(label)}
       fontSize={14}
       color={CRAFT_TEXT_DIM_COLOR}
       textAlign="middle-center"

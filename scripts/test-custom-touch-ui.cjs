@@ -71,6 +71,7 @@ console.log('PASS custom input bindings, native jump binding, safe insets, fixed
 // Exercise the actual picker layout at short, full-height and overflowing sizes.
 let toolCount = 2, safeHeight = 720
 Object.assign(mocks, {
+  '../../i18n/index': { t: value => value },
   '../../systems/nativeEquipment': { equipInventorySlot: () => {} },
   '../inventoryState': { HANDS_SLOT: -1, getEquippableSlots: () => Array.from({length: toolCount}, (_, i) => i), getSelectedSlot: () => 0, isSlotSelectable: () => true },
   '../items': { getInventorySlot: () => ({texture: 'tool.png'}), getItemDisplayName: () => 'Tool' },

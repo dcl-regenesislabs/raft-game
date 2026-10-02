@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { getRaftBuilderMode } from '../../systems/raftBuilder'
 import { isHookCharging } from '../../systems/hookThrower'
 import { getConstructionPlacementMode } from '../../systems/constructionPlacement'
@@ -62,7 +63,7 @@ export function ProximityActions(): ReactEcs.JSX.Element | null {
             />
           )}
           <Label
-            value={`${isMobile() ? '' : action.key + '  '}${action.label}`}
+            value={t(`${isMobile() ? '' : action.key + '  '}${action.label}`)}
             fontSize={16}
             color={UI_INK}
             textAlign="middle-left"

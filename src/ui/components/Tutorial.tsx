@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { chapter, isSandbox, objective } from '../../progression/state'
 import { Color4 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
@@ -99,7 +100,7 @@ export function Tutorial(): ReactEcs.JSX.Element {
         onMouseUp={showTutorial}
         uiBackground={{ color: Color4.create(0.1, 0.15, 0.15, 0.9) }}
       >
-        <Label value={`GUIDE +\n${title}`} fontSize={17} uiTransform={{ width: '100%', height: '100%' }} />
+        <Label value={t(`GUIDE +\n${title}`)} fontSize={17} uiTransform={{ width: '100%', height: '100%' }} />
       </UiEntity>
     )
   }
@@ -113,21 +114,21 @@ export function Tutorial(): ReactEcs.JSX.Element {
     >
       <Panel uiTransform={{ width: '100%', padding: 14, flexDirection: 'column' }}>
         <Label
-          value={campaign ? `OBJECTIVE   ${chapter()} / 6` : step ? `SURVIVAL GUIDE   ${index + 1} / ${steps.length}` : 'SURVIVAL GUIDE COMPLETE'}
+          value={t(campaign ? `OBJECTIVE   ${chapter()} / 6` : step ? `SURVIVAL GUIDE   ${index + 1} / ${steps.length}` : 'SURVIVAL GUIDE COMPLETE')}
           fontSize={16}
           color={UI_MUTED}
           uiTransform={{ width: '100%', height: 24 }}
         />
         <Label
-          value={title}
+          value={t(title)}
           fontSize={isMobile() ? 19 : 23}
           color={UI_INK}
           uiTransform={{ width: '100%', height: isMobile() ? 44 : 35 }}
         />
         <Label
           value={
-            goal?.detail ?? step?.text ??
-            'Keep collecting supplies, watch your hunger and thirst, and defend your raft. Craft a spear before the sharks attack. Explore new recipes and encounters at your own pace.'
+            t(goal?.detail ?? step?.text ??
+            'Keep collecting supplies, watch your hunger and thirst, and defend your raft. Craft a spear before the sharks attack. Explore new recipes and encounters at your own pace.')
           }
           fontSize={isMobile() ? 15 : 17}
           color={UI_INK}
@@ -141,7 +142,7 @@ export function Tutorial(): ReactEcs.JSX.Element {
           uiBackground={{ color: UI_ACCENT }}
         >
           <Label
-            value={isMobile() ? 'CLOSE GUIDE' : step ? 'SKIP · UNLOCK ALL RECIPES' : 'CONTINUE INVESTIGATION'}
+            value={t(isMobile() ? 'CLOSE GUIDE' : step ? 'SKIP · UNLOCK ALL RECIPES' : 'CONTINUE INVESTIGATION')}
             fontSize={16}
             uiTransform={{ width: '100%', height: '100%' }}
           />

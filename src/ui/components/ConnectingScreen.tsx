@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { multiplayerStatus } from '../../client/multiplayerState'
@@ -34,7 +35,7 @@ export function ConnectingScreen(): ReactEcs.JSX.Element {
         uiTransform={{ width: LOGO_WIDTH, height: LOGO_HEIGHT }}
         uiBackground={{ textureMode: 'stretch', texture: { src: 'images/raft_game_logo.png' } }}
       />
-      <Label value={multiplayerStatus()} fontSize={20} color={UI_MUTED} uiTransform={{ width: 600, height: 36, margin: { top: 8 } }} />
+      <Label value={t(multiplayerStatus())} fontSize={20} color={UI_MUTED} uiTransform={{ width: 600, height: 36, margin: { top: 8 } }} />
       <UiEntity
         uiTransform={{ width: TRACK_WIDTH, height: 4, borderRadius: 2, margin: { top: 14 } }}
         uiBackground={{ color: Color4.create(1, 1, 1, 0.1) }}

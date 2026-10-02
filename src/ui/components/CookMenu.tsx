@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
 import { beginUiTouch } from '../mobileControlsState'
 import { getMobileLayout } from '../mobileLayout'
@@ -138,7 +139,7 @@ function CookPanel(): ReactEcs.JSX.Element {
         uiBackground={{ color: CRAFT_DIVIDER_COLOR }}
       />
       <Label
-        value="Choose a recipe, or pick ingredients and tap + to experiment."
+        value={t('Choose a recipe, or pick ingredients and tap + to experiment.')}
         fontSize={15}
         color={UI_MUTED}
         textAlign="middle-left"
@@ -150,7 +151,7 @@ function CookPanel(): ReactEcs.JSX.Element {
         <CookRecipeLayout />
         <UiEntity uiTransform={{ height: 12, width: 1 }} />
         <Label
-          value={cookHint()}
+          value={t(cookHint())}
           fontSize={14}
           color={canStartCook() ? UI_GOLD : UI_MUTED}
           textAlign="middle-left"
@@ -173,7 +174,7 @@ function CookHeader(): ReactEcs.JSX.Element {
       }}
     >
       <Label
-        value="COOKING"
+        value={t('COOKING')}
         fontSize={22}
         color={CRAFT_TEXT_COLOR}
         textAlign="middle-left"
@@ -213,19 +214,19 @@ function CookRecipeLayout(): ReactEcs.JSX.Element {
       }}
     >
       <Label
-        value="INGREDIENTS"
+        value={t('INGREDIENTS')}
         fontSize={11}
         color={UI_MUTED}
         uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: 164, height: 20 }}
       />
       <Label
-        value="MEAL"
+        value={t('MEAL')}
         fontSize={11}
         color={UI_MUTED}
         uiTransform={{ positionType: 'absolute', position: { top: 0, right: 0 }, width: 90, height: 20 }}
       />
       <Label
-        value="WOOD / FUEL"
+        value={t('WOOD / FUEL')}
         fontSize={11}
         color={UI_MUTED}
         uiTransform={{ positionType: 'absolute', position: { top: 164, left: 8 }, width: 140, height: 20 }}
@@ -355,7 +356,7 @@ function CookCellOverlay(props: {
     >
       {props.texture === null && (
         <Label
-          value={props.onPress ? '+' : '?'}
+          value={t(props.onPress ? '+' : '?')}
           fontSize={26}
           color={UI_MUTED}
           uiTransform={{ width: '100%', height: '100%' }}
@@ -383,7 +384,7 @@ function CookCellOverlay(props: {
           }}
           uiBackground={{ color: COOK_SHORTAGE_BG }}
         >
-          <Label value={props.shortage.text} fontSize={12} color={COOK_SHORTAGE_FG} textAlign="middle-center" />
+          <Label value={t(props.shortage.text)} fontSize={12} color={COOK_SHORTAGE_FG} textAlign="middle-center" />
         </UiEntity>
       )}
     </UiEntity>
@@ -443,7 +444,7 @@ function CookActionButton(): ReactEcs.JSX.Element {
         }}
       >
         <Label
-          value="COOK"
+          value={t('COOK')}
           fontSize={17}
           color={enabled ? CRAFT_BUTTON_FG : UI_INK}
           textAlign="middle-center"
@@ -484,7 +485,7 @@ function CookRecipeList(): ReactEcs.JSX.Element {
       }}
     >
       <Label
-        value="KNOWN RECIPES"
+        value={t('KNOWN RECIPES')}
         fontSize={20}
         color={CRAFT_TEXT_COLOR}
         textAlign="middle-left"
@@ -507,7 +508,7 @@ function CookRecipeList(): ReactEcs.JSX.Element {
         {learnedIds.length === 0
           ? [
               <Label
-                value="Cook ingredients to discover recipes."
+                value={t('Cook ingredients to discover recipes.')}
                 fontSize={12}
                 color={CRAFT_TEXT_DIM_COLOR}
                 textAlign="top-left"
@@ -562,7 +563,7 @@ function CookRecipeRow(props: { recipe: CookableItem; selected: boolean; key?: s
         }}
       />
       <Label
-        value={recipe.name}
+        value={t(recipe.name)}
         fontSize={14}
         color={props.selected ? CRAFT_TEXT_LIGHT_COLOR : CRAFT_TEXT_COLOR}
         textAlign="middle-left"
@@ -608,14 +609,14 @@ function CookSupplies(): ReactEcs.JSX.Element {
       }}
     >
       <Label
-        value="SUPPLIES"
+        value={t('SUPPLIES')}
         fontSize={20}
         color={UI_INK}
         textAlign="middle-left"
         uiTransform={{ width: '100%', height: 36 }}
       />
       <Label
-        value="Pick an ingredient, then tap an empty slot."
+        value={t('Pick an ingredient, then tap an empty slot.')}
         fontSize={13}
         color={UI_MUTED}
         textAlign="top-left"
@@ -623,7 +624,7 @@ function CookSupplies(): ReactEcs.JSX.Element {
       />
       {items.length === 0 && (
         <Label
-          value="No ingredients yet. Fish or search barrels for food."
+          value={t('No ingredients yet. Fish or search barrels for food.')}
           fontSize={15}
           color={UI_MUTED}
           uiTransform={{ width: '100%', height: 80 }}
@@ -656,14 +657,14 @@ function CookSupplies(): ReactEcs.JSX.Element {
                   uiBackground={{ textureMode: 'stretch', texture: { src: item.texture } }}
                 />
                 <Label
-                  value={getItemDisplayName(item)}
+                  value={t(getItemDisplayName(item))}
                   fontSize={13}
                   color={UI_INK}
                   textAlign="middle-left"
                   uiTransform={{ width: 124, height: 40, margin: { left: 4 } }}
                 />
                 <Label
-                  value={`${getCombinedCount(item.id)}`}
+                  value={t(`${getCombinedCount(item.id)}`)}
                   fontSize={13}
                   color={UI_MUTED}
                   uiTransform={{ width: 36, height: 40 }}

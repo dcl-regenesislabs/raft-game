@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { UI_ACCENT, UI_CELL, UI_INK } from '../visualTheme'
 import { Color4 } from '@dcl/sdk/math'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
@@ -46,14 +47,14 @@ export function DebugPanel(): ReactEcs.JSX.Element | null {
         }}
       >
         <Label
-          value="DEBUG"
+          value={t('DEBUG')}
           fontSize={30}
           color={CRAFT_TEXT_COLOR}
           textAlign="middle-center"
           uiTransform={{ width: '100%', height: 48 }}
         />
         <Label
-          value="Force spawn scripted events."
+          value={t('Force spawn scripted events.')}
           fontSize={14}
           color={CRAFT_TEXT_DIM_COLOR}
           textAlign="middle-center"
@@ -96,7 +97,7 @@ function DebugButton(props: {
       onMouseDown={props.onPress}
     >
       <Label
-        value={props.label}
+        value={t(props.label)}
         fontSize={18}
         color={CRAFT_BUTTON_FG}
         textAlign="middle-center"

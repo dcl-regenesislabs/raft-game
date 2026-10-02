@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import { UI_PAPER, UI_BORDER, UI_CELL } from '../visualTheme'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
@@ -188,7 +189,7 @@ function BottomBarSelectedLabel(props: {
         }}
         uiBackground={{ color: Color4.create(0, 0, 0, 0.55) }}
       >
-        <Label value={props.value} fontSize={16} color={Color4.White()} />
+        <Label value={t(props.value)} fontSize={16} color={Color4.White()} />
       </UiEntity>
     </UiEntity>
   )

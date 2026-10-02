@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import ReactEcs,{ Label,UiEntity } from '@dcl/sdk/react-ecs'
 import { equipInventorySlot } from '../../systems/nativeEquipment'
 import { HANDS_SLOT,getEquippableSlots,getSelectedSlot,isSlotSelectable } from '../inventoryState'
@@ -66,13 +67,13 @@ export function ToolPicker(): ReactEcs.JSX.Element {
                   />
                 )}
                 <Label
-                  value={hands ? 'Hands' : item ? getItemDisplayName(item) : `Empty slot ${slot + 1}`}
+                  value={t(hands ? 'Hands' : item ? getItemDisplayName(item) : `Empty slot ${slot + 1}`)}
                   fontSize={14}
                   color={usable ? UI_INK : UI_MUTED}
                   textAlign="middle-left"
                   uiTransform={{ flexGrow: 1, flexShrink: 1, height: 36, margin: { left: 8 } }}
                 />
-                {selected && <Label value="ON" fontSize={16} uiTransform={{ width: 26, height: 32, flexShrink: 0 }} />}
+                {selected && <Label value={t('ON')} fontSize={16} uiTransform={{ width: 26, height: 32, flexShrink: 0 }} />}
               </UiEntity>
             )
           })}

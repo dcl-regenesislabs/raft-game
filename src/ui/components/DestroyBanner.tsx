@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index'
 import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 
 import { getDestroyHoverTarget } from '../../systems/raftBuilder'
@@ -24,7 +25,7 @@ export function DestroyBanner(): ReactEcs.JSX.Element | null {
       }}
       uiBackground={{ color: BANNER_BG }}
     >
-      <Label value="DELETE PLATFORM" fontSize={24} color={BANNER_FG} />
+      <Label value={t('DELETE PLATFORM')} fontSize={24} color={BANNER_FG} />
     </UiEntity>
   )
 }
